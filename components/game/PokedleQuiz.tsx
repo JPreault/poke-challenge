@@ -159,6 +159,7 @@ export function PokedleRound({
   const [guessName, setGuessName] = useState("");
   const [feedback, setFeedback] = useState<string>("");
   const [isSolved, setIsSolved] = useState(false);
+  const [wasAbandoned, setWasAbandoned] = useState(false);
 
   const excludedIds = useMemo(
     () => attempts.map((attempt) => attempt.guess.id),
@@ -171,6 +172,7 @@ export function PokedleRound({
     setGuessName("");
     setFeedback("");
     setIsSolved(false);
+    setWasAbandoned(false);
   }, [catalog]);
 
   const advanceRound = useCallback(() => {
@@ -255,6 +257,22 @@ export function PokedleRound({
     });
   };
 
+  const handleSkip = () => {
+    if (isSolved) return;
+
+    session.recordRound({
+      question: "Trouve le Pokémon mystère",
+      userAnswer: "Abandon",
+      correctAnswer: target.nameFr,
+      isCorrect: false,
+    });
+
+    setGuessName("");
+    setWasAbandoned(true);
+    setIsSolved(true);
+    setFeedback(`Abandonné. C'était ${target.nameFr}.`);
+  };
+
   return (
     <div className="space-y-8">
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -276,6 +294,11 @@ export function PokedleRound({
           <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
             Valider
           </Button>
+          {!isSolved ? (
+            <Button type="button" size="lg" variant="outline" onClick={handleSkip}>
+              Passer
+            </Button>
+          ) : null}
           {isSolved && !onRoundComplete ? (
             <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
               Suivant
@@ -302,7 +325,9 @@ export function PokedleRound({
         <p
           className={cn(
             "min-h-6 text-sm",
-            isSolved ? "feedback-success" : "text-muted-foreground",
+            isSolved && !wasAbandoned && "feedback-success",
+            isSolved && wasAbandoned && "text-muted-foreground",
+            !isSolved && "text-muted-foreground",
             feedback.includes("introuvable") && "feedback-error",
           )}
         >

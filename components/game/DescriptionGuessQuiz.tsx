@@ -48,6 +48,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
     const [guessName, setGuessName] = useState("");
     const [feedback, setFeedback] = useState("");
     const [isSolved, setIsSolved] = useState(false);
+    const [wasAbandoned, setWasAbandoned] = useState(false);
 
     const excludedIds = useMemo(() => wrongGuesses.map((pokemon) => pokemon.id), [wrongGuesses]);
 
@@ -58,6 +59,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         setGuessName("");
         setFeedback("");
         setIsSolved(false);
+        setWasAbandoned(false);
         window.setTimeout(() => {
             inputRef.current?.focus();
         }, 0);
@@ -150,12 +152,30 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                 ? "Ce n'est pas le bon Pokémon. Une nouvelle description a été dévoilée !"
                 : "Ce n'est pas le bon Pokémon. Réessaie !",
         );
-        window.setTimeout(() => {
-            inputRef.current?.focus();
-        }, 0);
-    };
+    window.setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  };
 
-    if (!target || target.descriptionsFr.length === 0) {
+  const handleSkip = () => {
+    if (!target || isSolved) return;
+
+    const primaryDescription = target.descriptionsFr[0] ?? "";
+
+    session.recordRound({
+      question: truncateDescription(primaryDescription),
+      userAnswer: "Abandon",
+      correctAnswer: target.nameFr,
+      isCorrect: false,
+    });
+
+    setGuessName("");
+    setWasAbandoned(true);
+    setIsSolved(true);
+    setFeedback(`Abandonné. C'était ${target.nameFr}.`);
+  };
+
+  if (!target || target.descriptionsFr.length === 0) {
         return <div className="flex h-64 items-center justify-center text-muted-foreground">Préparation de la manche…</div>;
     }
 
@@ -206,6 +226,11 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                     <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
                         Valider
                     </Button>
+                    {!isSolved ? (
+                        <Button type="button" size="lg" variant="outline" onClick={handleSkip}>
+                            Passer
+                        </Button>
+                    ) : null}
                     {isSolved && !onRoundComplete ? (
                         <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
                             Suivant
@@ -226,7 +251,8 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                 <p
                     className={cn(
                         "min-h-6 text-sm",
-                        isSolved && "feedback-success",
+                        isSolved && !wasAbandoned && "feedback-success",
+                        isSolved && wasAbandoned && "text-muted-foreground",
                         !isSolved && feedback.includes("introuvable") && "feedback-error",
                         !isSolved && feedback && !feedback.includes("introuvable") && "text-muted-foreground",
                     )}

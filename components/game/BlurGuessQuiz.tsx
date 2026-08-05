@@ -57,6 +57,7 @@ export function BlurGuessRound({
   const [isSolved, setIsSolved] = useState(false);
   // Préférence N&B limitée à la manche en cours (réinitialisée à chaque manche).
   const [grayscaleEnabled, setGrayscaleEnabled] = useState(true);
+  const [wasAbandoned, setWasAbandoned] = useState(false);
 
   const excludedIds = useMemo(
     () => wrongGuesses.map((pokemon) => pokemon.id),
@@ -80,6 +81,7 @@ export function BlurGuessRound({
     setGuessName("");
     setFeedback("");
     setIsSolved(false);
+    setWasAbandoned(false);
     setGrayscaleEnabled(true);
     window.setTimeout(() => {
       inputRef.current?.focus();
@@ -177,6 +179,23 @@ export function BlurGuessRound({
     }, 0);
   };
 
+  const handleSkip = () => {
+    if (!target || isSolved) return;
+
+    session.recordRound({
+      question: "Quel est ce Pokémon flouté ?",
+      userAnswer: "Abandon",
+      correctAnswer: target.nameFr,
+      isCorrect: false,
+      questionImage: target.artwork,
+    });
+
+    setGuessName("");
+    setWasAbandoned(true);
+    setIsSolved(true);
+    setFeedback(`Abandonné. C'était ${target.nameFr}.`);
+  };
+
   if (!target) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
@@ -254,6 +273,11 @@ export function BlurGuessRound({
           <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
             Valider
           </Button>
+          {!isSolved ? (
+            <Button type="button" size="lg" variant="outline" onClick={handleSkip}>
+              Passer
+            </Button>
+          ) : null}
           {isSolved && !onRoundComplete ? (
             <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
               Suivant
@@ -262,23 +286,24 @@ export function BlurGuessRound({
         </div>
       </form>
 
-      <p
-        className={cn(
-          "min-h-6 text-sm",
-          isSolved && "feedback-success",
-          !isSolved && feedback.includes("introuvable") && "feedback-error",
-          !isSolved &&
-            feedback.includes("liste du bac") &&
-            "feedback-error",
-          !isSolved &&
-            feedback &&
-            !feedback.includes("introuvable") &&
-            !feedback.includes("liste du bac") &&
-            "text-muted-foreground",
-        )}
-      >
-        {feedback}
-      </p>
+        <p
+          className={cn(
+            "min-h-6 text-sm",
+            isSolved && !wasAbandoned && "feedback-success",
+            isSolved && wasAbandoned && "text-muted-foreground",
+            !isSolved && feedback.includes("introuvable") && "feedback-error",
+            !isSolved &&
+              feedback.includes("liste du bac") &&
+              "feedback-error",
+            !isSolved &&
+              feedback &&
+              !feedback.includes("introuvable") &&
+              !feedback.includes("liste du bac") &&
+              "text-muted-foreground",
+          )}
+        >
+          {feedback}
+        </p>
 
       {wrongGuesses.length > 0 ? (
         <div className="space-y-3">

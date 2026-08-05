@@ -52,6 +52,7 @@ export function ZoomGuessRound({
   const [guessName, setGuessName] = useState("");
   const [feedback, setFeedback] = useState("");
   const [isSolved, setIsSolved] = useState(false);
+  const [wasAbandoned, setWasAbandoned] = useState(false);
 
   const excludedIds = useMemo(
     () => wrongGuesses.map((pokemon) => pokemon.id),
@@ -75,6 +76,7 @@ export function ZoomGuessRound({
     setGuessName("");
     setFeedback("");
     setIsSolved(false);
+    setWasAbandoned(false);
     window.setTimeout(() => {
       inputRef.current?.focus();
     }, 0);
@@ -171,6 +173,23 @@ export function ZoomGuessRound({
     }, 0);
   };
 
+  const handleSkip = () => {
+    if (!target || isSolved) return;
+
+    session.recordRound({
+      question: "Quel est ce Pokémon zoomé ?",
+      userAnswer: "Abandon",
+      correctAnswer: target.nameFr,
+      isCorrect: false,
+      questionImage: target.artwork,
+    });
+
+    setGuessName("");
+    setWasAbandoned(true);
+    setIsSolved(true);
+    setFeedback(`Abandonné. C'était ${target.nameFr}.`);
+  };
+
   if (!target) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
@@ -226,6 +245,11 @@ export function ZoomGuessRound({
           <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
             Valider
           </Button>
+          {!isSolved ? (
+            <Button type="button" size="lg" variant="outline" onClick={handleSkip}>
+              Passer
+            </Button>
+          ) : null}
           {isSolved && !onRoundComplete ? (
             <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
               Suivant
@@ -237,7 +261,8 @@ export function ZoomGuessRound({
       <p
         className={cn(
           "min-h-6 text-sm",
-          isSolved && "feedback-success",
+          isSolved && !wasAbandoned && "feedback-success",
+          isSolved && wasAbandoned && "text-muted-foreground",
           !isSolved && feedback.includes("introuvable") && "feedback-error",
           !isSolved &&
             feedback.includes("liste du bac") &&
