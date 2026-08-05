@@ -11,519 +11,476 @@ const FETCH_MAX_ATTEMPTS = 5;
 const OUTPUT_PATH = join(process.cwd(), "data", "pokemon.json");
 
 interface SpeciesName {
-  language: { name: string };
-  name: string;
+    language: { name: string };
+    name: string;
 }
 
 interface SpeciesListItem {
-  name: string;
-  url: string;
+    name: string;
+    url: string;
 }
 
 interface SpeciesListResponse {
-  results: SpeciesListItem[];
-  next: string | null;
+    results: SpeciesListItem[];
+    next: string | null;
 }
 
 interface FlavorTextEntry {
-  flavor_text: string;
-  language: { name: string };
-  version: { name: string };
+    flavor_text: string;
+    language: { name: string };
+    version: { name: string };
 }
 
 interface SpeciesResponse {
-  id: number;
-  name: string;
-  names: SpeciesName[];
-  generation: { name: string };
-  color: { name: string };
-  habitat: { name: string } | null;
-  evolution_chain: { url: string };
-  flavor_text_entries?: FlavorTextEntry[];
+    id: number;
+    name: string;
+    names: SpeciesName[];
+    generation: { name: string };
+    color: { name: string };
+    habitat: { name: string } | null;
+    evolution_chain: { url: string };
+    flavor_text_entries?: FlavorTextEntry[];
 }
 
 const FLAVOR_TEXT_VERSION_PRIORITY = [
-  "scarlet",
-  "violet",
-  "shield",
-  "sword",
-  "ultra-sun",
-  "ultra-moon",
-  "sun",
-  "moon",
-  "omega-ruby",
-  "alpha-sapphire",
-  "x",
-  "y",
-  "black-2",
-  "white-2",
-  "black",
-  "white",
-  "heartgold",
-  "soulsilver",
-  "platinum",
-  "diamond",
-  "pearl",
-  "emerald",
-  "firered",
-  "leafgreen",
-  "ruby",
-  "sapphire",
-  "crystal",
-  "silver",
-  "gold",
-  "yellow",
-  "red",
-  "blue",
+    "scarlet",
+    "violet",
+    "shield",
+    "sword",
+    "ultra-sun",
+    "ultra-moon",
+    "sun",
+    "moon",
+    "omega-ruby",
+    "alpha-sapphire",
+    "x",
+    "y",
+    "black-2",
+    "white-2",
+    "black",
+    "white",
+    "heartgold",
+    "soulsilver",
+    "platinum",
+    "diamond",
+    "pearl",
+    "emerald",
+    "firered",
+    "leafgreen",
+    "ruby",
+    "sapphire",
+    "crystal",
+    "silver",
+    "gold",
+    "yellow",
+    "red",
+    "blue",
 ];
 
 interface PokemonResponse {
-  id: number;
-  height: number;
-  weight: number;
-  types: Array<{
-    slot: number;
-    type: { name: string };
-  }>;
-  sprites: {
-    front_default: string | null;
-    other?: {
-      "official-artwork"?: {
+    id: number;
+    height: number;
+    weight: number;
+    types: Array<{
+        slot: number;
+        type: { name: string };
+    }>;
+    sprites: {
         front_default: string | null;
-      };
+        other?: {
+            "official-artwork"?: {
+                front_default: string | null;
+            };
+        };
     };
-  };
 }
 
 interface TypeListResponse {
-  results: Array<{ name: string; url: string }>;
+    results: Array<{ name: string; url: string }>;
 }
 
 interface TypeResponse {
-  names: Array<{
-    language: { name: string };
-    name: string;
-  }>;
+    names: Array<{
+        language: { name: string };
+        name: string;
+    }>;
 }
 
 interface EvolutionChainResponse {
-  chain: EvolutionChainNode;
+    chain: EvolutionChainNode;
 }
 
 interface EvolutionChainNode {
-  species: { url: string };
-  evolves_to: EvolutionChainNode[];
+    species: { url: string };
+    evolves_to: EvolutionChainNode[];
 }
 
 const FALLBACK_TYPE_FR: Record<string, string> = {
-  normal: "Normal",
-  fire: "Feu",
-  water: "Eau",
-  electric: "Électrik",
-  grass: "Plante",
-  ice: "Glace",
-  fighting: "Combat",
-  poison: "Poison",
-  ground: "Sol",
-  flying: "Vol",
-  psychic: "Psy",
-  bug: "Insecte",
-  rock: "Roche",
-  ghost: "Spectre",
-  dragon: "Dragon",
-  dark: "Ténèbres",
-  steel: "Acier",
-  fairy: "Fée",
+    normal: "Normal",
+    fire: "Feu",
+    water: "Eau",
+    electric: "Électrik",
+    grass: "Plante",
+    ice: "Glace",
+    fighting: "Combat",
+    poison: "Poison",
+    ground: "Sol",
+    flying: "Vol",
+    psychic: "Psy",
+    bug: "Insecte",
+    rock: "Roche",
+    ghost: "Spectre",
+    dragon: "Dragon",
+    dark: "Ténèbres",
+    steel: "Acier",
+    fairy: "Fée",
 };
 
 const HABITAT_FR: Record<string, string> = {
-  cave: "Grotte",
-  forest: "Forêt",
-  grassland: "Prairie",
-  mountain: "Montagne",
-  rare: "Rare",
-  "rough-terrain": "Terrain accidenté",
-  sea: "Mer",
-  urban: "Urbain",
-  "waters-edge": "Bord de l'eau",
+    cave: "Grotte",
+    forest: "Forêt",
+    grassland: "Prairie",
+    mountain: "Montagne",
+    rare: "Rare",
+    "rough-terrain": "Terrain accidenté",
+    sea: "Mer",
+    urban: "Urbain",
+    "waters-edge": "Bord de l'eau",
 };
 
 const COLOR_FR: Record<string, string> = {
-  black: "Noir",
-  blue: "Bleu",
-  brown: "Marron",
-  gray: "Gris",
-  green: "Vert",
-  pink: "Rose",
-  purple: "Violet",
-  red: "Rouge",
-  white: "Blanc",
-  yellow: "Jaune",
+    black: "Noir",
+    blue: "Bleu",
+    brown: "Marron",
+    gray: "Gris",
+    green: "Vert",
+    pink: "Rose",
+    purple: "Violet",
+    red: "Rouge",
+    white: "Blanc",
+    yellow: "Jaune",
 };
 
 function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function isRetryableStatus(status: number) {
-  return status === 408 || status === 429 || status >= 500;
+    return status === 408 || status === 429 || status >= 500;
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  let lastError: Error | null = null;
+    let lastError: Error | null = null;
 
-  for (let attempt = 1; attempt <= FETCH_MAX_ATTEMPTS; attempt += 1) {
-    try {
-      const response = await fetch(url);
+    for (let attempt = 1; attempt <= FETCH_MAX_ATTEMPTS; attempt += 1) {
+        try {
+            const response = await fetch(url);
 
-      if (response.ok) {
-        return (await response.json()) as T;
-      }
+            if (response.ok) {
+                return (await response.json()) as T;
+            }
 
-      const error = new Error(`Failed to fetch ${url}: ${response.status}`);
-      lastError = error;
+            const error = new Error(`Failed to fetch ${url}: ${response.status}`);
+            lastError = error;
 
-      if (!isRetryableStatus(response.status) || attempt === FETCH_MAX_ATTEMPTS) {
-        throw error;
-      }
+            if (!isRetryableStatus(response.status) || attempt === FETCH_MAX_ATTEMPTS) {
+                throw error;
+            }
 
-      const backoffMs = 300 * 2 ** (attempt - 1);
-      console.warn(
-        `Retry ${attempt}/${FETCH_MAX_ATTEMPTS} for ${url} (HTTP ${response.status}) in ${backoffMs}ms`,
-      );
-      await sleep(backoffMs);
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+            const backoffMs = 300 * 2 ** (attempt - 1);
+            console.warn(`Retry ${attempt}/${FETCH_MAX_ATTEMPTS} for ${url} (HTTP ${response.status}) in ${backoffMs}ms`);
+            await sleep(backoffMs);
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
 
-      if (attempt === FETCH_MAX_ATTEMPTS) {
-        throw lastError;
-      }
+            if (attempt === FETCH_MAX_ATTEMPTS) {
+                throw lastError;
+            }
 
-      const backoffMs = 300 * 2 ** (attempt - 1);
-      console.warn(
-        `Retry ${attempt}/${FETCH_MAX_ATTEMPTS} for ${url} (${lastError.message}) in ${backoffMs}ms`,
-      );
-      await sleep(backoffMs);
+            const backoffMs = 300 * 2 ** (attempt - 1);
+            console.warn(`Retry ${attempt}/${FETCH_MAX_ATTEMPTS} for ${url} (${lastError.message}) in ${backoffMs}ms`);
+            await sleep(backoffMs);
+        }
     }
-  }
 
-  throw lastError ?? new Error(`Failed to fetch ${url}`);
+    throw lastError ?? new Error(`Failed to fetch ${url}`);
 }
 
 async function fetchAllSpecies(): Promise<SpeciesResponse[]> {
-  const species: SpeciesResponse[] = [];
-  let url: string | null = `${POKEAPI_BASE}/pokemon-species?limit=2000`;
+    const species: SpeciesResponse[] = [];
+    let url: string | null = `${POKEAPI_BASE}/pokemon-species?limit=2000`;
 
-  while (url) {
-    const page: SpeciesListResponse = await fetchJson<SpeciesListResponse>(url);
-    const details = await mapWithConcurrency(
-      page.results,
-      FETCH_CONCURRENCY,
-      (item: SpeciesListItem) => fetchJson<SpeciesResponse>(item.url),
-    );
-    species.push(...details);
-    url = page.next;
-  }
+    while (url) {
+        const page: SpeciesListResponse = await fetchJson<SpeciesListResponse>(url);
+        const details = await mapWithConcurrency(page.results, FETCH_CONCURRENCY, (item: SpeciesListItem) => fetchJson<SpeciesResponse>(item.url));
+        species.push(...details);
+        url = page.next;
+    }
 
-  return species;
+    return species;
 }
 
 function parseTrailingIdFromUrl(url: string): number {
-  const match = url.match(/\/(\d+)\/?$/);
-  if (!match) {
-    throw new Error(`Unable to parse id from URL: ${url}`);
-  }
-  return Number(match[1]);
+    const match = url.match(/\/(\d+)\/?$/);
+    if (!match) {
+        throw new Error(`Unable to parse id from URL: ${url}`);
+    }
+    return Number(match[1]);
 }
 
 function generationNameToNumber(name: string): number {
-  const roman = name.replace("generation-", "").toUpperCase();
-  const map: Record<string, number> = {
-    I: 1,
-    II: 2,
-    III: 3,
-    IV: 4,
-    V: 5,
-    VI: 6,
-    VII: 7,
-    VIII: 8,
-    IX: 9,
-  };
-  const generation = map[roman];
-  if (!generation) {
-    throw new Error(`Unknown generation ${name}`);
-  }
-  return generation;
+    const roman = name.replace("generation-", "").toUpperCase();
+    const map: Record<string, number> = {
+        I: 1,
+        II: 2,
+        III: 3,
+        IV: 4,
+        V: 5,
+        VI: 6,
+        VII: 7,
+        VIII: 8,
+        IX: 9,
+    };
+    const generation = map[roman];
+    if (!generation) {
+        throw new Error(`Unknown generation ${name}`);
+    }
+    return generation;
 }
 
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  worker: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let cursor = 0;
+async function mapWithConcurrency<T, R>(items: T[], concurrency: number, worker: (item: T) => Promise<R>): Promise<R[]> {
+    const results: R[] = new Array(items.length);
+    let cursor = 0;
 
-  const tasks = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-    while (cursor < items.length) {
-      const index = cursor;
-      cursor += 1;
-      results[index] = await worker(items[index]);
-    }
-  });
+    const tasks = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+        while (cursor < items.length) {
+            const index = cursor;
+            cursor += 1;
+            results[index] = await worker(items[index]);
+        }
+    });
 
-  await Promise.all(tasks);
-  return results;
+    await Promise.all(tasks);
+    return results;
 }
 
 async function buildTypeTranslations(): Promise<Record<string, string>> {
-  const list = await fetchJson<TypeListResponse>(`${POKEAPI_BASE}/type?limit=100`);
-  const details = await mapWithConcurrency(
-    list.results,
-    FETCH_CONCURRENCY,
-    (typeItem) => fetchJson<TypeResponse>(typeItem.url),
-  );
+    const list = await fetchJson<TypeListResponse>(`${POKEAPI_BASE}/type?limit=100`);
+    const details = await mapWithConcurrency(list.results, FETCH_CONCURRENCY, (typeItem) => fetchJson<TypeResponse>(typeItem.url));
 
-  const output: Record<string, string> = {};
-  list.results.forEach((typeItem, index) => {
-    const frName =
-      details[index].names.find((entry) => entry.language.name === "fr")?.name ??
-      FALLBACK_TYPE_FR[typeItem.name] ??
-      typeItem.name;
-    output[typeItem.name] = frName;
-  });
+    const output: Record<string, string> = {};
+    list.results.forEach((typeItem, index) => {
+        const frName = details[index].names.find((entry) => entry.language.name === "fr")?.name ?? FALLBACK_TYPE_FR[typeItem.name] ?? typeItem.name;
+        output[typeItem.name] = frName;
+    });
 
-  return output;
+    return output;
 }
 
-function collectEvolutionStages(
-  node: EvolutionChainNode,
-  stage: number,
-  stageBySpeciesId: Map<number, number>,
-) {
-  const speciesId = parseTrailingIdFromUrl(node.species.url);
-  const current = stageBySpeciesId.get(speciesId);
-  if (!current || stage < current) {
-    stageBySpeciesId.set(speciesId, stage);
-  }
+function collectEvolutionStages(node: EvolutionChainNode, stage: number, stageBySpeciesId: Map<number, number>) {
+    const speciesId = parseTrailingIdFromUrl(node.species.url);
+    const current = stageBySpeciesId.get(speciesId);
+    if (!current || stage < current) {
+        stageBySpeciesId.set(speciesId, stage);
+    }
 
-  for (const next of node.evolves_to) {
-    collectEvolutionStages(next, stage + 1, stageBySpeciesId);
-  }
+    for (const next of node.evolves_to) {
+        collectEvolutionStages(next, stage + 1, stageBySpeciesId);
+    }
 }
 
-async function buildEvolutionStageMap(
-  speciesList: SpeciesResponse[],
-): Promise<Map<number, number>> {
-  const uniqueEvolutionUrls = Array.from(
-    new Set(speciesList.map((species) => species.evolution_chain.url)),
-  );
-  const stageBySpeciesId = new Map<number, number>();
+async function buildEvolutionStageMap(speciesList: SpeciesResponse[]): Promise<Map<number, number>> {
+    const uniqueEvolutionUrls = Array.from(new Set(speciesList.map((species) => species.evolution_chain.url)));
+    const stageBySpeciesId = new Map<number, number>();
 
-  await mapWithConcurrency(uniqueEvolutionUrls, 20, async (url) => {
-    const chain = await fetchJson<EvolutionChainResponse>(url);
-    collectEvolutionStages(chain.chain, 1, stageBySpeciesId);
-    return null;
-  });
+    await mapWithConcurrency(uniqueEvolutionUrls, 20, async (url) => {
+        const chain = await fetchJson<EvolutionChainResponse>(url);
+        collectEvolutionStages(chain.chain, 1, stageBySpeciesId);
+        return null;
+    });
 
-  return stageBySpeciesId;
+    return stageBySpeciesId;
 }
 
 function getFrenchName(species: SpeciesResponse): string | null {
-  return (
-    species.names.find((entry) => entry.language.name === "fr")?.name ?? null
-  );
+    return species.names.find((entry) => entry.language.name === "fr")?.name ?? null;
 }
 
 function normalizeFlavorText(text: string): string {
-  return text
-    .replace(/\f/g, " ")
-    .replace(/\n/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+    return text.replace(/\f/g, " ").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function getFrenchFlavorText(species: SpeciesResponse): string | null {
-  const frenchEntries = (species.flavor_text_entries ?? []).filter(
-    (entry) => entry.language.name === "fr",
-  );
+function getFrenchFlavorTexts(species: SpeciesResponse): string[] {
+    const frenchEntries = (species.flavor_text_entries ?? []).filter((entry) => entry.language.name === "fr");
 
-  if (frenchEntries.length === 0) {
-    return null;
-  }
+    if (frenchEntries.length === 0) {
+        return [];
+    }
 
-  const sortedEntries = [...frenchEntries].sort((left, right) => {
-    const leftIndex = FLAVOR_TEXT_VERSION_PRIORITY.indexOf(left.version.name);
-    const rightIndex = FLAVOR_TEXT_VERSION_PRIORITY.indexOf(right.version.name);
-    const leftPriority = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
-    const rightPriority = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
-    return leftPriority - rightPriority;
-  });
+    const sortedEntries = [...frenchEntries].sort((left, right) => {
+        const leftIndex = FLAVOR_TEXT_VERSION_PRIORITY.indexOf(left.version.name);
+        const rightIndex = FLAVOR_TEXT_VERSION_PRIORITY.indexOf(right.version.name);
+        const leftPriority = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+        const rightPriority = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+        return leftPriority - rightPriority;
+    });
 
-  return normalizeFlavorText(sortedEntries[0].flavor_text);
+    const uniqueTexts: string[] = [];
+    const seen = new Set<string>();
+
+    for (const entry of sortedEntries) {
+        const text = normalizeFlavorText(entry.flavor_text);
+        if (!text) continue;
+
+        const key = text.toLowerCase();
+        if (seen.has(key)) continue;
+
+        seen.add(key);
+        uniqueTexts.push(text);
+        if (uniqueTexts.length >= 6) break;
+    }
+
+    return uniqueTexts;
 }
 
 async function generatePokemonData() {
-  console.log("Fetching Pokémon species from PokéAPI...");
-  const allSpecies = await fetchAllSpecies();
-  console.log(`Fetched ${allSpecies.length} species.`);
+    console.log("Fetching Pokémon species from PokéAPI...");
+    const allSpecies = await fetchAllSpecies();
+    console.log(`Fetched ${allSpecies.length} species.`);
 
-  console.log("Fetching localized type labels...");
-  const typeTranslations = await buildTypeTranslations();
+    console.log("Fetching localized type labels...");
+    const typeTranslations = await buildTypeTranslations();
 
-  console.log("Fetching evolution chains...");
-  const evolutionStageBySpeciesId = await buildEvolutionStageMap(allSpecies);
+    console.log("Fetching evolution chains...");
+    const evolutionStageBySpeciesId = await buildEvolutionStageMap(allSpecies);
 
-  console.log("Fetching detailed Pokémon stats...");
-  const pokemonDetails = await mapWithConcurrency(
-    allSpecies,
-    FETCH_CONCURRENCY,
-    (species) =>
-      fetchJson<PokemonResponse>(`${POKEAPI_BASE}/pokemon/${species.id}`),
-  );
-  const pokemonById = new Map<number, PokemonResponse>(
-    pokemonDetails.map((pokemon) => [pokemon.id, pokemon]),
-  );
+    console.log("Fetching detailed Pokémon stats...");
+    const pokemonDetails = await mapWithConcurrency(allSpecies, FETCH_CONCURRENCY, (species) =>
+        fetchJson<PokemonResponse>(`${POKEAPI_BASE}/pokemon/${species.id}`),
+    );
+    const pokemonById = new Map<number, PokemonResponse>(pokemonDetails.map((pokemon) => [pokemon.id, pokemon]));
 
-  const frenchIndex: PokemonData["frenchIndex"] = {};
-  const frenchNameToSpecies = new Map<string, SpeciesResponse>();
+    const frenchIndex: PokemonData["frenchIndex"] = {};
+    const frenchNameToSpecies = new Map<string, SpeciesResponse>();
 
-  for (const species of allSpecies) {
-    const nameFr = getFrenchName(species);
-    if (!nameFr) continue;
+    for (const species of allSpecies) {
+        const nameFr = getFrenchName(species);
+        if (!nameFr) continue;
 
-    const key = normalizeFrenchName(nameFr);
-    frenchIndex[key] = { id: species.id, nameFr };
-    frenchNameToSpecies.set(key, species);
-  }
-
-  const bac: PokemonData["bac"] = [];
-  const failures: string[] = [];
-
-  for (const entry of BAC_POKEMON) {
-    const key = normalizeFrenchName(entry.name);
-    const species = frenchNameToSpecies.get(key);
-
-    if (!species) {
-      failures.push(entry.name);
-      continue;
+        const key = normalizeFrenchName(nameFr);
+        frenchIndex[key] = { id: species.id, nameFr };
+        frenchNameToSpecies.set(key, species);
     }
 
-    const pokemon = pokemonById.get(species.id);
-    if (!pokemon) {
-      failures.push(entry.name);
-      continue;
+    const bac: PokemonData["bac"] = [];
+    const failures: string[] = [];
+
+    for (const entry of BAC_POKEMON) {
+        const key = normalizeFrenchName(entry.name);
+        const species = frenchNameToSpecies.get(key);
+
+        if (!species) {
+            failures.push(entry.name);
+            continue;
+        }
+
+        const pokemon = pokemonById.get(species.id);
+        if (!pokemon) {
+            failures.push(entry.name);
+            continue;
+        }
+
+        const sprite = pokemon.sprites.front_default ?? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${species.id}.png`;
+        const artwork = pokemon.sprites.other?.["official-artwork"]?.front_default ?? sprite;
+
+        bac.push({
+            letter: entry.letter,
+            nameFr: entry.name,
+            id: species.id,
+            sprite,
+            artwork,
+        });
+
+        console.log(`✓ ${entry.letter} - ${entry.name} (id: ${species.id})`);
     }
 
-    const sprite =
-      pokemon.sprites.front_default ??
-      `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${species.id}.png`;
-    const artwork =
-      pokemon.sprites.other?.["official-artwork"]?.front_default ?? sprite;
-
-    bac.push({
-      letter: entry.letter,
-      nameFr: entry.name,
-      id: species.id,
-      sprite,
-      artwork,
-    });
-
-    console.log(`✓ ${entry.letter} - ${entry.name} (id: ${species.id})`);
-  }
-
-  if (failures.length > 0) {
-    console.error("\nFailed to resolve:");
-    for (const name of failures) {
-      console.error(`  - ${name}`);
+    if (failures.length > 0) {
+        console.error("\nFailed to resolve:");
+        for (const name of failures) {
+            console.error(`  - ${name}`);
+        }
+        throw new Error(`Unable to resolve ${failures.length} bac Pokémon`);
     }
-    throw new Error(`Unable to resolve ${failures.length} bac Pokémon`);
-  }
 
-  const catalog: PokemonData["catalog"] = Object.values(frenchIndex)
-    .map((entry) => {
-      const species = frenchNameToSpecies.get(normalizeFrenchName(entry.nameFr));
-      if (!species) {
-        return null;
-      }
+    const catalog: PokemonData["catalog"] = Object.values(frenchIndex)
+        .map((entry) => {
+            const species = frenchNameToSpecies.get(normalizeFrenchName(entry.nameFr));
+            if (!species) {
+                return null;
+            }
 
-      const pokemon = pokemonById.get(entry.id);
-      if (!pokemon) {
-        return null;
-      }
+            const pokemon = pokemonById.get(entry.id);
+            if (!pokemon) {
+                return null;
+            }
 
-      const sprite =
-        pokemon.sprites.front_default ??
-        `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${entry.id}.png`;
-      const artwork =
-        pokemon.sprites.other?.["official-artwork"]?.front_default ?? sprite;
-      const habitat = species.habitat
-        ? (HABITAT_FR[species.habitat.name] ?? species.habitat.name)
-        : null;
-      const colors = [COLOR_FR[species.color.name] ?? species.color.name];
-      const types = pokemon.types
-        .slice()
-        .sort((a, b) => a.slot - b.slot)
-        .map(
-          (typeEntry) =>
-            typeTranslations[typeEntry.type.name] ??
-            FALLBACK_TYPE_FR[typeEntry.type.name] ??
-            typeEntry.type.name,
-        );
+            const sprite =
+                pokemon.sprites.front_default ?? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${entry.id}.png`;
+            const artwork = pokemon.sprites.other?.["official-artwork"]?.front_default ?? sprite;
+            const habitat = species.habitat ? (HABITAT_FR[species.habitat.name] ?? species.habitat.name) : null;
+            const colors = [COLOR_FR[species.color.name] ?? species.color.name];
+            const types = pokemon.types
+                .slice()
+                .sort((a, b) => a.slot - b.slot)
+                .map((typeEntry) => typeTranslations[typeEntry.type.name] ?? FALLBACK_TYPE_FR[typeEntry.type.name] ?? typeEntry.type.name);
 
-      return {
-        id: entry.id,
-        nameFr: entry.nameFr,
-        sprite,
-        artwork,
-        cryLatest: `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${entry.id}.ogg`,
-        descriptionFr: getFrenchFlavorText(species),
-        generation: generationNameToNumber(species.generation.name),
-        types,
-        habitat,
-        colors,
-        evolutionStage: evolutionStageBySpeciesId.get(entry.id) ?? 1,
-        heightM: pokemon.height / 10,
-        weightKg: pokemon.weight / 10,
-      };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
-    .sort((a, b) => a.id - b.id);
+            return {
+                id: entry.id,
+                nameFr: entry.nameFr,
+                sprite,
+                artwork,
+                cryLatest: `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${entry.id}.ogg`,
+                descriptionsFr: getFrenchFlavorTexts(species),
+                generation: generationNameToNumber(species.generation.name),
+                types,
+                habitat,
+                colors,
+                evolutionStage: evolutionStageBySpeciesId.get(entry.id) ?? 1,
+                heightM: pokemon.height / 10,
+                weightKg: pokemon.weight / 10,
+            };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+        .sort((a, b) => a.id - b.id);
 
-  const data: PokemonData = { bac, catalog, frenchIndex };
-  writeFileSync(OUTPUT_PATH, JSON.stringify(data, null, 2));
-  console.log(
-    `\nWrote ${OUTPUT_PATH} (${bac.length} bac Pokémon, ${catalog.length} catalog)`,
-  );
+    const data: PokemonData = { bac, catalog, frenchIndex };
+    writeFileSync(OUTPUT_PATH, JSON.stringify(data, null, 2));
+    console.log(`\nWrote ${OUTPUT_PATH} (${bac.length} bac Pokémon, ${catalog.length} catalog)`);
 }
 
 async function main() {
-  const forceGenerate = process.env.FORCE_GENERATE_POKEMON === "1";
-  const hasExistingData = existsSync(OUTPUT_PATH);
+    const forceGenerate = process.env.FORCE_GENERATE_POKEMON === "1";
+    const hasExistingData = existsSync(OUTPUT_PATH);
 
-  // On Vercel/CI, reuse committed data by default to avoid PokéAPI flakiness.
-  if (hasExistingData && !forceGenerate) {
-    console.log(
-      `Using existing ${OUTPUT_PATH} (set FORCE_GENERATE_POKEMON=1 to regenerate from PokéAPI)`,
-    );
-    return;
-  }
-
-  try {
-    await generatePokemonData();
-  } catch (error) {
-    if (hasExistingData) {
-      console.warn(
-        "Pokémon data generation failed; continuing with existing data/pokemon.json",
-      );
-      console.warn(error);
-      return;
+    // On Vercel/CI, reuse committed data by default to avoid PokéAPI flakiness.
+    if (hasExistingData && !forceGenerate) {
+        console.log(`Using existing ${OUTPUT_PATH} (set FORCE_GENERATE_POKEMON=1 to regenerate from PokéAPI)`);
+        return;
     }
-    throw error;
-  }
+
+    try {
+        await generatePokemonData();
+    } catch (error) {
+        if (hasExistingData) {
+            console.warn("Pokémon data generation failed; continuing with existing data/pokemon.json");
+            console.warn(error);
+            return;
+        }
+        throw error;
+    }
 }
 
 main().catch((error) => {
-  console.error(error);
-  process.exit(1);
+    console.error(error);
+    process.exit(1);
 });
