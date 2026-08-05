@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { Button } from "@/components/ui/button";
@@ -140,7 +140,13 @@ function hintCellClass(status: HintStatus) {
   );
 }
 
-export function PokedleQuiz({ session }: { session: GameSession }) {
+export function PokedleRound({
+  session,
+  onRoundComplete,
+}: {
+  session: GameSession;
+  onRoundComplete?: () => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const catalog = useMemo(() => getCatalogPokemon(), []);
   const frenchIndex = useMemo(() => getFrenchIndex(), []);
@@ -178,6 +184,21 @@ export function PokedleQuiz({ session }: { session: GameSession }) {
     setShowSuggestions(false);
     setHighlightedSuggestionIndex(-1);
   };
+
+  const advanceRound = () => {
+    if (onRoundComplete) {
+      onRoundComplete();
+      return;
+    }
+    resetRound();
+  };
+
+  useEffect(() => {
+    if (!isSolved || !onRoundComplete) return;
+
+    const timeoutId = window.setTimeout(onRoundComplete, 2200);
+    return () => window.clearTimeout(timeoutId);
+  }, [isSolved, onRoundComplete]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -320,129 +341,135 @@ export function PokedleQuiz({ session }: { session: GameSession }) {
   };
 
   return (
+    <div className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <label htmlFor="pokedle-guess" className="block text-sm font-medium">
+          Nom du Pokémon
+        </label>
+        <div className="flex flex-col gap-3 lg:flex-row">
+          <div className="relative w-full lg:max-w-xl">
+            <Input
+              id="pokedle-guess"
+              ref={inputRef}
+              value={guessName}
+              onChange={(event) => {
+                setGuessName(event.target.value);
+                setShowSuggestions(true);
+                setHighlightedSuggestionIndex(-1);
+                setFeedback("");
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={handleInputKeyDown}
+              placeholder="Tape le nom du Pokémon..."
+              autoComplete="off"
+              readOnly={isSolved}
+              className="h-12"
+            />
+            {canShowSuggestions ? (
+              <ul className="absolute z-20 mt-2 max-h-80 w-full overflow-auto rounded-xl border border-border/70 bg-background p-1 shadow-lg">
+                {filteredSuggestions.map((pokemon, index) => (
+                  <li key={pokemon.id}>
+                    <button
+                      id={`pokedle-suggestion-${index}`}
+                      type="button"
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        handleSelectSuggestion(pokemon);
+                      }}
+                      onFocus={() => setHighlightedSuggestionIndex(index)}
+                      onKeyDown={(event) => handleSuggestionKeyDown(event, index)}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/60",
+                        highlightedSuggestionIndex >= 0 &&
+                          filteredSuggestions[highlightedSuggestionIndex]?.id ===
+                            pokemon.id &&
+                          "bg-muted/70",
+                      )}
+                    >
+                      <div className="relative h-8 w-8 shrink-0">
+                        <Image
+                          src={pokemon.sprite}
+                          alt={pokemon.nameFr}
+                          fill
+                          sizes="32px"
+                          className="object-contain"
+                        />
+                      </div>
+                      <span>{pokemon.nameFr}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+          <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
+            Valider
+          </Button>
+          {isSolved && !onRoundComplete ? (
+            <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
+              Suivant
+            </Button>
+          ) : null}
+        </div>
+      </form>
+
+      <div className="space-y-4">
+        {isSolved ? (
+          <div className="flex flex-col items-center gap-2">
+            <div className="relative h-40 w-40">
+              <Image
+                src={target.artwork}
+                alt={target.nameFr}
+                fill
+                sizes="160px"
+                className="object-contain"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        <p
+          className={cn(
+            "min-h-6 text-sm",
+            isSolved ? "feedback-success" : "text-muted-foreground",
+            feedback.includes("introuvable") && "feedback-error",
+          )}
+        >
+          {feedback}
+        </p>
+      </div>
+
+      {attempts.length > 0 ? (
+        <div className="overflow-x-auto">
+          <div className="grid min-w-275 grid-cols-9 gap-3">
+            {POKEDEX_COLUMNS.map((column) => (
+              <div
+                key={column}
+                className="aspect-square w-28 min-w-28 rounded-lg border border-border/60 bg-muted/30 px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+              >
+                <div className="flex h-full items-center justify-center">{column}</div>
+              </div>
+            ))}
+
+            {attempts.map((attempt, index) => (
+              <AttemptCells key={`${attempt.guess.id}-${index}`} attempt={attempt} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function PokedleQuiz({ session }: { session: GameSession }) {
+  return (
     <GameShell
       session={session}
       title="Pokédle"
       description="Propose un Pokémon et compare ses caractéristiques pour trouver le Pokémon mystère."
       maxWidthClassName="max-w-7xl"
     >
-      <div className="space-y-8">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <label htmlFor="pokedle-guess" className="block text-sm font-medium">
-            Nom du Pokémon
-          </label>
-          <div className="flex flex-col gap-3 lg:flex-row">
-            <div className="relative w-full lg:max-w-xl">
-              <Input
-                id="pokedle-guess"
-                ref={inputRef}
-                value={guessName}
-                onChange={(event) => {
-                  setGuessName(event.target.value);
-                  setShowSuggestions(true);
-                  setHighlightedSuggestionIndex(-1);
-                  setFeedback("");
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                onKeyDown={handleInputKeyDown}
-                placeholder="Tape le nom du Pokémon..."
-                autoComplete="off"
-                readOnly={isSolved}
-                className="h-12"
-              />
-              {canShowSuggestions ? (
-                <ul className="absolute z-20 mt-2 max-h-80 w-full overflow-auto rounded-xl border border-border/70 bg-background p-1 shadow-lg">
-                  {filteredSuggestions.map((pokemon, index) => (
-                    <li key={pokemon.id}>
-                      <button
-                        id={`pokedle-suggestion-${index}`}
-                        type="button"
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          handleSelectSuggestion(pokemon);
-                        }}
-                        onFocus={() => setHighlightedSuggestionIndex(index)}
-                        onKeyDown={(event) => handleSuggestionKeyDown(event, index)}
-                        className={cn(
-                          "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/60",
-                          highlightedSuggestionIndex >= 0 &&
-                            filteredSuggestions[highlightedSuggestionIndex]?.id ===
-                              pokemon.id &&
-                            "bg-muted/70",
-                        )}
-                      >
-                        <div className="relative h-8 w-8 shrink-0">
-                          <Image
-                            src={pokemon.sprite}
-                            alt={pokemon.nameFr}
-                            fill
-                            sizes="32px"
-                            className="object-contain"
-                          />
-                        </div>
-                        <span>{pokemon.nameFr}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-            <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
-              Valider
-            </Button>
-            {isSolved ? (
-              <Button type="button" size="lg" variant="outline" onClick={resetRound}>
-                Suivant
-              </Button>
-            ) : null}
-          </div>
-        </form>
-
-        <div className="space-y-4">
-          {isSolved ? (
-            <div className="flex flex-col items-center gap-2">
-              <div className="relative h-40 w-40">
-                <Image
-                  src={target.artwork}
-                  alt={target.nameFr}
-                  fill
-                  sizes="160px"
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          ) : null}
-
-          <p
-            className={cn(
-              "min-h-6 text-sm",
-              isSolved ? "feedback-success" : "text-muted-foreground",
-              feedback.includes("introuvable") && "feedback-error",
-            )}
-          >
-            {feedback}
-          </p>
-        </div>
-
-        {attempts.length > 0 ? (
-          <div className="overflow-x-auto">
-            <div className="grid min-w-275 grid-cols-9 gap-3">
-              {POKEDEX_COLUMNS.map((column) => (
-                <div
-                  key={column}
-                  className="aspect-square w-28 min-w-28 rounded-lg border border-border/60 bg-muted/30 px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
-                >
-                  <div className="flex h-full items-center justify-center">{column}</div>
-                </div>
-              ))}
-
-              {attempts.map((attempt, index) => (
-                <AttemptCells key={`${attempt.guess.id}-${index}`} attempt={attempt} />
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
+      <PokedleRound session={session} />
     </GameShell>
   );
 }

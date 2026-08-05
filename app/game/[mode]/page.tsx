@@ -10,6 +10,7 @@ const TRAINING_MODES: GameMode[] = [
   "letter-input",
 ];
 const ARENA_MODES: GameMode[] = [
+  "shuffle",
   "image-to-name",
   "name-to-image",
   "letter-input",

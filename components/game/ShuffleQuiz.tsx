@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { CryGuessRound } from "@/components/game/CryGuessQuiz";
 import { GameShell } from "@/components/game/GameShell";
 import { ImageToNameRound } from "@/components/game/ImageToNameQuiz";
 import { LetterInputRound } from "@/components/game/LetterInputQuiz";
 import { NameToImageRound } from "@/components/game/NameToImageQuiz";
+import { PokedleRound } from "@/components/game/PokedleQuiz";
 import { pickShuffleRoundType } from "@/lib/games/shuffle";
 import {
   getShuffleRoundDescription,
@@ -24,9 +26,9 @@ export function ShuffleQuiz({ session, useBacPool = true }: ShuffleQuizProps) {
   const [roundKey, setRoundKey] = useState(0);
 
   const nextShuffleRound = useCallback(() => {
-    setRoundType(pickShuffleRoundType());
+    setRoundType(pickShuffleRoundType(useBacPool));
     setRoundKey((current) => current + 1);
-  }, []);
+  }, [useBacPool]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(nextShuffleRound, 0);
@@ -44,6 +46,7 @@ export function ShuffleQuiz({ session, useBacPool = true }: ShuffleQuizProps) {
       title={roundLabel}
       description={roundDescription}
       modeLabel="Shuffle"
+      maxWidthClassName={roundType === "pokedle" ? "max-w-7xl" : "max-w-2xl"}
     >
       {!roundType ? (
         <div className="flex h-64 items-center justify-center text-muted-foreground">
@@ -70,6 +73,18 @@ export function ShuffleQuiz({ session, useBacPool = true }: ShuffleQuizProps) {
               session={session}
               onRoundComplete={nextShuffleRound}
               validationMode={useBacPool ? "free" : "catalog"}
+            />
+          ) : null}
+          {roundType === "cry-guess" ? (
+            <CryGuessRound
+              session={session}
+              onRoundComplete={nextShuffleRound}
+            />
+          ) : null}
+          {roundType === "pokedle" ? (
+            <PokedleRound
+              session={session}
+              onRoundComplete={nextShuffleRound}
             />
           ) : null}
         </div>

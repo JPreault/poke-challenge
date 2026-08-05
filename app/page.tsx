@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { BAC_POKEMON } from "@/data/bac-list";
-import type { GameInterfaceMode, GameMode } from "@/lib/games/types";
+import { useInterfaceMode } from "@/lib/games/useInterfaceMode";
+import type { GameMode } from "@/lib/games/types";
 import { cn } from "@/lib/utils";
 
 interface GameCard {
@@ -49,6 +49,13 @@ const TRAINING_GAMES: GameCard[] = [
 
 const ARENA_GAMES: GameCard[] = [
   {
+    mode: "shuffle",
+    title: "Shuffle",
+    description:
+      "Enchaîne les mini-jeux : à chaque manche, un jeu est choisi au hasard.",
+    tag: "Mix",
+  },
+  {
     mode: "image-to-name",
     title: "Image → Nom",
     description:
@@ -86,18 +93,7 @@ const ARENA_GAMES: GameCard[] = [
 ] as const;
 
 export default function HomePage() {
-  const router = useRouter();
-  const [selectedInterface, setSelectedInterface] = useState<GameInterfaceMode>(() => {
-    if (typeof window === "undefined") {
-      return "arena";
-    }
-
-    const searchParams = new URLSearchParams(window.location.search);
-    return searchParams.get("interface") === "bac-training"
-      ? "bac-training"
-      : "arena";
-  });
-
+  const selectedInterface = useInterfaceMode();
   const games =
     selectedInterface === "bac-training" ? TRAINING_GAMES : ARENA_GAMES;
   const gameLinksRef = useRef<Array<HTMLAnchorElement | null>>([]);
@@ -135,37 +131,6 @@ export default function HomePage() {
           à tout moment.
         </p>
       </header>
-
-      <section className="mb-12">
-        <div className="surface inline-flex gap-2 p-2">
-          <button
-            type="button"
-            className={cn(
-              buttonVariants({ variant: "ghost" }),
-              selectedInterface === "arena" && "bg-muted",
-            )}
-            onClick={() => {
-              setSelectedInterface("arena");
-              router.push("/");
-            }}
-          >
-            Mode Arène
-          </button>
-          <button
-            type="button"
-            className={cn(
-              buttonVariants({ variant: "ghost" }),
-              selectedInterface === "bac-training" && "bg-muted",
-            )}
-            onClick={() => {
-              setSelectedInterface("bac-training");
-              router.push("/?interface=bac-training");
-            }}
-          >
-            Entraînement Petit Bac
-          </button>
-        </div>
-      </section>
 
       <section className="mb-24">
         <h2 className="mb-8 font-heading text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">

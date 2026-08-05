@@ -8,12 +8,27 @@ export type GameMode =
 
 export type GameInterfaceMode = "bac-training" | "arena";
 
-export type ShuffleRoundType = "image-to-name" | "name-to-image" | "letter-input";
+export type BacShuffleRoundType = "image-to-name" | "name-to-image" | "letter-input";
 
-export const SHUFFLE_ROUND_TYPES: ShuffleRoundType[] = [
+export type ArenaShuffleRoundType =
+  | BacShuffleRoundType
+  | "cry-guess"
+  | "pokedle";
+
+export type ShuffleRoundType = BacShuffleRoundType | ArenaShuffleRoundType;
+
+export const BAC_SHUFFLE_ROUND_TYPES: BacShuffleRoundType[] = [
   "image-to-name",
   "name-to-image",
   "letter-input",
+];
+
+export const ARENA_SHUFFLE_ROUND_TYPES: ArenaShuffleRoundType[] = [
+  "image-to-name",
+  "name-to-image",
+  "letter-input",
+  "cry-guess",
+  "pokedle",
 ];
 
 export interface RoundRecord {
@@ -68,6 +83,10 @@ export function getShuffleRoundLabel(type: ShuffleRoundType): string {
       return "Nom → Image";
     case "letter-input":
       return "Lettre → Nom";
+    case "cry-guess":
+      return "Pokémon → Cri";
+    case "pokedle":
+      return "Pokédle";
   }
 }
 
@@ -79,6 +98,10 @@ export function getShuffleRoundDescription(type: ShuffleRoundType): string {
       return "Clique sur la bonne image parmi les 4 propositions.";
     case "letter-input":
       return "Entre un Pokémon existant dont le nom français commence par la lettre affichée.";
+    case "cry-guess":
+      return "Écoute les 4 propositions et choisis le cri correspondant au Pokémon affiché.";
+    case "pokedle":
+      return "Propose un Pokémon et compare ses caractéristiques pour trouver le Pokémon mystère.";
   }
 }
 
