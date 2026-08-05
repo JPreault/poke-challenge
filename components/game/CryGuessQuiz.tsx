@@ -65,6 +65,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
   const playCry = useCallback((pokemon: QuizPokemon) => {
     setIsPlayingId(pokemon.id);
     const audio = new Audio(pokemon.cryLatest);
+    audio.volume = 0.35;
     audio.play().catch(() => undefined);
     audio.onended = () => setIsPlayingId((current) => (current === pokemon.id ? null : current));
   }, []);
