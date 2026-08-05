@@ -8,6 +8,7 @@ const TRAINING_MODES: GameMode[] = [
   "image-to-name",
   "name-to-image",
   "letter-input",
+  "blur-guess",
 ];
 const ARENA_MODES: GameMode[] = [
   "shuffle",
@@ -17,6 +18,7 @@ const ARENA_MODES: GameMode[] = [
   "cry-guess",
   "pokedle",
   "description-guess",
+  "blur-guess",
 ];
 
 function parseInterfaceMode(value: string | string[] | undefined): GameInterfaceMode {

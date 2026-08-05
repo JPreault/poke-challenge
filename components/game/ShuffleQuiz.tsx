@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { BlurGuessRound } from "@/components/game/BlurGuessQuiz";
 import { CryGuessRound } from "@/components/game/CryGuessQuiz";
 import { DescriptionGuessRound } from "@/components/game/DescriptionGuessQuiz";
 import { GameShell } from "@/components/game/GameShell";
@@ -92,6 +93,13 @@ export function ShuffleQuiz({ session, useBacPool = true }: ShuffleQuizProps) {
             <DescriptionGuessRound
               session={session}
               onRoundComplete={nextShuffleRound}
+            />
+          ) : null}
+          {roundType === "blur-guess" ? (
+            <BlurGuessRound
+              session={session}
+              onRoundComplete={nextShuffleRound}
+              useBacPool={useBacPool}
             />
           ) : null}
         </div>

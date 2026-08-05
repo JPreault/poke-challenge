@@ -5,11 +5,16 @@ export type GameMode =
   | "cry-guess"
   | "shuffle"
   | "pokedle"
-  | "description-guess";
+  | "description-guess"
+  | "blur-guess";
 
 export type GameInterfaceMode = "bac-training" | "arena";
 
-export type BacShuffleRoundType = "image-to-name" | "name-to-image" | "letter-input";
+export type BacShuffleRoundType =
+  | "image-to-name"
+  | "name-to-image"
+  | "letter-input"
+  | "blur-guess";
 
 export type ArenaShuffleRoundType =
   | BacShuffleRoundType
@@ -23,12 +28,14 @@ export const BAC_SHUFFLE_ROUND_TYPES: BacShuffleRoundType[] = [
   "image-to-name",
   "name-to-image",
   "letter-input",
+  "blur-guess",
 ];
 
 export const ARENA_SHUFFLE_ROUND_TYPES: ArenaShuffleRoundType[] = [
   "image-to-name",
   "name-to-image",
   "letter-input",
+  "blur-guess",
   "cry-guess",
   "pokedle",
   "description-guess",
@@ -77,6 +84,8 @@ export function getGameModeLabel(mode: GameMode): string {
       return "Pokédle";
     case "description-guess":
       return "Description → Pokémon";
+    case "blur-guess":
+      return "Image flou";
   }
 }
 
@@ -94,6 +103,8 @@ export function getShuffleRoundLabel(type: ShuffleRoundType): string {
       return "Pokédle";
     case "description-guess":
       return "Description → Pokémon";
+    case "blur-guess":
+      return "Image flou";
   }
 }
 
@@ -111,6 +122,8 @@ export function getShuffleRoundDescription(type: ShuffleRoundType): string {
       return "Propose un Pokémon et compare ses caractéristiques pour trouver le Pokémon mystère.";
     case "description-guess":
       return "Lis la description Pokédex et retrouve le Pokémon correspondant.";
+    case "blur-guess":
+      return "Devine le Pokémon à partir d'une image floutée. À chaque tentative, l'image se dévoile légèrement.";
   }
 }
 
@@ -125,5 +138,33 @@ export function computeStats(rounds: RoundRecord[]): GameStats {
     incorrectCount,
     successRate: totalRounds > 0 ? Math.round((correctCount / totalRounds) * 100) : 0,
     errors: rounds.filter((round) => !round.isCorrect),
+  };
+}
+
+export interface BlurGuessStats {
+  completedRounds: number;
+  averageAttempts: number | null;
+}
+
+export function computeBlurGuessStats(rounds: RoundRecord[]): BlurGuessStats {
+  let completedRounds = 0;
+  let totalAttempts = 0;
+  let currentAttempts = 0;
+
+  for (const round of rounds) {
+    currentAttempts += 1;
+    if (round.isCorrect) {
+      completedRounds += 1;
+      totalAttempts += currentAttempts;
+      currentAttempts = 0;
+    }
+  }
+
+  return {
+    completedRounds,
+    averageAttempts:
+      completedRounds > 0
+        ? Math.round((totalAttempts / completedRounds) * 10) / 10
+        : null,
   };
 }

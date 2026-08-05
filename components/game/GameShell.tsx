@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { getGameModeLabel } from "@/lib/games/types";
+import { getGameModeLabel, computeBlurGuessStats } from "@/lib/games/types";
 import type { GameSession } from "@/lib/games/useGameSession";
 import { cn } from "@/lib/utils";
 
@@ -98,6 +98,62 @@ function GameRecap({
   replayHref?: string;
 }) {
   const { stats, mode, rounds } = session;
+
+  if (mode === "blur-guess") {
+    const blurStats = computeBlurGuessStats(rounds);
+
+    return (
+      <div className="mx-auto w-full max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
+        <div className="surface p-8 sm:p-10">
+          <div className="mb-10 space-y-2">
+            <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
+              {getGameModeLabel(mode)}
+            </p>
+            <h1 className="font-heading text-3xl font-bold">Récapitulatif</h1>
+          </div>
+
+          <div className="mb-10 grid grid-cols-2 gap-4">
+            <StatBlock label="Manches" value={blurStats.completedRounds} />
+            <StatBlock
+              label="Tentatives (moy.)"
+              value={
+                blurStats.averageAttempts !== null
+                  ? blurStats.averageAttempts.toLocaleString("fr-FR", {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })
+                  : "—"
+              }
+            />
+          </div>
+
+          {blurStats.completedRounds === 0 ? (
+            <p className="mb-10 text-sm text-muted-foreground">
+              Aucune manche terminée.
+            </p>
+          ) : null}
+
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={replayHref ?? `/game/${mode}`}
+              className={cn(buttonVariants({ size: "lg" }), "inline-flex")}
+            >
+              Rejouer
+            </Link>
+            <Link
+              href={homeHref}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "inline-flex",
+              )}
+            >
+              Changer de jeu
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-16 sm:px-8 sm:py-20">

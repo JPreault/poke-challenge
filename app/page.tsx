@@ -45,6 +45,13 @@ const TRAINING_GAMES: GameCard[] = [
       "Entre un Pokémon existant dont le nom français commence par la lettre affichée.",
     tag: "Saisie",
   },
+  {
+    mode: "blur-guess",
+    title: "Image flou",
+    description:
+      "Devine le Pokémon à partir d'une image floutée. À chaque tentative, l'image se dévoile légèrement.",
+    tag: "Visuel",
+  },
 ] as const;
 
 const ARENA_GAMES: GameCard[] = [
@@ -96,6 +103,13 @@ const ARENA_GAMES: GameCard[] = [
     description:
       "Lis une description Pokédex aléatoire et retrouve le Pokémon correspondant.",
     tag: "Déduction",
+  },
+  {
+    mode: "blur-guess",
+    title: "Image flou",
+    description:
+      "Devine le Pokémon à partir d'une image floutée. À chaque tentative, l'image se dévoile légèrement.",
+    tag: "Visuel",
   },
 ] as const;
 
