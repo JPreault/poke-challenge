@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "tsx scripts/generate-pokemon-data.ts",
-    "generate:pokemon": "tsx scripts/generate-pokemon-data.ts",
+    "generate:pokemon": "FORCE_GENERATE_POKEMON=1 tsx scripts/generate-pokemon-data.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

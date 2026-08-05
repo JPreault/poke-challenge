@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { BAC_POKEMON } from "../data/bac-list";
@@ -6,6 +6,9 @@ import { normalizeFrenchName } from "../lib/pokemon/normalize";
 import type { PokemonData } from "../lib/pokemon/types";
 
 const POKEAPI_BASE = "https://pokeapi.co/api/v2";
+const FETCH_CONCURRENCY = 12;
+const FETCH_MAX_ATTEMPTS = 5;
+const OUTPUT_PATH = join(process.cwd(), "data", "pokemon.json");
 
 interface SpeciesName {
   language: { name: string };
@@ -158,12 +161,53 @@ const COLOR_FR: Record<string, string> = {
   yellow: "Jaune",
 };
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableStatus(status: number) {
+  return status === 408 || status === 429 || status >= 500;
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= FETCH_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(url);
+
+      if (response.ok) {
+        return (await response.json()) as T;
+      }
+
+      const error = new Error(`Failed to fetch ${url}: ${response.status}`);
+      lastError = error;
+
+      if (!isRetryableStatus(response.status) || attempt === FETCH_MAX_ATTEMPTS) {
+        throw error;
+      }
+
+      const backoffMs = 300 * 2 ** (attempt - 1);
+      console.warn(
+        `Retry ${attempt}/${FETCH_MAX_ATTEMPTS} for ${url} (HTTP ${response.status}) in ${backoffMs}ms`,
+      );
+      await sleep(backoffMs);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (attempt === FETCH_MAX_ATTEMPTS) {
+        throw lastError;
+      }
+
+      const backoffMs = 300 * 2 ** (attempt - 1);
+      console.warn(
+        `Retry ${attempt}/${FETCH_MAX_ATTEMPTS} for ${url} (${lastError.message}) in ${backoffMs}ms`,
+      );
+      await sleep(backoffMs);
+    }
   }
-  return response.json() as Promise<T>;
+
+  throw lastError ?? new Error(`Failed to fetch ${url}`);
 }
 
 async function fetchAllSpecies(): Promise<SpeciesResponse[]> {
@@ -172,10 +216,10 @@ async function fetchAllSpecies(): Promise<SpeciesResponse[]> {
 
   while (url) {
     const page: SpeciesListResponse = await fetchJson<SpeciesListResponse>(url);
-    const details = await Promise.all(
-      page.results.map((item: SpeciesListItem) =>
-        fetchJson<SpeciesResponse>(item.url),
-      ),
+    const details = await mapWithConcurrency(
+      page.results,
+      FETCH_CONCURRENCY,
+      (item: SpeciesListItem) => fetchJson<SpeciesResponse>(item.url),
     );
     species.push(...details);
     url = page.next;
@@ -234,8 +278,10 @@ async function mapWithConcurrency<T, R>(
 
 async function buildTypeTranslations(): Promise<Record<string, string>> {
   const list = await fetchJson<TypeListResponse>(`${POKEAPI_BASE}/type?limit=100`);
-  const details = await Promise.all(
-    list.results.map((typeItem) => fetchJson<TypeResponse>(typeItem.url)),
+  const details = await mapWithConcurrency(
+    list.results,
+    FETCH_CONCURRENCY,
+    (typeItem) => fetchJson<TypeResponse>(typeItem.url),
   );
 
   const output: Record<string, string> = {};
@@ -317,7 +363,7 @@ function getFrenchFlavorText(species: SpeciesResponse): string | null {
   return normalizeFlavorText(sortedEntries[0].flavor_text);
 }
 
-async function main() {
+async function generatePokemonData() {
   console.log("Fetching Pokémon species from PokéAPI...");
   const allSpecies = await fetchAllSpecies();
   console.log(`Fetched ${allSpecies.length} species.`);
@@ -329,8 +375,11 @@ async function main() {
   const evolutionStageBySpeciesId = await buildEvolutionStageMap(allSpecies);
 
   console.log("Fetching detailed Pokémon stats...");
-  const pokemonDetails = await mapWithConcurrency(allSpecies, 20, (species) =>
-    fetchJson<PokemonResponse>(`${POKEAPI_BASE}/pokemon/${species.id}`),
+  const pokemonDetails = await mapWithConcurrency(
+    allSpecies,
+    FETCH_CONCURRENCY,
+    (species) =>
+      fetchJson<PokemonResponse>(`${POKEAPI_BASE}/pokemon/${species.id}`),
   );
   const pokemonById = new Map<number, PokemonResponse>(
     pokemonDetails.map((pokemon) => [pokemon.id, pokemon]),
@@ -388,7 +437,7 @@ async function main() {
     for (const name of failures) {
       console.error(`  - ${name}`);
     }
-    process.exit(1);
+    throw new Error(`Unable to resolve ${failures.length} bac Pokémon`);
   }
 
   const catalog: PokemonData["catalog"] = Object.values(frenchIndex)
@@ -442,11 +491,36 @@ async function main() {
     .sort((a, b) => a.id - b.id);
 
   const data: PokemonData = { bac, catalog, frenchIndex };
-  const outputPath = join(process.cwd(), "data", "pokemon.json");
-  writeFileSync(outputPath, JSON.stringify(data, null, 2));
+  writeFileSync(OUTPUT_PATH, JSON.stringify(data, null, 2));
   console.log(
-    `\nWrote ${outputPath} (${bac.length} bac Pokémon, ${catalog.length} catalog)`,
+    `\nWrote ${OUTPUT_PATH} (${bac.length} bac Pokémon, ${catalog.length} catalog)`,
   );
+}
+
+async function main() {
+  const forceGenerate = process.env.FORCE_GENERATE_POKEMON === "1";
+  const hasExistingData = existsSync(OUTPUT_PATH);
+
+  // On Vercel/CI, reuse committed data by default to avoid PokéAPI flakiness.
+  if (hasExistingData && !forceGenerate) {
+    console.log(
+      `Using existing ${OUTPUT_PATH} (set FORCE_GENERATE_POKEMON=1 to regenerate from PokéAPI)`,
+    );
+    return;
+  }
+
+  try {
+    await generatePokemonData();
+  } catch (error) {
+    if (hasExistingData) {
+      console.warn(
+        "Pokémon data generation failed; continuing with existing data/pokemon.json",
+      );
+      console.warn(error);
+      return;
+    }
+    throw error;
+  }
 }
 
 main().catch((error) => {
