@@ -37,9 +37,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (mode !== "strict" && mode !== "free") {
+  if (mode !== "strict" && mode !== "free" && mode !== "catalog") {
     return NextResponse.json(
-      { error: "Le mode doit être 'strict' ou 'free'." },
+      { error: "Le mode doit être 'strict', 'free' ou 'catalog'." },
       { status: 400 },
     );
   }

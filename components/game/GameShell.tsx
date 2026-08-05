@@ -13,6 +13,8 @@ interface GameShellProps {
   title: string;
   description?: string;
   modeLabel?: string;
+  homeHref?: string;
+  replayHref?: string;
   maxWidthClassName?: string;
   children: React.ReactNode;
 }
@@ -22,6 +24,8 @@ export function GameShell({
   title,
   description,
   modeLabel,
+  homeHref = "/",
+  replayHref,
   maxWidthClassName = "max-w-2xl",
   children,
 }: GameShellProps) {
@@ -29,7 +33,7 @@ export function GameShell({
   const displayedModeLabel = modeLabel ?? getGameModeLabel(session.mode);
 
   if (isFinished) {
-    return <GameRecap session={session} />;
+    return <GameRecap session={session} homeHref={homeHref} replayHref={replayHref} />;
   }
 
   return (
@@ -41,7 +45,7 @@ export function GameShell({
     >
       <header className="space-y-6">
         <Link
-          href="/"
+          href={homeHref}
           className="inline-flex text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           ← Retour
@@ -84,7 +88,15 @@ export function GameShell({
   );
 }
 
-function GameRecap({ session }: { session: GameSession }) {
+function GameRecap({
+  session,
+  homeHref,
+  replayHref,
+}: {
+  session: GameSession;
+  homeHref: string;
+  replayHref?: string;
+}) {
   const { stats, mode, rounds } = session;
 
   return (
@@ -193,13 +205,13 @@ function GameRecap({ session }: { session: GameSession }) {
 
         <div className="flex flex-wrap gap-3">
           <Link
-            href={`/game/${mode}`}
+            href={replayHref ?? `/game/${mode}`}
             className={cn(buttonVariants({ size: "lg" }), "inline-flex")}
           >
             Rejouer
           </Link>
           <Link
-            href="/"
+            href={homeHref}
             className={cn(
               buttonVariants({ variant: "outline", size: "lg" }),
               "inline-flex",

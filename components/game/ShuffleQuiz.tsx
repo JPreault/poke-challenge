@@ -6,7 +6,6 @@ import { GameShell } from "@/components/game/GameShell";
 import { ImageToNameRound } from "@/components/game/ImageToNameQuiz";
 import { LetterInputRound } from "@/components/game/LetterInputQuiz";
 import { NameToImageRound } from "@/components/game/NameToImageQuiz";
-import { CryGuessRound } from "@/components/game/CryGuessQuiz";
 import { pickShuffleRoundType } from "@/lib/games/shuffle";
 import {
   getShuffleRoundDescription,
@@ -17,9 +16,10 @@ import type { GameSession } from "@/lib/games/useGameSession";
 
 interface ShuffleQuizProps {
   session: GameSession;
+  useBacPool?: boolean;
 }
 
-export function ShuffleQuiz({ session }: ShuffleQuizProps) {
+export function ShuffleQuiz({ session, useBacPool = true }: ShuffleQuizProps) {
   const [roundType, setRoundType] = useState<ShuffleRoundType | null>(null);
   const [roundKey, setRoundKey] = useState(0);
 
@@ -55,24 +55,21 @@ export function ShuffleQuiz({ session }: ShuffleQuizProps) {
             <ImageToNameRound
               session={session}
               onRoundComplete={nextShuffleRound}
+              useBacPool={useBacPool}
             />
           ) : null}
           {roundType === "name-to-image" ? (
             <NameToImageRound
               session={session}
               onRoundComplete={nextShuffleRound}
+              useBacPool={useBacPool}
             />
           ) : null}
           {roundType === "letter-input" ? (
             <LetterInputRound
               session={session}
               onRoundComplete={nextShuffleRound}
-            />
-          ) : null}
-          {roundType === "cry-guess" ? (
-            <CryGuessRound
-              session={session}
-              onRoundComplete={nextShuffleRound}
+              validationMode={useBacPool ? "free" : "catalog"}
             />
           ) : null}
         </div>

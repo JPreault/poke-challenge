@@ -6,27 +6,44 @@ import { NameToImageQuiz } from "@/components/game/NameToImageQuiz";
 import { CryGuessQuiz } from "@/components/game/CryGuessQuiz";
 import { ShuffleQuiz } from "@/components/game/ShuffleQuiz";
 import { PokedleQuiz } from "@/components/game/PokedleQuiz";
-import type { GameMode } from "@/lib/games/types";
+import type { GameInterfaceMode, GameMode } from "@/lib/games/types";
 import { useGameSession } from "@/lib/games/useGameSession";
 
 interface GameClientProps {
   mode: GameMode;
+  interfaceMode: GameInterfaceMode;
 }
 
-export function GameClient({ mode }: GameClientProps) {
+export function GameClient({ mode, interfaceMode }: GameClientProps) {
   const session = useGameSession(mode);
+  const useBacPool = interfaceMode === "bac-training";
 
   switch (mode) {
     case "image-to-name":
-      return <ImageToNameQuiz session={session} />;
+      return (
+        <ImageToNameQuiz
+          session={session}
+          useBacPool={useBacPool}
+        />
+      );
     case "name-to-image":
-      return <NameToImageQuiz session={session} />;
+      return (
+        <NameToImageQuiz
+          session={session}
+          useBacPool={useBacPool}
+        />
+      );
     case "letter-input":
-      return <LetterInputQuiz session={session} />;
+      return (
+        <LetterInputQuiz
+          session={session}
+          validationMode={useBacPool ? "free" : "catalog"}
+        />
+      );
     case "cry-guess":
       return <CryGuessQuiz session={session} />;
     case "shuffle":
-      return <ShuffleQuiz session={session} />;
+      return <ShuffleQuiz session={session} useBacPool={useBacPool} />;
     case "pokedle":
       return <PokedleQuiz session={session} />;
   }

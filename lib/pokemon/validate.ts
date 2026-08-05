@@ -80,6 +80,35 @@ function validateFree(letter: string, answer: string): ValidationResult {
   };
 }
 
+function validateCatalog(letter: string, answer: string): ValidationResult {
+  const matchedName = findMatchingFrenchName(answer);
+
+  if (!matchedName) {
+    return {
+      correct: false,
+      preferred: false,
+    };
+  }
+
+  const startsWithLetter =
+    getFirstLetter(matchedName).toUpperCase() === letter.toUpperCase();
+
+  if (!startsWithLetter) {
+    return {
+      correct: false,
+      preferred: false,
+      matched: matchedName,
+    };
+  }
+
+  return {
+    correct: true,
+    preferred: true,
+    matched: matchedName,
+    hasTypo: !isExactSpelling(answer, matchedName),
+  };
+}
+
 export function validateAnswer(
   letter: string,
   answer: string,
@@ -96,6 +125,10 @@ export function validateAnswer(
 
   if (mode === "strict") {
     return validateStrict(letter, trimmedAnswer);
+  }
+
+  if (mode === "catalog") {
+    return validateCatalog(letter, trimmedAnswer);
   }
 
   return validateFree(letter, trimmedAnswer);

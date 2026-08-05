@@ -1,58 +1,105 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { BAC_POKEMON } from "@/data/bac-list";
+import type { GameInterfaceMode, GameMode } from "@/lib/games/types";
 import { cn } from "@/lib/utils";
 
-const GAMES = [
+interface GameCard {
+  mode: GameMode;
+  title: string;
+  description: string;
+  tag: string;
+}
+
+const TRAINING_GAMES: GameCard[] = [
   {
-    href: "/game/shuffle",
+    mode: "shuffle",
     title: "Shuffle",
     description:
       "Enchaîne les mini-jeux : à chaque manche, un jeu est choisi au hasard.",
     tag: "Mix",
   },
   {
-    href: "/game/pokedle",
-    title: "Pokédle",
-    description:
-      "Trouve le Pokémon mystère grâce à des indices colorés qui se dévoilent à chaque proposition.",
-    tag: "Déduction",
-  },
-  {
-    href: "/game/image-to-name",
+    mode: "image-to-name",
     title: "Image → Nom",
     description:
       "Une image s'affiche, choisis le bon nom parmi 4 propositions.",
     tag: "QCM",
   },
   {
-    href: "/game/name-to-image",
+    mode: "name-to-image",
     title: "Nom → Image",
     description:
       "Un nom s'affiche, choisis la bonne image parmi 4 propositions.",
     tag: "QCM",
   },
   {
-    href: "/game/letter-input",
+    mode: "letter-input",
+    title: "Lettre → Nom",
+    description:
+      "Entre un Pokémon existant dont le nom français commence par la lettre affichée.",
+    tag: "Saisie",
+  },
+] as const;
+
+const ARENA_GAMES: GameCard[] = [
+  {
+    mode: "image-to-name",
+    title: "Image → Nom",
+    description:
+      "Une image s'affiche, choisis le bon nom parmi 4 propositions.",
+    tag: "QCM",
+  },
+  {
+    mode: "name-to-image",
+    title: "Nom → Image",
+    description:
+      "Un nom s'affiche, choisis la bonne image parmi 4 propositions.",
+    tag: "QCM",
+  },
+  {
+    mode: "letter-input",
     title: "Lettre → Nom",
     description:
       "Entre un Pokémon existant dont le nom français commence par la lettre affichée.",
     tag: "Saisie",
   },
   {
-    href: "/game/cry-guess",
+    mode: "cry-guess",
     title: "Pokémon → Cri",
     description:
       "Un Pokémon aléatoire s'affiche : trouve son cri parmi 4 propositions audio.",
     tag: "Audio",
   },
+  {
+    mode: "pokedle",
+    title: "Pokédle",
+    description:
+      "Trouve le Pokémon mystère grâce à des indices colorés qui se dévoilent à chaque proposition.",
+    tag: "Déduction",
+  },
 ] as const;
 
 export default function HomePage() {
+  const router = useRouter();
+  const [selectedInterface, setSelectedInterface] = useState<GameInterfaceMode>(() => {
+    if (typeof window === "undefined") {
+      return "arena";
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get("interface") === "bac-training"
+      ? "bac-training"
+      : "arena";
+  });
+
+  const games =
+    selectedInterface === "bac-training" ? TRAINING_GAMES : ARENA_GAMES;
   const gameLinksRef = useRef<Array<HTMLAnchorElement | null>>([]);
 
   const handleGameCardKeyDown = (
@@ -68,7 +115,7 @@ export default function HomePage() {
     if (event.key === "ArrowUp") nextIndex = index - columns;
 
     if (nextIndex === index) return;
-    if (nextIndex < 0 || nextIndex >= GAMES.length) return;
+    if (nextIndex < 0 || nextIndex >= games.length) return;
 
     event.preventDefault();
     gameLinksRef.current[nextIndex]?.focus();
@@ -84,20 +131,50 @@ export default function HomePage() {
           Poke Challenge
         </h1>
         <p className="mt-6 text-lg leading-8 text-muted-foreground">
-          Entraîne-toi à mémoriser un Pokémon par lettre de l&apos;alphabet.
-          Choisis un mini-jeu, joue autant de manches que tu veux, puis arrête
-          pour voir ton récapitulatif.
+          Choisis ton interface, puis lance un mini-jeu. Tu peux changer de mode
+          à tout moment.
         </p>
       </header>
+
+      <section className="mb-12">
+        <div className="surface inline-flex gap-2 p-2">
+          <button
+            type="button"
+            className={cn(
+              buttonVariants({ variant: "ghost" }),
+              selectedInterface === "arena" && "bg-muted",
+            )}
+            onClick={() => {
+              setSelectedInterface("arena");
+              router.push("/");
+            }}
+          >
+            Mode Arène
+          </button>
+          <button
+            type="button"
+            className={cn(
+              buttonVariants({ variant: "ghost" }),
+              selectedInterface === "bac-training" && "bg-muted",
+            )}
+            onClick={() => {
+              setSelectedInterface("bac-training");
+              router.push("/?interface=bac-training");
+            }}
+          >
+            Entraînement Petit Bac
+          </button>
+        </div>
+      </section>
 
       <section className="mb-24">
         <h2 className="mb-8 font-heading text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
           Mini-jeux
         </h2>
         <div className="grid gap-6 sm:grid-cols-2">
-          {GAMES.map((game, index) => (
+          {games.map((game, index) => (
             <article
-              key={game.href}
+              key={game.mode}
               className="surface-hover flex flex-col p-8"
             >
               <div className="mb-6 flex items-center justify-between">
@@ -116,7 +193,11 @@ export default function HomePage() {
               </div>
 
               <Link
-                href={game.href}
+                href={
+                  selectedInterface === "bac-training"
+                    ? `/game/${game.mode}?interface=bac-training`
+                    : `/game/${game.mode}`
+                }
                 ref={(node) => {
                   gameLinksRef.current[index] = node;
                 }}
@@ -133,7 +214,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section>
+      {selectedInterface === "bac-training" ? (
+        <section>
         <div className="mb-8 space-y-2">
           <h2 className="font-heading text-2xl font-semibold">Liste du bac</h2>
           <p className="text-muted-foreground">
@@ -164,7 +246,8 @@ export default function HomePage() {
             )}
           </div>
         </div>
-      </section>
+        </section>
+      ) : null}
     </main>
   );
 }

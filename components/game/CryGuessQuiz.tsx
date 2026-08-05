@@ -99,7 +99,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
   };
 
   const handleValidateSelected = () => {
-    if (!round || feedback !== "idle" || selectedId === null) return;
+    if (!round || feedback.type !== "idle" || selectedId === null) return;
     const selected = round.choices.find((choice) => choice.id === selectedId);
     if (!selected) return;
     validateChoice(selected);
@@ -225,7 +225,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
               variant={isSelected ? "default" : "outline"}
               className={cn(
                 "h-auto w-full justify-between rounded-xl border border-border/60 px-4 py-4 text-base",
-                feedback === "idle" && "hover:border-foreground/20",
+                feedback.type === "idle" && "hover:border-foreground/20",
               )}
               onClick={() => {
                 setSelectedId(pokemon.id);

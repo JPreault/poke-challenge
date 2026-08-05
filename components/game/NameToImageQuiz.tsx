@@ -8,26 +8,32 @@ import { buildQuizChoices } from "@/lib/games/distractors";
 import { pickRandom } from "@/lib/games/random";
 import type { GameSession } from "@/lib/games/useGameSession";
 import { getBacPokemon, getCatalogPokemon } from "@/lib/pokemon/data";
-import type { BacPokemon, QuizPokemon } from "@/lib/pokemon/types";
+import type { QuizPokemon } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
 
 interface RoundProps {
   session: GameSession;
   onRoundComplete?: () => void;
+  useBacPool?: boolean;
 }
 
 interface NameToImageQuizProps {
   session: GameSession;
+  useBacPool?: boolean;
 }
 
 type FeedbackState = "idle" | "correct" | "incorrect";
 
 interface RoundState {
-  pokemon: BacPokemon;
+  pokemon: QuizPokemon;
   choices: QuizPokemon[];
 }
 
-export function NameToImageRound({ session, onRoundComplete }: RoundProps) {
+export function NameToImageRound({
+  session,
+  onRoundComplete,
+  useBacPool = true,
+}: RoundProps) {
   const bacPokemon = useMemo(() => getBacPokemon(), []);
   const catalog = useMemo(() => getCatalogPokemon(), []);
   const [round, setRound] = useState<RoundState | null>(null);
@@ -35,16 +41,17 @@ export function NameToImageRound({ session, onRoundComplete }: RoundProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const startRound = useCallback(() => {
-    const pokemon = pickRandom(bacPokemon);
-    const catalogPokemon = catalog.find((entry) => entry.id === pokemon.id);
-    if (!catalogPokemon) return;
+    const pokemon = useBacPool
+      ? catalog.find((entry) => entry.id === pickRandom(bacPokemon).id)
+      : pickRandom(catalog);
+    if (!pokemon) return;
     setRound({
       pokemon,
-      choices: buildQuizChoices(catalogPokemon, catalog),
+      choices: buildQuizChoices(pokemon, catalog),
     });
     setFeedback("idle");
     setSelectedId(null);
-  }, [bacPokemon, catalog]);
+  }, [bacPokemon, catalog, useBacPool]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -215,14 +222,17 @@ export function NameToImageRound({ session, onRoundComplete }: RoundProps) {
   );
 }
 
-export function NameToImageQuiz({ session }: NameToImageQuizProps) {
+export function NameToImageQuiz({
+  session,
+  useBacPool = true,
+}: NameToImageQuizProps) {
   return (
     <GameShell
       session={session}
       title="Devine l'image"
       description="Clique sur la bonne image parmi les 4 propositions."
     >
-      <NameToImageRound session={session} />
+      <NameToImageRound session={session} useBacPool={useBacPool} />
     </GameShell>
   );
 }

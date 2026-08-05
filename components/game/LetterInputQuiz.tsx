@@ -7,18 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { pickRandom } from "@/lib/games/random";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { getBacPokemon } from "@/lib/pokemon/data";
-import type { BacPokemon } from "@/lib/pokemon/types";
-import type { ValidationResult } from "@/lib/pokemon/types";
+import { getBacPokemon, getCatalogPokemon } from "@/lib/pokemon/data";
+import { getFirstLetter } from "@/lib/pokemon/normalize";
+import type { ValidationMode, ValidationResult } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
 
 interface RoundProps {
   session: GameSession;
   onRoundComplete?: () => void;
+  validationMode?: ValidationMode;
 }
 
 interface LetterInputQuizProps {
   session: GameSession;
+  validationMode?: ValidationMode;
 }
 
 type FeedbackState =
@@ -41,9 +43,32 @@ type FeedbackState =
 function buildFeedback(
   result: ValidationResult,
   userAnswer: string,
-  fallbackExpected: string,
+  roundLetter: string,
+  validationMode: ValidationMode,
+  fallbackExpected?: string,
 ): FeedbackState {
-  const expected = result.expected ?? fallbackExpected;
+  if (validationMode === "catalog") {
+    if (!result.correct) {
+      return {
+        type: "error",
+        message: result.matched
+          ? `${result.matched} ne commence pas par ${roundLetter}.`
+          : `Incorrect — le Pokémon doit commencer par ${roundLetter}.`,
+        userAnswer,
+      };
+    }
+
+    return {
+      type: "success",
+      message: "Bravo !",
+      preferred: true,
+      userAnswer,
+      hasTypo: Boolean(result.hasTypo),
+      correctSpelling: result.matched,
+    };
+  }
+
+  const expected = result.expected ?? fallbackExpected ?? "";
 
   if (!result.correct) {
     return {
@@ -117,20 +142,42 @@ function FeedbackMessage({ feedback }: { feedback: FeedbackState }) {
   );
 }
 
-export function LetterInputRound({ session, onRoundComplete }: RoundProps) {
+export function LetterInputRound({
+  session,
+  onRoundComplete,
+  validationMode = "free",
+}: RoundProps) {
   const allPokemon = useMemo(() => getBacPokemon(), []);
+  const availableLetters = useMemo(() => {
+    if (validationMode !== "catalog") {
+      return allPokemon.map((pokemon) => pokemon.letter);
+    }
+
+    const uniqueLetters = new Set(
+      getCatalogPokemon().map((pokemon) => getFirstLetter(pokemon.nameFr)),
+    );
+    return Array.from(uniqueLetters).filter(Boolean);
+  }, [allPokemon, validationMode]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [currentPokemon, setCurrentPokemon] = useState<BacPokemon | null>(null);
+  const [currentLetter, setCurrentLetter] = useState<string | null>(null);
+  const [expectedName, setExpectedName] = useState<string | undefined>(undefined);
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState<FeedbackState>({ type: "idle" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const startRound = useCallback(() => {
-    setCurrentPokemon(pickRandom(allPokemon));
+    const letter = pickRandom(availableLetters);
+    setCurrentLetter(letter);
+    if (validationMode === "free") {
+      const expected = allPokemon.find((pokemon) => pokemon.letter === letter);
+      setExpectedName(expected?.nameFr);
+    } else {
+      setExpectedName(undefined);
+    }
     setAnswer("");
     setFeedback({ type: "idle" });
     setIsSubmitting(false);
-  }, [allPokemon]);
+  }, [allPokemon, availableLetters, validationMode]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -146,9 +193,9 @@ export function LetterInputRound({ session, onRoundComplete }: RoundProps) {
   }, [startRound]);
 
   useEffect(() => {
-    if (!currentPokemon || feedback.type !== "idle") return;
+    if (!currentLetter || feedback.type !== "idle") return;
     inputRef.current?.focus();
-  }, [feedback.type, currentPokemon]);
+  }, [feedback.type, currentLetter]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -158,7 +205,7 @@ export function LetterInputRound({ session, onRoundComplete }: RoundProps) {
       return;
     }
 
-    if (!currentPokemon || isSubmitting || !answer.trim()) return;
+    if (!currentLetter || isSubmitting || !answer.trim()) return;
 
     setIsSubmitting(true);
 
@@ -167,23 +214,23 @@ export function LetterInputRound({ session, onRoundComplete }: RoundProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          letter: currentPokemon.letter,
+          letter: currentLetter,
           answer,
-          mode: "free",
+          mode: validationMode,
         }),
       });
 
       const result = (await response.json()) as ValidationResult;
 
       session.recordRound({
-        question: `Nom de Pokémon pour la lettre ${currentPokemon.letter}`,
+        question: `Nom de Pokémon pour la lettre ${currentLetter}`,
         userAnswer: answer,
-        correctAnswer: result.expected ?? currentPokemon.nameFr,
+        correctAnswer: result.expected ?? result.matched ?? "Réponse valide",
         isCorrect: result.correct,
         preferred: result.preferred,
       });
 
-      setFeedback(buildFeedback(result, answer, currentPokemon.nameFr));
+      setFeedback(buildFeedback(result, answer, currentLetter, validationMode, expectedName));
       setIsSubmitting(false);
     } catch {
       setIsSubmitting(false);
@@ -196,7 +243,7 @@ export function LetterInputRound({ session, onRoundComplete }: RoundProps) {
     }
   };
 
-  if (!currentPokemon) {
+  if (!currentLetter) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
         Préparation de la manche…
@@ -212,7 +259,7 @@ export function LetterInputRound({ session, onRoundComplete }: RoundProps) {
       className="flex flex-col items-center gap-10"
     >
       <div className="letter-disc">
-        <span>{currentPokemon.letter}</span>
+        <span>{currentLetter}</span>
       </div>
 
       <div className="w-full max-w-sm space-y-4">
@@ -247,14 +294,17 @@ export function LetterInputRound({ session, onRoundComplete }: RoundProps) {
   );
 }
 
-export function LetterInputQuiz({ session }: LetterInputQuizProps) {
+export function LetterInputQuiz({
+  session,
+  validationMode = "free",
+}: LetterInputQuizProps) {
   return (
     <GameShell
       session={session}
       title="Lettre → Nom"
       description="Entre un Pokémon existant dont le nom français commence par la lettre affichée."
     >
-      <LetterInputRound session={session} />
+      <LetterInputRound session={session} validationMode={validationMode} />
     </GameShell>
   );
 }
