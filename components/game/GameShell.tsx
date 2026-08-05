@@ -13,6 +13,7 @@ interface GameShellProps {
   title: string;
   description?: string;
   modeLabel?: string;
+  maxWidthClassName?: string;
   children: React.ReactNode;
 }
 
@@ -21,6 +22,7 @@ export function GameShell({
   title,
   description,
   modeLabel,
+  maxWidthClassName = "max-w-2xl",
   children,
 }: GameShellProps) {
   const { stats, isFinished, stopGame } = session;
@@ -31,7 +33,12 @@ export function GameShell({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-16 sm:px-8 sm:py-20">
+    <div
+      className={cn(
+        "mx-auto flex w-full flex-col gap-8 px-6 py-16 sm:px-8 sm:py-20",
+        maxWidthClassName,
+      )}
+    >
       <header className="space-y-6">
         <Link
           href="/"

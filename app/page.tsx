@@ -16,6 +16,13 @@ const GAMES = [
     tag: "Mix",
   },
   {
+    href: "/game/pokedle",
+    title: "Pokédle",
+    description:
+      "Trouve le Pokémon mystère grâce à des indices colorés qui se dévoilent à chaque proposition.",
+    tag: "Déduction",
+  },
+  {
     href: "/game/image-to-name",
     title: "Image → Nom",
     description:

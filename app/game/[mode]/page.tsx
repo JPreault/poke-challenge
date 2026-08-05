@@ -9,6 +9,7 @@ const VALID_MODES: GameMode[] = [
   "letter-input",
   "cry-guess",
   "shuffle",
+  "pokedle",
 ];
 
 function isGameMode(value: string): value is GameMode {

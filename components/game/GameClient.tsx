@@ -5,6 +5,7 @@ import { LetterInputQuiz } from "@/components/game/LetterInputQuiz";
 import { NameToImageQuiz } from "@/components/game/NameToImageQuiz";
 import { CryGuessQuiz } from "@/components/game/CryGuessQuiz";
 import { ShuffleQuiz } from "@/components/game/ShuffleQuiz";
+import { PokedleQuiz } from "@/components/game/PokedleQuiz";
 import type { GameMode } from "@/lib/games/types";
 import { useGameSession } from "@/lib/games/useGameSession";
 
@@ -26,5 +27,7 @@ export function GameClient({ mode }: GameClientProps) {
       return <CryGuessQuiz session={session} />;
     case "shuffle":
       return <ShuffleQuiz session={session} />;
+    case "pokedle":
+      return <PokedleQuiz session={session} />;
   }
 }

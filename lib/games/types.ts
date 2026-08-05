@@ -3,7 +3,8 @@ export type GameMode =
   | "name-to-image"
   | "letter-input"
   | "cry-guess"
-  | "shuffle";
+  | "shuffle"
+  | "pokedle";
 
 export type ShuffleRoundType =
   | "image-to-name"
@@ -57,6 +58,8 @@ export function getGameModeLabel(mode: GameMode): string {
       return "Pokémon → Cri";
     case "shuffle":
       return "Shuffle";
+    case "pokedle":
+      return "Pokédle";
   }
 }
 

@@ -19,6 +19,13 @@ export interface QuizPokemon {
   sprite: string;
   artwork: string;
   cryLatest: string;
+  generation: number;
+  types: string[];
+  habitat: string | null;
+  colors: string[];
+  evolutionStage: number;
+  heightM: number;
+  weightKg: number;
 }
 
 export interface PokemonData {
