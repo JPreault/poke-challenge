@@ -36,6 +36,13 @@ const GAMES = [
       "Entre un Pokémon existant dont le nom français commence par la lettre affichée.",
     tag: "Saisie",
   },
+  {
+    href: "/game/cry-guess",
+    title: "Pokémon → Cri",
+    description:
+      "Un Pokémon aléatoire s'affiche : trouve son cri parmi 4 propositions audio.",
+    tag: "Audio",
+  },
 ] as const;
 
 export default function HomePage() {

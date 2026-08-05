@@ -36,9 +36,11 @@ export function NameToImageRound({ session, onRoundComplete }: RoundProps) {
 
   const startRound = useCallback(() => {
     const pokemon = pickRandom(bacPokemon);
+    const catalogPokemon = catalog.find((entry) => entry.id === pokemon.id);
+    if (!catalogPokemon) return;
     setRound({
       pokemon,
-      choices: buildQuizChoices(pokemon, catalog),
+      choices: buildQuizChoices(catalogPokemon, catalog),
     });
     setFeedback("idle");
     setSelectedId(null);

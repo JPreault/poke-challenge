@@ -1,12 +1,14 @@
-import type { QuizPokemon } from "@/lib/pokemon/types";
-
 import { pickRandomDistinct, shuffle } from "./random";
 
-export function buildQuizChoices(
-  correct: QuizPokemon,
-  catalog: QuizPokemon[],
+interface HasId {
+  id: number;
+}
+
+export function buildQuizChoices<T extends HasId>(
+  correct: T,
+  catalog: T[],
   count = 4,
-): QuizPokemon[] {
+): T[] {
   const distractorCount = Math.max(0, count - 1);
   const distractors = pickRandomDistinct(
     catalog.filter((pokemon) => pokemon.id !== correct.id),

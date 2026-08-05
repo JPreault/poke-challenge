@@ -7,6 +7,7 @@ const VALID_MODES: GameMode[] = [
   "image-to-name",
   "name-to-image",
   "letter-input",
+  "cry-guess",
   "shuffle",
 ];
 

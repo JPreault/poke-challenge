@@ -18,6 +18,7 @@ export interface QuizPokemon {
   nameFr: string;
   sprite: string;
   artwork: string;
+  cryLatest: string;
 }
 
 export interface PokemonData {

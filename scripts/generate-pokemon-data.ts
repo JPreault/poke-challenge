@@ -135,6 +135,7 @@ async function main() {
       nameFr: entry.nameFr,
       sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${entry.id}.png`,
       artwork: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${entry.id}.png`,
+      cryLatest: `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${entry.id}.ogg`,
     }))
     .sort((a, b) => a.id - b.id);
 

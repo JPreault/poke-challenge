@@ -6,6 +6,7 @@ import { GameShell } from "@/components/game/GameShell";
 import { ImageToNameRound } from "@/components/game/ImageToNameQuiz";
 import { LetterInputRound } from "@/components/game/LetterInputQuiz";
 import { NameToImageRound } from "@/components/game/NameToImageQuiz";
+import { CryGuessRound } from "@/components/game/CryGuessQuiz";
 import { pickShuffleRoundType } from "@/lib/games/shuffle";
 import {
   getShuffleRoundDescription,
@@ -64,6 +65,12 @@ export function ShuffleQuiz({ session }: ShuffleQuizProps) {
           ) : null}
           {roundType === "letter-input" ? (
             <LetterInputRound
+              session={session}
+              onRoundComplete={nextShuffleRound}
+            />
+          ) : null}
+          {roundType === "cry-guess" ? (
+            <CryGuessRound
               session={session}
               onRoundComplete={nextShuffleRound}
             />
