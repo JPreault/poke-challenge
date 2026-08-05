@@ -216,7 +216,7 @@ export function ZoomGuessRound({
   return (
     <div className="space-y-8">
       <div className="flex flex-col items-center gap-4">
-        <div className="display-frame flex h-56 w-56 items-center justify-center overflow-hidden">
+        <div className="display-frame flex h-56 w-56 select-none items-center justify-center overflow-hidden">
           <div
             className={cn(
               (wrongAttempts > 0 || isSolved) && "transition-transform duration-500",
@@ -228,7 +228,8 @@ export function ZoomGuessRound({
               alt="Pokémon mystère"
               width={192}
               height={192}
-              className="object-contain"
+              draggable={false}
+              className="pointer-events-none object-contain select-none"
               priority
             />
           </div>
