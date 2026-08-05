@@ -99,7 +99,7 @@ function GameRecap({
 }) {
   const { stats, mode, rounds } = session;
 
-  if (mode === "blur-guess") {
+  if (mode === "blur-guess" || mode === "zoom-guess") {
     const blurStats = computeBlurGuessStats(rounds);
 
     return (

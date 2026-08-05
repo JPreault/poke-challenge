@@ -1,6 +1,7 @@
 "use client";
 
 import { BlurGuessQuiz } from "@/components/game/BlurGuessQuiz";
+import { ZoomGuessQuiz } from "@/components/game/ZoomGuessQuiz";
 import { ImageToNameQuiz } from "@/components/game/ImageToNameQuiz";
 import { LetterInputQuiz } from "@/components/game/LetterInputQuiz";
 import { NameToImageQuiz } from "@/components/game/NameToImageQuiz";
@@ -52,5 +53,7 @@ export function GameClient({ mode, interfaceMode }: GameClientProps) {
       return <DescriptionGuessQuiz session={session} />;
     case "blur-guess":
       return <BlurGuessQuiz session={session} useBacPool={useBacPool} />;
+    case "zoom-guess":
+      return <ZoomGuessQuiz session={session} useBacPool={useBacPool} />;
   }
 }

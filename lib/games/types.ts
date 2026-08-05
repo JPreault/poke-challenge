@@ -6,7 +6,8 @@ export type GameMode =
   | "shuffle"
   | "pokedle"
   | "description-guess"
-  | "blur-guess";
+  | "blur-guess"
+  | "zoom-guess";
 
 export type GameInterfaceMode = "bac-training" | "arena";
 
@@ -14,7 +15,8 @@ export type BacShuffleRoundType =
   | "image-to-name"
   | "name-to-image"
   | "letter-input"
-  | "blur-guess";
+  | "blur-guess"
+  | "zoom-guess";
 
 export type ArenaShuffleRoundType =
   | BacShuffleRoundType
@@ -29,6 +31,7 @@ export const BAC_SHUFFLE_ROUND_TYPES: BacShuffleRoundType[] = [
   "name-to-image",
   "letter-input",
   "blur-guess",
+  "zoom-guess",
 ];
 
 export const ARENA_SHUFFLE_ROUND_TYPES: ArenaShuffleRoundType[] = [
@@ -36,6 +39,7 @@ export const ARENA_SHUFFLE_ROUND_TYPES: ArenaShuffleRoundType[] = [
   "name-to-image",
   "letter-input",
   "blur-guess",
+  "zoom-guess",
   "cry-guess",
   "pokedle",
   "description-guess",
@@ -86,6 +90,8 @@ export function getGameModeLabel(mode: GameMode): string {
       return "Description → Pokémon";
     case "blur-guess":
       return "Image flou";
+    case "zoom-guess":
+      return "Image zoomer";
   }
 }
 
@@ -105,6 +111,8 @@ export function getShuffleRoundLabel(type: ShuffleRoundType): string {
       return "Description → Pokémon";
     case "blur-guess":
       return "Image flou";
+    case "zoom-guess":
+      return "Image zoomer";
   }
 }
 
@@ -124,6 +132,8 @@ export function getShuffleRoundDescription(type: ShuffleRoundType): string {
       return "Lis la description Pokédex et retrouve le Pokémon correspondant.";
     case "blur-guess":
       return "Devine le Pokémon à partir d'une image floutée. À chaque tentative, l'image se dévoile légèrement.";
+    case "zoom-guess":
+      return "Devine le Pokémon à partir d'une image ultra zoomée. À chaque tentative, l'image se dézoome légèrement.";
   }
 }
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { BlurGuessRound } from "@/components/game/BlurGuessQuiz";
+import { ZoomGuessRound } from "@/components/game/ZoomGuessQuiz";
 import { CryGuessRound } from "@/components/game/CryGuessQuiz";
 import { DescriptionGuessRound } from "@/components/game/DescriptionGuessQuiz";
 import { GameShell } from "@/components/game/GameShell";
@@ -97,6 +98,13 @@ export function ShuffleQuiz({ session, useBacPool = true }: ShuffleQuizProps) {
           ) : null}
           {roundType === "blur-guess" ? (
             <BlurGuessRound
+              session={session}
+              onRoundComplete={nextShuffleRound}
+              useBacPool={useBacPool}
+            />
+          ) : null}
+          {roundType === "zoom-guess" ? (
+            <ZoomGuessRound
               session={session}
               onRoundComplete={nextShuffleRound}
               useBacPool={useBacPool}

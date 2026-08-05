@@ -8,7 +8,8 @@ import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { Button } from "@/components/ui/button";
 import { pickRandom } from "@/lib/games/random";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { getCatalogPokemon, getFrenchIndex } from "@/lib/pokemon/data";
+import { getZoomScale, isFullyDezoomed } from "@/lib/games/zoom-levels";
+import { getBacPokemon, getCatalogPokemon, getFrenchIndex } from "@/lib/pokemon/data";
 import { normalizeFrenchName } from "@/lib/pokemon/normalize";
 import type { QuizPokemon } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
@@ -16,24 +17,30 @@ import { cn } from "@/lib/utils";
 interface RoundProps {
   session: GameSession;
   onRoundComplete?: () => void;
+  useBacPool?: boolean;
 }
 
-function truncateDescription(text: string, maxLength = 120): string {
-  if (text.length <= maxLength) return text;
-  return `${text.slice(0, maxLength)}…`;
+interface ZoomGuessQuizProps {
+  session: GameSession;
+  useBacPool?: boolean;
 }
 
-function pickRandomWithDescription(catalog: QuizPokemon[]): QuizPokemon {
-  const withDescription = catalog.filter(
-    (pokemon) => pokemon.descriptionFr && pokemon.descriptionFr.length > 0,
-  );
-  return pickRandom(withDescription);
-}
-
-export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) {
+export function ZoomGuessRound({
+  session,
+  onRoundComplete,
+  useBacPool = true,
+}: RoundProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const bacPokemon = useMemo(() => getBacPokemon(), []);
   const catalog = useMemo(() => getCatalogPokemon(), []);
   const frenchIndex = useMemo(() => getFrenchIndex(), []);
+  const searchCatalog = useMemo(
+    () =>
+      useBacPool
+        ? catalog.filter((entry) => bacPokemon.some((bac) => bac.id === entry.id))
+        : catalog,
+    [bacPokemon, catalog, useBacPool],
+  );
   const catalogById = useMemo(
     () => new Map(catalog.map((pokemon) => [pokemon.id, pokemon])),
     [catalog],
@@ -41,6 +48,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
 
   const [target, setTarget] = useState<QuizPokemon | null>(null);
   const [wrongGuesses, setWrongGuesses] = useState<QuizPokemon[]>([]);
+  const [wrongAttempts, setWrongAttempts] = useState(0);
   const [guessName, setGuessName] = useState("");
   const [feedback, setFeedback] = useState("");
   const [isSolved, setIsSolved] = useState(false);
@@ -50,16 +58,23 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
     [wrongGuesses],
   );
 
+  const pickPokemon = useCallback(() => {
+    return useBacPool
+      ? catalog.find((entry) => entry.id === pickRandom(bacPokemon).id)
+      : pickRandom(catalog);
+  }, [bacPokemon, catalog, useBacPool]);
+
   const startRound = useCallback(() => {
-    setTarget(pickRandomWithDescription(catalog));
+    setTarget(pickPokemon() ?? null);
     setWrongGuesses([]);
+    setWrongAttempts(0);
     setGuessName("");
     setFeedback("");
     setIsSolved(false);
     window.setTimeout(() => {
       inputRef.current?.focus();
     }, 0);
-  }, [catalog]);
+  }, [pickPokemon]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -113,13 +128,19 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
       return;
     }
 
+    if (useBacPool && !bacPokemon.some((bac) => bac.id === guessedPokemon.id)) {
+      setFeedback("Ce Pokémon ne fait pas partie de la liste du bac.");
+      return;
+    }
+
     const isCorrect = guessedPokemon.id === target.id;
 
     session.recordRound({
-      question: truncateDescription(target.descriptionFr ?? ""),
+      question: "Quel est ce Pokémon zoomé ?",
       userAnswer: guessedPokemon.nameFr,
       correctAnswer: target.nameFr,
       isCorrect,
+      questionImage: target.artwork,
     });
 
     if (isCorrect) {
@@ -135,6 +156,9 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
       }
       return [...current, guessedPokemon];
     });
+
+    setWrongAttempts((current) => current + 1);
+
     setGuessName("");
     setFeedback("Ce n'est pas le bon Pokémon. Réessaie !");
     window.setTimeout(() => {
@@ -142,7 +166,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
     }, 0);
   };
 
-  if (!target?.descriptionFr) {
+  if (!target) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
         Préparation de la manche…
@@ -150,25 +174,45 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
     );
   }
 
+  const zoomScale = isSolved ? 1 : getZoomScale(wrongAttempts);
+
   return (
     <div className="space-y-8">
-      <div className="display-frame max-h-56 overflow-y-auto px-6 py-5">
-        <p className="text-sm leading-relaxed text-muted-foreground italic">
-          « {target.descriptionFr} »
-        </p>
+      <div className="flex flex-col items-center gap-4">
+        <div className="display-frame flex h-56 w-56 items-center justify-center overflow-hidden">
+          <div
+            className={cn(
+              (wrongAttempts > 0 || isSolved) && "transition-transform duration-500",
+            )}
+            style={{ transform: `scale(${zoomScale})` }}
+          >
+            <Image
+              src={target.artwork}
+              alt="Pokémon mystère"
+              width={192}
+              height={192}
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+
+        {!isSolved && isFullyDezoomed(wrongAttempts) ? (
+          <p className="text-sm text-muted-foreground">Image entièrement dévoilée</p>
+        ) : null}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <label htmlFor="description-guess" className="block text-sm font-medium">
-          Quel Pokémon correspond à cette description ?
+        <label htmlFor="zoom-guess" className="block text-sm font-medium">
+          Quel est ce Pokémon ?
         </label>
         <div className="flex flex-col gap-3 sm:flex-row">
           <PokemonSearchInput
-            id="description-guess"
+            id="zoom-guess"
             value={guessName}
             onChange={setGuessName}
             onInputActivity={() => setFeedback("")}
-            catalog={catalog}
+            catalog={searchCatalog}
             excludedIds={excludedIds}
             readOnly={isSolved}
             inputRef={inputRef}
@@ -185,35 +229,23 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         </div>
       </form>
 
-      <div className="space-y-4">
-        {isSolved ? (
-          <div className="flex flex-col items-center gap-2">
-            <div className="relative h-40 w-40">
-              <Image
-                src={target.artwork}
-                alt={target.nameFr}
-                fill
-                sizes="160px"
-                className="object-contain"
-              />
-            </div>
-          </div>
-        ) : null}
-
-        <p
-          className={cn(
-            "min-h-6 text-sm",
-            isSolved && "feedback-success",
-            !isSolved && feedback.includes("introuvable") && "feedback-error",
-            !isSolved &&
-              feedback &&
-              !feedback.includes("introuvable") &&
-              "text-muted-foreground",
-          )}
-        >
-          {feedback}
-        </p>
-      </div>
+      <p
+        className={cn(
+          "min-h-6 text-sm",
+          isSolved && "feedback-success",
+          !isSolved && feedback.includes("introuvable") && "feedback-error",
+          !isSolved &&
+            feedback.includes("liste du bac") &&
+            "feedback-error",
+          !isSolved &&
+            feedback &&
+            !feedback.includes("introuvable") &&
+            !feedback.includes("liste du bac") &&
+            "text-muted-foreground",
+        )}
+      >
+        {feedback}
+      </p>
 
       {wrongGuesses.length > 0 ? (
         <div className="space-y-3">
@@ -245,18 +277,17 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
   );
 }
 
-interface DescriptionGuessQuizProps {
-  session: GameSession;
-}
-
-export function DescriptionGuessQuiz({ session }: DescriptionGuessQuizProps) {
+export function ZoomGuessQuiz({
+  session,
+  useBacPool = true,
+}: ZoomGuessQuizProps) {
   return (
     <GameShell
       session={session}
-      title="Description → Pokémon"
-      description="Lis la description Pokédex et retrouve le Pokémon correspondant."
+      title="Image zoomer"
+      description="Devine le Pokémon à partir d'une image ultra zoomée. À chaque tentative, l'image se dézoome légèrement."
     >
-      <DescriptionGuessRound session={session} />
+      <ZoomGuessRound session={session} useBacPool={useBacPool} />
     </GameShell>
   );
 }

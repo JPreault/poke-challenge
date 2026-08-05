@@ -52,6 +52,13 @@ const TRAINING_GAMES: GameCard[] = [
       "Devine le Pokémon à partir d'une image floutée. À chaque tentative, l'image se dévoile légèrement.",
     tag: "Visuel",
   },
+  {
+    mode: "zoom-guess",
+    title: "Image zoomer",
+    description:
+      "Devine le Pokémon à partir d'une image ultra zoomée. À chaque tentative, l'image se dézoome légèrement.",
+    tag: "Visuel",
+  },
 ] as const;
 
 const ARENA_GAMES: GameCard[] = [
@@ -109,6 +116,13 @@ const ARENA_GAMES: GameCard[] = [
     title: "Image flou",
     description:
       "Devine le Pokémon à partir d'une image floutée. À chaque tentative, l'image se dévoile légèrement.",
+    tag: "Visuel",
+  },
+  {
+    mode: "zoom-guess",
+    title: "Image zoomer",
+    description:
+      "Devine le Pokémon à partir d'une image ultra zoomée. À chaque tentative, l'image se dézoome légèrement.",
     tag: "Visuel",
   },
 ] as const;

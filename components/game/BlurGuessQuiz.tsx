@@ -17,8 +17,6 @@ import { normalizeFrenchName } from "@/lib/pokemon/normalize";
 import type { QuizPokemon } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
 
-const GRAYSCALE_STORAGE_KEY = "blur-guess-grayscale";
-
 interface RoundProps {
   session: GameSession;
   onRoundComplete?: () => void;
@@ -28,27 +26,6 @@ interface RoundProps {
 interface BlurGuessQuizProps {
   session: GameSession;
   useBacPool?: boolean;
-}
-
-function useGrayscalePreference() {
-  const [grayscaleEnabled, setGrayscaleEnabled] = useState(true);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(GRAYSCALE_STORAGE_KEY);
-    if (stored !== null) {
-      setGrayscaleEnabled(stored === "true");
-    }
-  }, []);
-
-  const toggleGrayscale = useCallback(() => {
-    setGrayscaleEnabled((current) => {
-      const next = !current;
-      window.localStorage.setItem(GRAYSCALE_STORAGE_KEY, String(next));
-      return next;
-    });
-  }, []);
-
-  return { grayscaleEnabled, toggleGrayscale };
 }
 
 export function BlurGuessRound({
@@ -71,7 +48,6 @@ export function BlurGuessRound({
     () => new Map(catalog.map((pokemon) => [pokemon.id, pokemon])),
     [catalog],
   );
-  const { grayscaleEnabled, toggleGrayscale } = useGrayscalePreference();
 
   const [target, setTarget] = useState<QuizPokemon | null>(null);
   const [wrongGuesses, setWrongGuesses] = useState<QuizPokemon[]>([]);
@@ -79,6 +55,8 @@ export function BlurGuessRound({
   const [guessName, setGuessName] = useState("");
   const [feedback, setFeedback] = useState("");
   const [isSolved, setIsSolved] = useState(false);
+  // Préférence N&B limitée à la manche en cours (réinitialisée à chaque manche).
+  const [grayscaleEnabled, setGrayscaleEnabled] = useState(true);
 
   const excludedIds = useMemo(
     () => wrongGuesses.map((pokemon) => pokemon.id),
@@ -98,6 +76,7 @@ export function BlurGuessRound({
     setGuessName("");
     setFeedback("");
     setIsSolved(false);
+    setGrayscaleEnabled(true);
     window.setTimeout(() => {
       inputRef.current?.focus();
     }, 0);
@@ -122,6 +101,19 @@ export function BlurGuessRound({
     const timeoutId = window.setTimeout(onRoundComplete, 2200);
     return () => window.clearTimeout(timeoutId);
   }, [isSolved, onRoundComplete]);
+
+  useEffect(() => {
+    if (!isSolved) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" || event.repeat) return;
+      event.preventDefault();
+      advanceRound();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSolved, advanceRound]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -189,17 +181,21 @@ export function BlurGuessRound({
   }
 
   const blurPx = isSolved ? 0 : getBlurPx(wrongAttempts);
+  // Couleurs forcées à la bonne réponse ; sinon préférence de la manche.
+  const showGrayscale = !isSolved && grayscaleEnabled;
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col items-center gap-4">
         <div className="display-frame flex h-56 w-56 items-center justify-center overflow-hidden">
           <div
-            className="transition-[filter] duration-500"
+            className={cn(
+              (wrongAttempts > 0 || isSolved) && "transition-[filter] duration-500",
+            )}
             style={{
               filter: [
                 blurPx > 0 ? `blur(${blurPx}px)` : "",
-                grayscaleEnabled ? "grayscale(100%)" : "",
+                showGrayscale ? "grayscale(100%)" : "",
               ]
                 .filter(Boolean)
                 .join(" ") || "none",
@@ -217,15 +213,17 @@ export function BlurGuessRound({
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground"
-            onClick={toggleGrayscale}
-          >
-            {grayscaleEnabled ? "Passer en couleur" : "Passer en noir & blanc"}
-          </Button>
+          {!isSolved ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setGrayscaleEnabled((current) => !current)}
+            >
+              {grayscaleEnabled ? "Passer en couleur" : "Passer en noir & blanc"}
+            </Button>
+          ) : null}
           {!isSolved && isFullyDeblurred(wrongAttempts) ? (
             <p className="text-sm text-muted-foreground">Image entièrement dévoilée</p>
           ) : null}

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
@@ -165,21 +165,21 @@ export function PokedleRound({
     [attempts],
   );
 
-  const resetRound = () => {
+  const resetRound = useCallback(() => {
     setTarget(pickRandom(catalog));
     setAttempts([]);
     setGuessName("");
     setFeedback("");
     setIsSolved(false);
-  };
+  }, [catalog]);
 
-  const advanceRound = () => {
+  const advanceRound = useCallback(() => {
     if (onRoundComplete) {
       onRoundComplete();
       return;
     }
     resetRound();
-  };
+  }, [onRoundComplete, resetRound]);
 
   useEffect(() => {
     if (!isSolved || !onRoundComplete) return;
@@ -187,6 +187,19 @@ export function PokedleRound({
     const timeoutId = window.setTimeout(onRoundComplete, 2200);
     return () => window.clearTimeout(timeoutId);
   }, [isSolved, onRoundComplete]);
+
+  useEffect(() => {
+    if (!isSolved) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" || event.repeat) return;
+      event.preventDefault();
+      advanceRound();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSolved, advanceRound]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
