@@ -19,6 +19,7 @@ export interface QuizPokemon {
   sprite: string;
   artwork: string;
   cryLatest: string;
+  descriptionFr: string | null;
   generation: number;
   types: string[];
   habitat: string | null;

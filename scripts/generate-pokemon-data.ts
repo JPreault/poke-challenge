@@ -22,6 +22,12 @@ interface SpeciesListResponse {
   next: string | null;
 }
 
+interface FlavorTextEntry {
+  flavor_text: string;
+  language: { name: string };
+  version: { name: string };
+}
+
 interface SpeciesResponse {
   id: number;
   name: string;
@@ -30,7 +36,43 @@ interface SpeciesResponse {
   color: { name: string };
   habitat: { name: string } | null;
   evolution_chain: { url: string };
+  flavor_text_entries?: FlavorTextEntry[];
 }
+
+const FLAVOR_TEXT_VERSION_PRIORITY = [
+  "scarlet",
+  "violet",
+  "shield",
+  "sword",
+  "ultra-sun",
+  "ultra-moon",
+  "sun",
+  "moon",
+  "omega-ruby",
+  "alpha-sapphire",
+  "x",
+  "y",
+  "black-2",
+  "white-2",
+  "black",
+  "white",
+  "heartgold",
+  "soulsilver",
+  "platinum",
+  "diamond",
+  "pearl",
+  "emerald",
+  "firered",
+  "leafgreen",
+  "ruby",
+  "sapphire",
+  "crystal",
+  "silver",
+  "gold",
+  "yellow",
+  "red",
+  "blue",
+];
 
 interface PokemonResponse {
   id: number;
@@ -247,6 +289,34 @@ function getFrenchName(species: SpeciesResponse): string | null {
   );
 }
 
+function normalizeFlavorText(text: string): string {
+  return text
+    .replace(/\f/g, " ")
+    .replace(/\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getFrenchFlavorText(species: SpeciesResponse): string | null {
+  const frenchEntries = (species.flavor_text_entries ?? []).filter(
+    (entry) => entry.language.name === "fr",
+  );
+
+  if (frenchEntries.length === 0) {
+    return null;
+  }
+
+  const sortedEntries = [...frenchEntries].sort((left, right) => {
+    const leftIndex = FLAVOR_TEXT_VERSION_PRIORITY.indexOf(left.version.name);
+    const rightIndex = FLAVOR_TEXT_VERSION_PRIORITY.indexOf(right.version.name);
+    const leftPriority = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+    const rightPriority = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+    return leftPriority - rightPriority;
+  });
+
+  return normalizeFlavorText(sortedEntries[0].flavor_text);
+}
+
 async function main() {
   console.log("Fetching Pokémon species from PokéAPI...");
   const allSpecies = await fetchAllSpecies();
@@ -358,6 +428,7 @@ async function main() {
         sprite,
         artwork,
         cryLatest: `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${entry.id}.ogg`,
+        descriptionFr: getFrenchFlavorText(species),
         generation: generationNameToNumber(species.generation.name),
         types,
         habitat,

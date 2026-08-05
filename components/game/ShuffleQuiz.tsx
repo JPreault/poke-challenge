@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { CryGuessRound } from "@/components/game/CryGuessQuiz";
+import { DescriptionGuessRound } from "@/components/game/DescriptionGuessQuiz";
 import { GameShell } from "@/components/game/GameShell";
 import { ImageToNameRound } from "@/components/game/ImageToNameQuiz";
 import { LetterInputRound } from "@/components/game/LetterInputQuiz";
@@ -83,6 +84,12 @@ export function ShuffleQuiz({ session, useBacPool = true }: ShuffleQuizProps) {
           ) : null}
           {roundType === "pokedle" ? (
             <PokedleRound
+              session={session}
+              onRoundComplete={nextShuffleRound}
+            />
+          ) : null}
+          {roundType === "description-guess" ? (
+            <DescriptionGuessRound
               session={session}
               onRoundComplete={nextShuffleRound}
             />

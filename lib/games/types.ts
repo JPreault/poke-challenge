@@ -4,7 +4,8 @@ export type GameMode =
   | "letter-input"
   | "cry-guess"
   | "shuffle"
-  | "pokedle";
+  | "pokedle"
+  | "description-guess";
 
 export type GameInterfaceMode = "bac-training" | "arena";
 
@@ -13,7 +14,8 @@ export type BacShuffleRoundType = "image-to-name" | "name-to-image" | "letter-in
 export type ArenaShuffleRoundType =
   | BacShuffleRoundType
   | "cry-guess"
-  | "pokedle";
+  | "pokedle"
+  | "description-guess";
 
 export type ShuffleRoundType = BacShuffleRoundType | ArenaShuffleRoundType;
 
@@ -29,6 +31,7 @@ export const ARENA_SHUFFLE_ROUND_TYPES: ArenaShuffleRoundType[] = [
   "letter-input",
   "cry-guess",
   "pokedle",
+  "description-guess",
 ];
 
 export interface RoundRecord {
@@ -72,6 +75,8 @@ export function getGameModeLabel(mode: GameMode): string {
       return "Shuffle";
     case "pokedle":
       return "Pokédle";
+    case "description-guess":
+      return "Description → Pokémon";
   }
 }
 
@@ -87,6 +92,8 @@ export function getShuffleRoundLabel(type: ShuffleRoundType): string {
       return "Pokémon → Cri";
     case "pokedle":
       return "Pokédle";
+    case "description-guess":
+      return "Description → Pokémon";
   }
 }
 
@@ -102,6 +109,8 @@ export function getShuffleRoundDescription(type: ShuffleRoundType): string {
       return "Écoute les 4 propositions et choisis le cri correspondant au Pokémon affiché.";
     case "pokedle":
       return "Propose un Pokémon et compare ses caractéristiques pour trouver le Pokémon mystère.";
+    case "description-guess":
+      return "Lis la description Pokédex et retrouve le Pokémon correspondant.";
   }
 }
 

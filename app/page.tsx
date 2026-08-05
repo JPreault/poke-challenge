@@ -90,6 +90,13 @@ const ARENA_GAMES: GameCard[] = [
       "Trouve le Pokémon mystère grâce à des indices colorés qui se dévoilent à chaque proposition.",
     tag: "Déduction",
   },
+  {
+    mode: "description-guess",
+    title: "Description → Pokémon",
+    description:
+      "Lis une description Pokédex aléatoire et retrouve le Pokémon correspondant.",
+    tag: "Déduction",
+  },
 ] as const;
 
 export default function HomePage() {

@@ -4,6 +4,7 @@ import { ImageToNameQuiz } from "@/components/game/ImageToNameQuiz";
 import { LetterInputQuiz } from "@/components/game/LetterInputQuiz";
 import { NameToImageQuiz } from "@/components/game/NameToImageQuiz";
 import { CryGuessQuiz } from "@/components/game/CryGuessQuiz";
+import { DescriptionGuessQuiz } from "@/components/game/DescriptionGuessQuiz";
 import { ShuffleQuiz } from "@/components/game/ShuffleQuiz";
 import { PokedleQuiz } from "@/components/game/PokedleQuiz";
 import type { GameInterfaceMode, GameMode } from "@/lib/games/types";
@@ -46,5 +47,7 @@ export function GameClient({ mode, interfaceMode }: GameClientProps) {
       return <ShuffleQuiz session={session} useBacPool={useBacPool} />;
     case "pokedle":
       return <PokedleQuiz session={session} />;
+    case "description-guess":
+      return <DescriptionGuessQuiz session={session} />;
   }
 }

@@ -16,6 +16,7 @@ const ARENA_MODES: GameMode[] = [
   "letter-input",
   "cry-guess",
   "pokedle",
+  "description-guess",
 ];
 
 function parseInterfaceMode(value: string | string[] | undefined): GameInterfaceMode {
