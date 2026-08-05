@@ -8,16 +8,26 @@ import { NameToImageQuiz } from "@/components/game/NameToImageQuiz";
 import { CryGuessQuiz } from "@/components/game/CryGuessQuiz";
 import { DescriptionGuessQuiz } from "@/components/game/DescriptionGuessQuiz";
 import { ShuffleQuiz } from "@/components/game/ShuffleQuiz";
+import { ShuffleSetup } from "@/components/game/ShuffleSetup";
 import { PokedleQuiz } from "@/components/game/PokedleQuiz";
-import type { GameInterfaceMode, GameMode } from "@/lib/games/types";
+import type {
+  GameInterfaceMode,
+  GameMode,
+  ShuffleRoundType,
+} from "@/lib/games/types";
 import { useGameSession } from "@/lib/games/useGameSession";
 
 interface GameClientProps {
   mode: GameMode;
   interfaceMode: GameInterfaceMode;
+  selectedShuffleRoundTypes?: ShuffleRoundType[];
 }
 
-export function GameClient({ mode, interfaceMode }: GameClientProps) {
+export function GameClient({
+  mode,
+  interfaceMode,
+  selectedShuffleRoundTypes = [],
+}: GameClientProps) {
   const session = useGameSession(mode);
   const useBacPool = interfaceMode === "bac-training";
 
@@ -46,7 +56,18 @@ export function GameClient({ mode, interfaceMode }: GameClientProps) {
     case "cry-guess":
       return <CryGuessQuiz session={session} />;
     case "shuffle":
-      return <ShuffleQuiz session={session} useBacPool={useBacPool} />;
+      if (selectedShuffleRoundTypes.length === 0) {
+        return <ShuffleSetup interfaceMode={interfaceMode} />;
+      }
+
+      return (
+        <ShuffleQuiz
+          session={session}
+          selectedRoundTypes={selectedShuffleRoundTypes}
+          useBacPool={useBacPool}
+          interfaceMode={interfaceMode}
+        />
+      );
     case "pokedle":
       return <PokedleQuiz session={session} />;
     case "description-guess":

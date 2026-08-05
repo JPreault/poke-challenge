@@ -11,27 +11,35 @@ import { ImageToNameRound } from "@/components/game/ImageToNameQuiz";
 import { LetterInputRound } from "@/components/game/LetterInputQuiz";
 import { NameToImageRound } from "@/components/game/NameToImageQuiz";
 import { PokedleRound } from "@/components/game/PokedleQuiz";
-import { pickShuffleRoundType } from "@/lib/games/shuffle";
+import { buildShuffleGamesQuery, pickShuffleRoundType } from "@/lib/games/shuffle";
 import {
   getShuffleRoundDescription,
   getShuffleRoundLabel,
+  type GameInterfaceMode,
   type ShuffleRoundType,
 } from "@/lib/games/types";
 import type { GameSession } from "@/lib/games/useGameSession";
 
 interface ShuffleQuizProps {
   session: GameSession;
+  selectedRoundTypes: ShuffleRoundType[];
   useBacPool?: boolean;
+  interfaceMode?: GameInterfaceMode;
 }
 
-export function ShuffleQuiz({ session, useBacPool = true }: ShuffleQuizProps) {
+export function ShuffleQuiz({
+  session,
+  selectedRoundTypes,
+  useBacPool = true,
+  interfaceMode = "arena",
+}: ShuffleQuizProps) {
   const [roundType, setRoundType] = useState<ShuffleRoundType | null>(null);
   const [roundKey, setRoundKey] = useState(0);
 
   const nextShuffleRound = useCallback(() => {
-    setRoundType(pickShuffleRoundType(useBacPool));
+    setRoundType(pickShuffleRoundType(selectedRoundTypes));
     setRoundKey((current) => current + 1);
-  }, [useBacPool]);
+  }, [selectedRoundTypes]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(nextShuffleRound, 0);
@@ -43,12 +51,23 @@ export function ShuffleQuiz({ session, useBacPool = true }: ShuffleQuizProps) {
     ? getShuffleRoundDescription(roundType)
     : "Un mini-jeu aléatoire à chaque manche.";
 
+  const gamesQuery = buildShuffleGamesQuery(selectedRoundTypes);
+  const replayParams = new URLSearchParams({ games: gamesQuery });
+  if (interfaceMode === "bac-training") {
+    replayParams.set("interface", "bac-training");
+  }
+  const homeHref =
+    interfaceMode === "bac-training" ? "/?interface=bac-training" : "/";
+  const replayHref = `/game/shuffle?${replayParams.toString()}`;
+
   return (
     <GameShell
       session={session}
       title={roundLabel}
       description={roundDescription}
       modeLabel="Shuffle"
+      homeHref={homeHref}
+      replayHref={replayHref}
       maxWidthClassName={roundType === "pokedle" ? "max-w-7xl" : "max-w-2xl"}
     >
       {!roundType ? (

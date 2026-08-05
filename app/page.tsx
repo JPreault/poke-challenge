@@ -18,13 +18,6 @@ interface GameCard {
 
 const TRAINING_GAMES: GameCard[] = [
   {
-    mode: "shuffle",
-    title: "Shuffle",
-    description:
-      "Enchaîne les mini-jeux : à chaque manche, un jeu est choisi au hasard.",
-    tag: "Mix",
-  },
-  {
     mode: "image-to-name",
     title: "Image → Nom",
     description:
@@ -62,13 +55,6 @@ const TRAINING_GAMES: GameCard[] = [
 ] as const;
 
 const ARENA_GAMES: GameCard[] = [
-  {
-    mode: "shuffle",
-    title: "Shuffle",
-    description:
-      "Enchaîne les mini-jeux : à chaque manche, un jeu est choisi au hasard.",
-    tag: "Mix",
-  },
   {
     mode: "image-to-name",
     title: "Image → Nom",
@@ -166,6 +152,33 @@ export default function HomePage() {
           à tout moment.
         </p>
       </header>
+
+      <section className="mb-12">
+        <div className="surface flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-xl space-y-2">
+            <h2 className="font-heading text-xl font-semibold text-foreground">
+              Shuffle
+            </h2>
+            <p className="text-base leading-7 text-muted-foreground">
+              Choisis les mini-jeux à mélanger, puis enchaîne des manches
+              aléatoires parmi ta sélection.
+            </p>
+          </div>
+          <Link
+            href={
+              selectedInterface === "bac-training"
+                ? "/game/shuffle?interface=bac-training"
+                : "/game/shuffle"
+            }
+            className={cn(
+              buttonVariants({ size: "lg" }),
+              "w-full shrink-0 justify-center sm:w-auto",
+            )}
+          >
+            Configurer
+          </Link>
+        </div>
+      </section>
 
       <section className="mb-24">
         <h2 className="mb-8 font-heading text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">

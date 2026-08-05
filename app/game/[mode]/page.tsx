@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { GameClient } from "@/components/game/GameClient";
+import { parseShuffleGamesParam } from "@/lib/games/shuffle";
 import type { GameInterfaceMode, GameMode } from "@/lib/games/types";
 
 const TRAINING_MODES: GameMode[] = [
@@ -48,5 +49,19 @@ export default async function GamePage({
     notFound();
   }
 
-  return <GameClient mode={mode} interfaceMode={interfaceMode} />;
+  const selectedShuffleRoundTypes =
+    mode === "shuffle"
+      ? parseShuffleGamesParam(
+          resolvedSearchParams?.games,
+          interfaceMode === "bac-training",
+        )
+      : [];
+
+  return (
+    <GameClient
+      mode={mode}
+      interfaceMode={interfaceMode}
+      selectedShuffleRoundTypes={selectedShuffleRoundTypes}
+    />
+  );
 }
