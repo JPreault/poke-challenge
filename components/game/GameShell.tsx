@@ -115,6 +115,7 @@ function GameRecap({ session }: { session: GameSession }) {
                             src={round.questionImage}
                             alt={round.correctAnswer}
                             fill
+                            sizes="40px"
                             className="object-contain"
                           />
                         </div>
@@ -136,6 +137,7 @@ function GameRecap({ session }: { session: GameSession }) {
                               src={round.chosenImage}
                               alt={round.chosenLabel ?? round.userAnswer}
                               fill
+                              sizes="64px"
                               className="object-contain"
                             />
                           </div>
@@ -157,6 +159,7 @@ function GameRecap({ session }: { session: GameSession }) {
                               src={round.correctImage}
                               alt={round.correctAnswer}
                               fill
+                              sizes="64px"
                               className="object-contain"
                             />
                           </div>
