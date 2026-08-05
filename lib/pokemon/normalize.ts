@@ -7,7 +7,7 @@ export function normalizeFrenchName(name: string): string {
 }
 
 export function getFirstLetter(name: string): string {
-  const normalized = name.trim();
+  const normalized = normalizeFrenchName(name);
   if (!normalized) return "";
   return normalized[0].toUpperCase();
 }
