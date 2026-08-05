@@ -58,14 +58,18 @@ export function ZoomGuessRound({
     [wrongGuesses],
   );
 
-  const pickPokemon = useCallback(() => {
-    return useBacPool
-      ? catalog.find((entry) => entry.id === pickRandom(bacPokemon).id)
-      : pickRandom(catalog);
+  const pickPokemon = useCallback((): QuizPokemon => {
+    if (useBacPool) {
+      const bacEntry = pickRandom(bacPokemon);
+      return (
+        catalog.find((entry) => entry.id === bacEntry.id) ?? pickRandom(catalog)
+      );
+    }
+    return pickRandom(catalog);
   }, [bacPokemon, catalog, useBacPool]);
 
   const startRound = useCallback(() => {
-    setTarget(pickPokemon() ?? null);
+    setTarget(pickPokemon());
     setWrongGuesses([]);
     setWrongAttempts(0);
     setGuessName("");
@@ -85,9 +89,10 @@ export function ZoomGuessRound({
   }, [onRoundComplete, startRound]);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(startRound, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [startRound]);
+    startRound();
+    // Mount-only init (also re-runs when Shuffle remounts the round via key).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!isSolved || !onRoundComplete) return;

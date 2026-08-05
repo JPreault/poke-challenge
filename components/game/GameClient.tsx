@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { BlurGuessQuiz } from "@/components/game/BlurGuessQuiz";
@@ -35,14 +36,17 @@ export function GameClient({
   const searchParams = useSearchParams();
   const useBacPool = interfaceMode === "bac-training";
 
-  // Source of truth client-side: soft navigation to the same path with ?games=
-  // does not always refresh server props reliably.
-  const selectedFromUrl = parseShuffleGamesParam(
-    searchParams.get("games") ?? undefined,
-    useBacPool,
-  );
-  const selectedShuffleTypes =
-    selectedFromUrl.length > 0 ? selectedFromUrl : selectedShuffleRoundTypes;
+  const gamesParam = searchParams.get("games") ?? "";
+  const serverGamesKey = selectedShuffleRoundTypes.join(",");
+
+  // Memoize so ShuffleQuiz does not reset on every session.recordRound re-render.
+  const selectedShuffleTypes = useMemo(() => {
+    const fromUrl = parseShuffleGamesParam(gamesParam || undefined, useBacPool);
+    if (fromUrl.length > 0) {
+      return fromUrl;
+    }
+    return parseShuffleGamesParam(serverGamesKey || undefined, useBacPool);
+  }, [gamesParam, useBacPool, serverGamesKey]);
 
   switch (mode) {
     case "image-to-name":

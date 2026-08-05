@@ -40,22 +40,25 @@ export function ShuffleQuiz({
   const [roundType, setRoundType] = useState<ShuffleRoundType | null>(null);
   const [roundKey, setRoundKey] = useState(0);
   const deckRef = useRef<ShuffleRoundType[]>([]);
+  const selectedRef = useRef(selectedRoundTypes);
+  selectedRef.current = selectedRoundTypes;
+
+  const selectionKey = selectedRoundTypes.join(",");
 
   const drawRound = useCallback(() => {
     const { nextType, remainingDeck } = drawNextShuffleRoundType(
       deckRef.current,
-      selectedRoundTypes,
+      selectedRef.current,
     );
     deckRef.current = remainingDeck;
     setRoundType(nextType);
     setRoundKey((current) => current + 1);
-  }, [selectedRoundTypes]);
+  }, []);
 
   useEffect(() => {
-    deckRef.current = createShuffleDeck(selectedRoundTypes);
-    const timeoutId = window.setTimeout(drawRound, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [drawRound, selectedRoundTypes]);
+    deckRef.current = createShuffleDeck(selectedRef.current);
+    drawRound();
+  }, [drawRound, selectionKey]);
 
   const roundLabel = roundType ? getShuffleRoundLabel(roundType) : "Shuffle";
   const roundDescription = roundType
