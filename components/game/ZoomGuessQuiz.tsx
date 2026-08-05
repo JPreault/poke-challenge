@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
+import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
 import { pickRandom } from "@/lib/games/random";
 import type { GameSession } from "@/lib/games/useGameSession";
@@ -142,15 +143,18 @@ export function ZoomGuessRound({
 
     const isCorrect = guessedPokemon.id === target.id;
 
-    session.recordRound({
-      question: "Quel est ce Pokémon zoomé ?",
-      userAnswer: guessedPokemon.nameFr,
-      correctAnswer: target.nameFr,
-      isCorrect,
-      questionImage: target.artwork,
-    });
-
     if (isCorrect) {
+      session.recordRound({
+        question: "Quel est ce Pokémon zoomé ?",
+        userAnswer: guessedPokemon.nameFr,
+        correctAnswer: target.nameFr,
+        isCorrect: true,
+        attemptCount: wrongAttempts + 1,
+        chosenImage: guessedPokemon.artwork,
+        chosenLabel: guessedPokemon.nameFr,
+        correctImage: target.artwork,
+        questionImage: target.artwork,
+      });
       setIsSolved(true);
       setGuessName("");
       setFeedback(`Bravo ! C'était ${target.nameFr}.`);
@@ -173,14 +177,21 @@ export function ZoomGuessRound({
     }, 0);
   };
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     if (!target || isSolved) return;
+
+    const lastGuess = wrongGuesses[wrongGuesses.length - 1];
 
     session.recordRound({
       question: "Quel est ce Pokémon zoomé ?",
       userAnswer: "Abandon",
       correctAnswer: target.nameFr,
       isCorrect: false,
+      skipped: true,
+      attemptCount: wrongAttempts,
+      chosenImage: lastGuess?.artwork,
+      chosenLabel: lastGuess?.nameFr,
+      correctImage: target.artwork,
       questionImage: target.artwork,
     });
 
@@ -188,7 +199,9 @@ export function ZoomGuessRound({
     setWasAbandoned(true);
     setIsSolved(true);
     setFeedback(`Abandonné. C'était ${target.nameFr}.`);
-  };
+  }, [isSolved, session, target, wrongAttempts, wrongGuesses]);
+
+  useRegisterSkip(handleSkip, Boolean(target) && !isSolved);
 
   if (!target) {
     return (
@@ -245,11 +258,6 @@ export function ZoomGuessRound({
           <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
             Valider
           </Button>
-          {!isSolved ? (
-            <Button type="button" size="lg" variant="outline" onClick={handleSkip}>
-              Passer
-            </Button>
-          ) : null}
           {isSolved && !onRoundComplete ? (
             <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
               Suivant

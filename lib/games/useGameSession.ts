@@ -9,7 +9,7 @@ import {
   type RoundRecord,
 } from "@/lib/games/types";
 
-interface RecordRoundInput {
+export interface RecordRoundInput {
   question: string;
   userAnswer: string;
   correctAnswer: string;
@@ -19,6 +19,11 @@ interface RecordRoundInput {
   chosenImage?: string;
   chosenLabel?: string;
   correctImage?: string;
+  skipped?: boolean;
+  attemptCount?: number;
+  hintAccuracyPercent?: number;
+  userAnswerCry?: string;
+  correctAnswerCry?: string;
 }
 
 export function useGameSession(mode: GameMode) {
@@ -39,6 +44,11 @@ export function useGameSession(mode: GameMode) {
     setIsFinished(true);
   }, []);
 
+  const resetGame = useCallback(() => {
+    setRounds([]);
+    setIsFinished(false);
+  }, []);
+
   const stats = useMemo<GameStats>(() => computeStats(rounds), [rounds]);
 
   return {
@@ -48,6 +58,7 @@ export function useGameSession(mode: GameMode) {
     stats,
     recordRound,
     stopGame,
+    resetGame,
   };
 }
 

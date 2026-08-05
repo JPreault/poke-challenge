@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
+import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { pickRandom } from "@/lib/games/random";
@@ -40,21 +41,45 @@ type FeedbackState =
       correctSpelling?: string;
     };
 
+function getExampleNameForLetter(letter: string, validationMode: ValidationMode): string {
+  if (validationMode !== "catalog") {
+    return (
+      getBacPokemon().find((pokemon) => pokemon.letter === letter.toUpperCase())
+        ?.nameFr ?? letter
+    );
+  }
+
+  const matches = getCatalogPokemon().filter(
+    (pokemon) => getFirstLetter(pokemon.nameFr) === letter.toUpperCase(),
+  );
+  return matches.length > 0 ? pickRandom(matches).nameFr : letter;
+}
+
 function buildFeedback(
   result: ValidationResult,
   userAnswer: string,
   roundLetter: string,
   validationMode: ValidationMode,
   fallbackExpected?: string,
+  exampleName?: string,
 ): FeedbackState {
+  const example = exampleName ?? fallbackExpected ?? roundLetter;
+
   if (validationMode === "catalog") {
     if (!result.correct) {
+      if (result.matched) {
+        return {
+          type: "error",
+          message: `${result.matched} ne commence pas par ${roundLetter}.`,
+          userAnswer,
+        };
+      }
+
       return {
         type: "error",
-        message: result.matched
-          ? `${result.matched} ne commence pas par ${roundLetter}.`
-          : `Incorrect — le Pokémon doit commencer par ${roundLetter}.`,
+        message: `Ce nom de Pokémon n'existe pas, voici un exemple de nom : ${example}.`,
         userAnswer,
+        correctSpelling: example,
       };
     }
 
@@ -71,11 +96,19 @@ function buildFeedback(
   const expected = result.expected ?? fallbackExpected ?? "";
 
   if (!result.correct) {
+    if (result.matched) {
+      return {
+        type: "error",
+        message: `${result.matched} ne commence pas par ${roundLetter}.`,
+        userAnswer,
+      };
+    }
+
     return {
       type: "error",
-      message: `Incorrect — c'était ${expected}.`,
+      message: `Ce nom de Pokémon n'existe pas, voici un exemple de nom : ${example}.`,
       userAnswer,
-      correctSpelling: expected,
+      correctSpelling: example,
     };
   }
 
@@ -221,16 +254,26 @@ export function LetterInputRound({
       });
 
       const result = (await response.json()) as ValidationResult;
+      const exampleName = getExampleNameForLetter(currentLetter, validationMode);
 
       session.recordRound({
         question: `Nom de Pokémon pour la lettre ${currentLetter}`,
         userAnswer: answer,
-        correctAnswer: result.expected ?? result.matched ?? "Réponse valide",
+        correctAnswer: result.expected ?? result.matched ?? exampleName,
         isCorrect: result.correct,
         preferred: result.preferred,
       });
 
-      setFeedback(buildFeedback(result, answer, currentLetter, validationMode, expectedName));
+      setFeedback(
+        buildFeedback(
+          result,
+          answer,
+          currentLetter,
+          validationMode,
+          expectedName,
+          exampleName,
+        ),
+      );
       setIsSubmitting(false);
     } catch {
       setIsSubmitting(false);
@@ -242,6 +285,30 @@ export function LetterInputRound({
       inputRef.current?.focus();
     }
   };
+
+  const handleSkip = useCallback(() => {
+    if (!currentLetter || feedback.type !== "idle") return;
+
+    const exampleName =
+      expectedName ?? getExampleNameForLetter(currentLetter, validationMode);
+
+    session.recordRound({
+      question: `Nom de Pokémon pour la lettre ${currentLetter}`,
+      userAnswer: "Abandon",
+      correctAnswer: exampleName,
+      isCorrect: false,
+      skipped: true,
+    });
+
+    setFeedback({
+      type: "error",
+      message: `Abandonné. Exemple : ${exampleName}.`,
+      userAnswer: "Abandon",
+      correctSpelling: exampleName,
+    });
+  }, [currentLetter, expectedName, feedback.type, session, validationMode]);
+
+  useRegisterSkip(handleSkip, Boolean(currentLetter) && feedback.type === "idle");
 
   if (!currentLetter) {
     return (

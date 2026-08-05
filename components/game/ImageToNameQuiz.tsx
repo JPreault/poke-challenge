@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
+import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
 import { buildQuizChoices } from "@/lib/games/distractors";
 import { pickRandom } from "@/lib/games/random";
@@ -66,6 +67,25 @@ export function ImageToNameRound({
     const timeoutId = window.setTimeout(startRound, 0);
     return () => window.clearTimeout(timeoutId);
   }, [startRound]);
+
+  const handleSkip = useCallback(() => {
+    if (!round || feedback !== "idle") return;
+
+    session.recordRound({
+      question: "Quel est ce Pokémon ?",
+      userAnswer: "Abandon",
+      correctAnswer: round.pokemon.nameFr,
+      isCorrect: false,
+      skipped: true,
+      questionImage: round.pokemon.artwork,
+      correctImage: round.pokemon.artwork,
+    });
+
+    setFeedback("incorrect");
+    window.setTimeout(advanceRound, 800);
+  }, [advanceRound, feedback, round, session]);
+
+  useRegisterSkip(handleSkip, Boolean(round) && feedback === "idle");
 
   const handleAnswer = (pokemon: QuizPokemon) => {
     if (!round || feedback !== "idle") return;

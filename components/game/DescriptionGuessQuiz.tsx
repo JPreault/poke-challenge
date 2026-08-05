@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
+import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
 import { pickRandom } from "@/lib/games/random";
 import type { GameSession } from "@/lib/games/useGameSession";
@@ -121,14 +122,17 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         const isCorrect = guessedPokemon.id === target.id;
         const primaryDescription = target.descriptionsFr[0] ?? "";
 
-        session.recordRound({
-            question: truncateDescription(primaryDescription),
-            userAnswer: guessedPokemon.nameFr,
-            correctAnswer: target.nameFr,
-            isCorrect,
-        });
-
         if (isCorrect) {
+            session.recordRound({
+                question: truncateDescription(primaryDescription),
+                userAnswer: guessedPokemon.nameFr,
+                correctAnswer: target.nameFr,
+                isCorrect: true,
+                attemptCount: wrongAttempts + 1,
+                chosenImage: guessedPokemon.artwork,
+                chosenLabel: guessedPokemon.nameFr,
+                correctImage: target.artwork,
+            });
             setIsSolved(true);
             setGuessName("");
             setFeedback(`Bravo ! C'était ${target.nameFr}.`);
@@ -152,30 +156,38 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                 ? "Ce n'est pas le bon Pokémon. Une nouvelle description a été dévoilée !"
                 : "Ce n'est pas le bon Pokémon. Réessaie !",
         );
-    window.setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
-  };
+        window.setTimeout(() => {
+            inputRef.current?.focus();
+        }, 0);
+    };
 
-  const handleSkip = () => {
-    if (!target || isSolved) return;
+    const handleSkip = useCallback(() => {
+        if (!target || isSolved) return;
 
-    const primaryDescription = target.descriptionsFr[0] ?? "";
+        const primaryDescription = target.descriptionsFr[0] ?? "";
+        const lastGuess = wrongGuesses[wrongGuesses.length - 1];
 
-    session.recordRound({
-      question: truncateDescription(primaryDescription),
-      userAnswer: "Abandon",
-      correctAnswer: target.nameFr,
-      isCorrect: false,
-    });
+        session.recordRound({
+            question: truncateDescription(primaryDescription),
+            userAnswer: "Abandon",
+            correctAnswer: target.nameFr,
+            isCorrect: false,
+            skipped: true,
+            attemptCount: wrongAttempts,
+            chosenImage: lastGuess?.artwork,
+            chosenLabel: lastGuess?.nameFr,
+            correctImage: target.artwork,
+        });
 
-    setGuessName("");
-    setWasAbandoned(true);
-    setIsSolved(true);
-    setFeedback(`Abandonné. C'était ${target.nameFr}.`);
-  };
+        setGuessName("");
+        setWasAbandoned(true);
+        setIsSolved(true);
+        setFeedback(`Abandonné. C'était ${target.nameFr}.`);
+    }, [isSolved, session, target, wrongAttempts, wrongGuesses]);
 
-  if (!target || target.descriptionsFr.length === 0) {
+    useRegisterSkip(handleSkip, Boolean(target) && !isSolved);
+
+    if (!target || target.descriptionsFr.length === 0) {
         return <div className="flex h-64 items-center justify-center text-muted-foreground">Préparation de la manche…</div>;
     }
 
@@ -226,11 +238,6 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                     <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
                         Valider
                     </Button>
-                    {!isSolved ? (
-                        <Button type="button" size="lg" variant="outline" onClick={handleSkip}>
-                            Passer
-                        </Button>
-                    ) : null}
                     {isSolved && !onRoundComplete ? (
                         <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
                             Suivant

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
+import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
 import { pickRandom } from "@/lib/games/random";
 import type { GameSession } from "@/lib/games/useGameSession";
@@ -115,6 +116,12 @@ function buildHints(guess: QuizPokemon, target: QuizPokemon): AttemptHints {
     heightM: guess.heightM === target.heightM ? "correct" : "wrong",
     weightKg: guess.weightKg === target.weightKg ? "correct" : "wrong",
   };
+}
+
+function getHintAccuracyPercent(hints: AttemptHints): number {
+  const values = Object.values(hints);
+  const correctCount = values.filter((status) => status === "correct").length;
+  return Math.round((correctCount / values.length) * 100);
 }
 
 function getDirection(guessValue: number, targetValue: number): Direction {
@@ -249,29 +256,48 @@ export function PokedleRound({
       inputRef.current?.focus();
     }, 0);
 
-    session.recordRound({
-      question: "Trouve le Pokémon mystère",
-      userAnswer: guessedPokemon.nameFr,
-      correctAnswer: target.nameFr,
-      isCorrect,
-    });
+    if (isCorrect) {
+      session.recordRound({
+        question: "Trouve le Pokémon mystère",
+        userAnswer: guessedPokemon.nameFr,
+        correctAnswer: target.nameFr,
+        isCorrect: true,
+        attemptCount: attempts.length + 1,
+        chosenImage: guessedPokemon.artwork,
+        chosenLabel: guessedPokemon.nameFr,
+        correctImage: target.artwork,
+        hintAccuracyPercent: 100,
+      });
+    }
   };
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     if (isSolved) return;
+
+    const lastAttempt = attempts[0];
 
     session.recordRound({
       question: "Trouve le Pokémon mystère",
       userAnswer: "Abandon",
       correctAnswer: target.nameFr,
       isCorrect: false,
+      skipped: true,
+      attemptCount: attempts.length,
+      chosenImage: lastAttempt?.guess.artwork,
+      chosenLabel: lastAttempt?.guess.nameFr,
+      correctImage: target.artwork,
+      hintAccuracyPercent: lastAttempt
+        ? getHintAccuracyPercent(lastAttempt.hints)
+        : 0,
     });
 
     setGuessName("");
     setWasAbandoned(true);
     setIsSolved(true);
     setFeedback(`Abandonné. C'était ${target.nameFr}.`);
-  };
+  }, [attempts, isSolved, session, target.artwork, target.nameFr]);
+
+  useRegisterSkip(handleSkip, !isSolved);
 
   return (
     <div className="space-y-8">
@@ -294,11 +320,6 @@ export function PokedleRound({
           <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
             Valider
           </Button>
-          {!isSolved ? (
-            <Button type="button" size="lg" variant="outline" onClick={handleSkip}>
-              Passer
-            </Button>
-          ) : null}
           {isSolved && !onRoundComplete ? (
             <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
               Suivant

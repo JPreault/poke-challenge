@@ -2,9 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useCallback } from "react";
 
+import {
+  RoundActionsProvider,
+  useRoundActions,
+} from "@/components/game/RoundActionsContext";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { getGameModeLabel, computeBlurGuessStats } from "@/lib/games/types";
+import type { RoundRecord } from "@/lib/games/types";
 import type { GameSession } from "@/lib/games/useGameSession";
 import { cn } from "@/lib/utils";
 
@@ -19,21 +26,47 @@ interface GameShellProps {
   children: React.ReactNode;
 }
 
-export function GameShell({
+export function GameShell(props: GameShellProps) {
+  return (
+    <RoundActionsProvider>
+      <GameShellInner {...props} />
+    </RoundActionsProvider>
+  );
+}
+
+function GameShellInner({
   session,
   title,
   description,
   modeLabel,
-  homeHref = "/",
+  homeHref,
   replayHref,
   maxWidthClassName = "max-w-2xl",
   children,
 }: GameShellProps) {
-  const { stats, isFinished, stopGame } = session;
-  const displayedModeLabel = modeLabel ?? getGameModeLabel(session.mode);
+  const { stats, isFinished, stopGame, mode } = session;
+  const { skipAction } = useRoundActions();
+  const searchParams = useSearchParams();
+  const isBacTraining = searchParams.get("interface") === "bac-training";
+  const resolvedHomeHref =
+    homeHref ?? (isBacTraining ? "/?interface=bac-training" : "/");
+  const resolvedReplayHref =
+    replayHref ??
+    (isBacTraining ? `/game/${mode}?interface=bac-training` : `/game/${mode}`);
+  const displayedModeLabel = modeLabel ?? getGameModeLabel(mode);
+
+  const handleReplay = useCallback(() => {
+    window.location.assign(resolvedReplayHref);
+  }, [resolvedReplayHref]);
 
   if (isFinished) {
-    return <GameRecap session={session} homeHref={homeHref} replayHref={replayHref} />;
+    return (
+      <GameRecap
+        session={session}
+        homeHref={resolvedHomeHref}
+        onReplay={handleReplay}
+      />
+    );
   }
 
   return (
@@ -45,7 +78,7 @@ export function GameShell({
     >
       <header className="space-y-6">
         <Link
-          href={homeHref}
+          href={resolvedHomeHref}
           className="inline-flex text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           ← Retour
@@ -64,21 +97,35 @@ export function GameShell({
             ) : null}
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-3">
-            <div className="rounded-full bg-muted px-4 py-2 text-sm">
-              <span className="text-muted-foreground">Manche </span>
-              <span className="font-semibold">{stats.totalRounds + 1}</span>
+          <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
+            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+              <div className="rounded-full bg-muted px-4 py-2 text-sm">
+                <span className="text-muted-foreground">Manche </span>
+                <span className="font-semibold">{stats.totalRounds + 1}</span>
+              </div>
+              <div className="rounded-full bg-muted px-4 py-2 text-sm">
+                <span className="font-semibold">{stats.correctCount}</span>
+                <span className="text-muted-foreground">
+                  {" "}
+                  / {stats.totalRounds}
+                </span>
+              </div>
+              <Button variant="outline" size="sm" onClick={stopGame}>
+                Stop
+              </Button>
             </div>
-            <div className="rounded-full bg-muted px-4 py-2 text-sm">
-              <span className="font-semibold">{stats.correctCount}</span>
-              <span className="text-muted-foreground">
-                {" "}
-                / {stats.totalRounds}
-              </span>
-            </div>
-            <Button variant="outline" size="sm" onClick={stopGame}>
-              Stop
-            </Button>
+            {skipAction ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="sm:w-fit"
+                disabled={skipAction.disabled}
+                onClick={skipAction.onSkip}
+              >
+                Passer
+              </Button>
+            ) : null}
           </div>
         </div>
       </header>
@@ -88,72 +135,26 @@ export function GameShell({
   );
 }
 
+function playCryUrl(url: string) {
+  const audio = new Audio(url);
+  audio.volume = 0.35;
+  audio.play().catch(() => undefined);
+}
+
 function GameRecap({
   session,
   homeHref,
-  replayHref,
+  onReplay,
 }: {
   session: GameSession;
   homeHref: string;
-  replayHref?: string;
+  onReplay: () => void;
 }) {
   const { stats, mode, rounds } = session;
-
-  if (mode === "blur-guess" || mode === "zoom-guess") {
-    const blurStats = computeBlurGuessStats(rounds);
-
-    return (
-      <div className="mx-auto w-full max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
-        <div className="surface p-8 sm:p-10">
-          <div className="mb-10 space-y-2">
-            <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
-              {getGameModeLabel(mode)}
-            </p>
-            <h1 className="font-heading text-3xl font-bold">Récapitulatif</h1>
-          </div>
-
-          <div className="mb-10 grid grid-cols-2 gap-4">
-            <StatBlock label="Manches" value={blurStats.completedRounds} />
-            <StatBlock
-              label="Tentatives (moy.)"
-              value={
-                blurStats.averageAttempts !== null
-                  ? blurStats.averageAttempts.toLocaleString("fr-FR", {
-                      minimumFractionDigits: 1,
-                      maximumFractionDigits: 1,
-                    })
-                  : "—"
-              }
-            />
-          </div>
-
-          {blurStats.completedRounds === 0 ? (
-            <p className="mb-10 text-sm text-muted-foreground">
-              Aucune manche terminée.
-            </p>
-          ) : null}
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href={replayHref ?? `/game/${mode}`}
-              className={cn(buttonVariants({ size: "lg" }), "inline-flex")}
-            >
-              Rejouer
-            </Link>
-            <Link
-              href={homeHref}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "inline-flex",
-              )}
-            >
-              Changer de jeu
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const blurStats =
+    mode === "blur-guess" || mode === "zoom-guess"
+      ? computeBlurGuessStats(rounds)
+      : null;
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
@@ -172,80 +173,24 @@ function GameRecap({
           <StatBlock label="Réussite" value={`${stats.successRate}%`} />
         </div>
 
+        {blurStats && blurStats.averageAttempts !== null ? (
+          <p className="mb-8 text-sm text-muted-foreground">
+            Tentatives moyennes (manches réussies) :{" "}
+            <span className="font-medium text-foreground">
+              {blurStats.averageAttempts.toLocaleString("fr-FR", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              })}
+            </span>
+          </p>
+        ) : null}
+
         {stats.errors.length > 0 ? (
           <div className="mb-10 space-y-4">
             <h2 className="font-heading text-lg font-semibold">Erreurs</h2>
             <ul className="space-y-3">
               {stats.errors.map((round) => (
-                <li
-                  key={round.round}
-                  className="rounded-xl border border-border/60 bg-muted/30 px-5 py-4 text-sm leading-6"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <p className="font-medium">{round.question}</p>
-                      {round.questionImage ? (
-                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border/60 bg-background">
-                          <Image
-                            src={round.questionImage}
-                            alt={round.correctAnswer}
-                            fill
-                            sizes="40px"
-                            className="object-contain"
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="text-muted-foreground">
-                      Ta réponse : {round.userAnswer || "—"}
-                    </div>
-
-                    {round.chosenImage ? (
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Image choisie
-                        </p>
-                        <div className="inline-flex flex-col items-center gap-1 rounded-md border border-border/60 bg-background p-2">
-                          <div className="relative h-16 w-16">
-                            <Image
-                              src={round.chosenImage}
-                              alt={round.chosenLabel ?? round.userAnswer}
-                              fill
-                              sizes="64px"
-                              className="object-contain"
-                            />
-                          </div>
-                          <span className="text-xs font-medium text-foreground">
-                            {round.chosenLabel ?? round.userAnswer}
-                          </span>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    <div className="space-y-2">
-                      <p className="font-medium text-foreground">
-                        Bonne réponse : {round.correctAnswer}
-                      </p>
-                      {round.correctImage ? (
-                        <div className="inline-flex flex-col items-center gap-1 rounded-md border border-border/60 bg-background p-2">
-                          <div className="relative h-16 w-16">
-                            <Image
-                              src={round.correctImage}
-                              alt={round.correctAnswer}
-                              fill
-                              sizes="64px"
-                              className="object-contain"
-                            />
-                          </div>
-                          <span className="text-xs font-medium text-foreground">
-                            {round.correctAnswer}
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </li>
+                <ErrorRoundItem key={round.round} round={round} mode={mode} />
               ))}
             </ul>
           </div>
@@ -260,12 +205,9 @@ function GameRecap({
         )}
 
         <div className="flex flex-wrap gap-3">
-          <Link
-            href={replayHref ?? `/game/${mode}`}
-            className={cn(buttonVariants({ size: "lg" }), "inline-flex")}
-          >
+          <Button type="button" size="lg" onClick={onReplay}>
             Rejouer
-          </Link>
+          </Button>
           <Link
             href={homeHref}
             className={cn(
@@ -278,6 +220,193 @@ function GameRecap({
         </div>
       </div>
     </div>
+  );
+}
+
+function ErrorRoundItem({
+  round,
+  mode,
+}: {
+  round: RoundRecord;
+  mode: GameSession["mode"];
+}) {
+  const isCry = mode === "cry-guess" || Boolean(round.userAnswerCry || round.correctAnswerCry);
+  // Deduction games (and their shuffle rounds) record attemptCount / hint % on skip only.
+  const isDeductionRecap =
+    Boolean(round.skipped) &&
+    (round.hintAccuracyPercent != null || round.attemptCount != null);
+
+  return (
+    <li className="rounded-xl border border-border/60 bg-muted/30 px-5 py-4 text-sm leading-6">
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <p className="font-medium">{round.question}</p>
+          {round.questionImage && !isDeductionRecap ? (
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border/60 bg-background">
+              <Image
+                src={round.questionImage}
+                alt={round.correctAnswer}
+                fill
+                sizes="40px"
+                className="object-contain"
+              />
+            </div>
+          ) : null}
+        </div>
+
+        {isDeductionRecap ? (
+          <div className="flex flex-wrap gap-6">
+            <AnswerCard
+              label="Dernière proposition"
+              name={round.chosenLabel ?? (round.userAnswer !== "Abandon" ? round.userAnswer : null)}
+              image={round.chosenImage}
+              hint={
+                round.hintAccuracyPercent != null
+                  ? `${round.hintAccuracyPercent}% d'indices trouvés`
+                  : null
+              }
+            />
+            <AnswerCard
+              label="Bonne réponse"
+              name={round.correctAnswer}
+              image={round.correctImage}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+              <span>Ta réponse : {round.userAnswer || "—"}</span>
+              {isCry && round.userAnswerCry ? (
+                <CryPlayButton cryUrl={round.userAnswerCry} label="Écouter ta réponse" />
+              ) : null}
+            </div>
+
+            {round.chosenImage ? (
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Image choisie
+                </p>
+                <div className="inline-flex flex-col items-center gap-1 rounded-md border border-border/60 bg-background p-2">
+                  <div className="relative h-16 w-16">
+                    <Image
+                      src={round.chosenImage}
+                      alt={round.chosenLabel ?? round.userAnswer}
+                      fill
+                      sizes="64px"
+                      className="object-contain"
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-foreground">
+                    {round.chosenLabel ?? round.userAnswer}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium text-foreground">
+                Bonne réponse : {round.correctAnswer}
+              </p>
+              {(mode === "cry-guess" || round.correctAnswerCry) &&
+              round.correctAnswerCry ? (
+                <CryPlayButton
+                  cryUrl={round.correctAnswerCry}
+                  label="Écouter la bonne réponse"
+                />
+              ) : null}
+            </div>
+
+            {round.correctImage ? (
+              <div className="inline-flex flex-col items-center gap-1 rounded-md border border-border/60 bg-background p-2">
+                <div className="relative h-16 w-16">
+                  <Image
+                    src={round.correctImage}
+                    alt={round.correctAnswer}
+                    fill
+                    sizes="64px"
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-xs font-medium text-foreground">
+                  {round.correctAnswer}
+                </span>
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function AnswerCard({
+  label,
+  name,
+  image,
+  hint,
+}: {
+  label: string;
+  name: string | null | undefined;
+  image?: string;
+  hint?: string | null;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      {name || image ? (
+        <div className="inline-flex flex-col items-center gap-1 rounded-md border border-border/60 bg-background p-2">
+          {image ? (
+            <div className="relative h-16 w-16">
+              <Image
+                src={image}
+                alt={name ?? label}
+                fill
+                sizes="64px"
+                className="object-contain"
+              />
+            </div>
+          ) : null}
+          {name ? (
+            <span className="text-xs font-medium text-foreground">{name}</span>
+          ) : (
+            <span className="text-xs text-muted-foreground">Aucune</span>
+          )}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">Aucune proposition</p>
+      )}
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function CryPlayButton({ cryUrl, label }: { cryUrl: string; label: string }) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon-sm"
+      aria-label={label}
+      title={label}
+      onClick={() => playCryUrl(cryUrl)}
+    >
+      <PlayIcon />
+    </Button>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="size-3.5"
+      aria-hidden
+    >
+      <path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86A1 1 0 0 0 8 5.14Z" />
+    </svg>
   );
 }
 

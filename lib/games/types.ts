@@ -56,6 +56,14 @@ export interface RoundRecord {
   chosenImage?: string;
   chosenLabel?: string;
   correctImage?: string;
+  /** True when the player skipped/abandoned the round. */
+  skipped?: boolean;
+  /** Number of guesses before solve/skip (blur/zoom/description/pokedle). */
+  attemptCount?: number;
+  /** Share of correct Pokedle hint cells, 0–100. */
+  hintAccuracyPercent?: number;
+  userAnswerCry?: string;
+  correctAnswerCry?: string;
 }
 
 export interface GameSessionState {
@@ -157,24 +165,17 @@ export interface BlurGuessStats {
 }
 
 export function computeBlurGuessStats(rounds: RoundRecord[]): BlurGuessStats {
-  let completedRounds = 0;
-  let totalAttempts = 0;
-  let currentAttempts = 0;
-
-  for (const round of rounds) {
-    currentAttempts += 1;
-    if (round.isCorrect) {
-      completedRounds += 1;
-      totalAttempts += currentAttempts;
-      currentAttempts = 0;
-    }
-  }
+  const successful = rounds.filter((round) => round.isCorrect);
+  const totalAttempts = successful.reduce(
+    (sum, round) => sum + (round.attemptCount ?? 1),
+    0,
+  );
 
   return {
-    completedRounds,
+    completedRounds: successful.length,
     averageAttempts:
-      completedRounds > 0
-        ? Math.round((totalAttempts / completedRounds) * 10) / 10
+      successful.length > 0
+        ? Math.round((totalAttempts / successful.length) * 10) / 10
         : null,
   };
 }

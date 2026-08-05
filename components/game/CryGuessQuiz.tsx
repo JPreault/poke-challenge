@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
+import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
 import { buildQuizChoices } from "@/lib/games/distractors";
 import { pickRandom } from "@/lib/games/random";
@@ -70,6 +71,30 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
     audio.onended = () => setIsPlayingId((current) => (current === pokemon.id ? null : current));
   }, []);
 
+  const handleSkip = useCallback(() => {
+    if (!round || feedback.type !== "idle") return;
+
+    session.recordRound({
+      question: `Quel cri correspond à ${round.pokemon.nameFr} ?`,
+      userAnswer: "Abandon",
+      correctAnswer: round.pokemon.nameFr,
+      isCorrect: false,
+      skipped: true,
+      questionImage: round.pokemon.artwork,
+      correctImage: round.pokemon.artwork,
+      correctAnswerCry: round.pokemon.cryLatest,
+    });
+
+    setFeedback({
+      type: "incorrect",
+      message: `Abandonné. C'était ${round.pokemon.nameFr}.`,
+    });
+    playCry(round.pokemon);
+    window.setTimeout(advanceRound, 1800);
+  }, [advanceRound, feedback.type, playCry, round, session]);
+
+  useRegisterSkip(handleSkip, Boolean(round) && feedback.type === "idle");
+
   const validateChoice = (pokemon: QuizPokemon) => {
     if (!round || feedback.type !== "idle") return;
 
@@ -94,6 +119,8 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       correctAnswer: round.pokemon.nameFr,
       isCorrect,
       questionImage: round.pokemon.artwork,
+      userAnswerCry: pokemon.cryLatest,
+      correctAnswerCry: round.pokemon.cryLatest,
     });
 
     window.setTimeout(advanceRound, isCorrect ? 1200 : 2200);
