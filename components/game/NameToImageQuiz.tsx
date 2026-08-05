@@ -139,6 +139,7 @@ export function NameToImageRound({ session, onRoundComplete }: RoundProps) {
                   alt={pokemon.nameFr}
                   fill
                   sizes="112px"
+                  loading="eager"
                   className="object-contain"
                 />
               </div>
