@@ -53,12 +53,15 @@ export function ShuffleSetup({ interfaceMode }: ShuffleSetupProps) {
     if (selected.length === 0) return;
 
     const games = buildShuffleGamesQuery(selected);
-    const params = new URLSearchParams({ games });
+    const params = new URLSearchParams();
+    params.set("games", games);
     if (interfaceMode === "bac-training") {
       params.set("interface", "bac-training");
     }
 
-    router.push(`/game/shuffle?${params.toString()}`);
+    const href = `/game/shuffle?${params.toString()}`;
+    router.push(href);
+    router.refresh();
   };
 
   return (

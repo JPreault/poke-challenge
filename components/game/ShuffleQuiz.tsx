@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BlurGuessRound } from "@/components/game/BlurGuessQuiz";
 import { ZoomGuessRound } from "@/components/game/ZoomGuessQuiz";
@@ -11,7 +11,11 @@ import { ImageToNameRound } from "@/components/game/ImageToNameQuiz";
 import { LetterInputRound } from "@/components/game/LetterInputQuiz";
 import { NameToImageRound } from "@/components/game/NameToImageQuiz";
 import { PokedleRound } from "@/components/game/PokedleQuiz";
-import { buildShuffleGamesQuery, pickShuffleRoundType } from "@/lib/games/shuffle";
+import {
+  buildShuffleGamesQuery,
+  createShuffleDeck,
+  drawNextShuffleRoundType,
+} from "@/lib/games/shuffle";
 import {
   getShuffleRoundDescription,
   getShuffleRoundLabel,
@@ -35,16 +39,23 @@ export function ShuffleQuiz({
 }: ShuffleQuizProps) {
   const [roundType, setRoundType] = useState<ShuffleRoundType | null>(null);
   const [roundKey, setRoundKey] = useState(0);
+  const deckRef = useRef<ShuffleRoundType[]>([]);
 
-  const nextShuffleRound = useCallback(() => {
-    setRoundType(pickShuffleRoundType(selectedRoundTypes));
+  const drawRound = useCallback(() => {
+    const { nextType, remainingDeck } = drawNextShuffleRoundType(
+      deckRef.current,
+      selectedRoundTypes,
+    );
+    deckRef.current = remainingDeck;
+    setRoundType(nextType);
     setRoundKey((current) => current + 1);
   }, [selectedRoundTypes]);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(nextShuffleRound, 0);
+    deckRef.current = createShuffleDeck(selectedRoundTypes);
+    const timeoutId = window.setTimeout(drawRound, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [nextShuffleRound]);
+  }, [drawRound, selectedRoundTypes]);
 
   const roundLabel = roundType ? getShuffleRoundLabel(roundType) : "Shuffle";
   const roundDescription = roundType
@@ -79,53 +90,47 @@ export function ShuffleQuiz({
           {roundType === "image-to-name" ? (
             <ImageToNameRound
               session={session}
-              onRoundComplete={nextShuffleRound}
+              onRoundComplete={drawRound}
               useBacPool={useBacPool}
             />
           ) : null}
           {roundType === "name-to-image" ? (
             <NameToImageRound
               session={session}
-              onRoundComplete={nextShuffleRound}
+              onRoundComplete={drawRound}
               useBacPool={useBacPool}
             />
           ) : null}
           {roundType === "letter-input" ? (
             <LetterInputRound
               session={session}
-              onRoundComplete={nextShuffleRound}
+              onRoundComplete={drawRound}
               validationMode={useBacPool ? "free" : "catalog"}
             />
           ) : null}
           {roundType === "cry-guess" ? (
-            <CryGuessRound
-              session={session}
-              onRoundComplete={nextShuffleRound}
-            />
+            <CryGuessRound session={session} onRoundComplete={drawRound} />
           ) : null}
           {roundType === "pokedle" ? (
-            <PokedleRound
-              session={session}
-              onRoundComplete={nextShuffleRound}
-            />
+            <PokedleRound session={session} onRoundComplete={drawRound} />
           ) : null}
           {roundType === "description-guess" ? (
             <DescriptionGuessRound
               session={session}
-              onRoundComplete={nextShuffleRound}
+              onRoundComplete={drawRound}
             />
           ) : null}
           {roundType === "blur-guess" ? (
             <BlurGuessRound
               session={session}
-              onRoundComplete={nextShuffleRound}
+              onRoundComplete={drawRound}
               useBacPool={useBacPool}
             />
           ) : null}
           {roundType === "zoom-guess" ? (
             <ZoomGuessRound
               session={session}
-              onRoundComplete={nextShuffleRound}
+              onRoundComplete={drawRound}
               useBacPool={useBacPool}
             />
           ) : null}

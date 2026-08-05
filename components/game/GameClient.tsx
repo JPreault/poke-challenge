@@ -1,5 +1,7 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
 import { BlurGuessQuiz } from "@/components/game/BlurGuessQuiz";
 import { ZoomGuessQuiz } from "@/components/game/ZoomGuessQuiz";
 import { ImageToNameQuiz } from "@/components/game/ImageToNameQuiz";
@@ -10,6 +12,7 @@ import { DescriptionGuessQuiz } from "@/components/game/DescriptionGuessQuiz";
 import { ShuffleQuiz } from "@/components/game/ShuffleQuiz";
 import { ShuffleSetup } from "@/components/game/ShuffleSetup";
 import { PokedleQuiz } from "@/components/game/PokedleQuiz";
+import { parseShuffleGamesParam } from "@/lib/games/shuffle";
 import type {
   GameInterfaceMode,
   GameMode,
@@ -29,7 +32,17 @@ export function GameClient({
   selectedShuffleRoundTypes = [],
 }: GameClientProps) {
   const session = useGameSession(mode);
+  const searchParams = useSearchParams();
   const useBacPool = interfaceMode === "bac-training";
+
+  // Source of truth client-side: soft navigation to the same path with ?games=
+  // does not always refresh server props reliably.
+  const selectedFromUrl = parseShuffleGamesParam(
+    searchParams.get("games") ?? undefined,
+    useBacPool,
+  );
+  const selectedShuffleTypes =
+    selectedFromUrl.length > 0 ? selectedFromUrl : selectedShuffleRoundTypes;
 
   switch (mode) {
     case "image-to-name":
@@ -56,14 +69,15 @@ export function GameClient({
     case "cry-guess":
       return <CryGuessQuiz session={session} />;
     case "shuffle":
-      if (selectedShuffleRoundTypes.length === 0) {
+      if (selectedShuffleTypes.length === 0) {
         return <ShuffleSetup interfaceMode={interfaceMode} />;
       }
 
       return (
         <ShuffleQuiz
+          key={selectedShuffleTypes.join(",")}
           session={session}
-          selectedRoundTypes={selectedShuffleRoundTypes}
+          selectedRoundTypes={selectedShuffleTypes}
           useBacPool={useBacPool}
           interfaceMode={interfaceMode}
         />
