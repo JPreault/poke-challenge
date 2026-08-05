@@ -77,6 +77,66 @@ export function NameToImageRound({ session, onRoundComplete }: RoundProps) {
     window.setTimeout(advanceRound, 1000);
   };
 
+  const handleChoiceKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (!round || feedback !== "idle") return;
+
+    const columns = 2;
+    let nextIndex = index;
+
+    if (event.key === "ArrowRight") nextIndex = index + 1;
+    if (event.key === "ArrowLeft") nextIndex = index - 1;
+    if (event.key === "ArrowDown") nextIndex = index + columns;
+    if (event.key === "ArrowUp") nextIndex = index - columns;
+
+    if (nextIndex === index) return;
+    if (nextIndex < 0 || nextIndex >= round.choices.length) return;
+
+    event.preventDefault();
+    const nextButton = document.getElementById(
+      `name-to-image-choice-${nextIndex}`,
+    ) as HTMLButtonElement | null;
+    nextButton?.focus();
+  };
+
+  useEffect(() => {
+    if (!round || feedback !== "idle") return;
+
+    const focusChoiceFromArrow = (event: KeyboardEvent) => {
+      if (
+        event.key !== "ArrowRight" &&
+        event.key !== "ArrowLeft" &&
+        event.key !== "ArrowDown" &&
+        event.key !== "ArrowUp"
+      ) {
+        return;
+      }
+
+      const active = document.activeElement as HTMLElement | null;
+      const isAlreadyOnChoice = active?.id?.startsWith("name-to-image-choice-");
+      if (isAlreadyOnChoice) return;
+
+      const targetIndex =
+        event.key === "ArrowLeft" || event.key === "ArrowUp"
+          ? round.choices.length - 1
+          : 0;
+      const target = document.getElementById(
+        `name-to-image-choice-${targetIndex}`,
+      ) as HTMLButtonElement | null;
+
+      if (!target) return;
+      event.preventDefault();
+      target.focus();
+    };
+
+    window.addEventListener("keydown", focusChoiceFromArrow);
+    return () => {
+      window.removeEventListener("keydown", focusChoiceFromArrow);
+    };
+  }, [round, feedback]);
+
   if (!round) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
@@ -110,13 +170,14 @@ export function NameToImageRound({ session, onRoundComplete }: RoundProps) {
       )}
 
       <div className="grid w-full grid-cols-2 gap-4">
-        {round.choices.map((pokemon) => {
+        {round.choices.map((pokemon, index) => {
           const isSelected = selectedId === pokemon.id;
           const isCorrectChoice = pokemon.id === round.pokemon.id;
 
           return (
             <button
               key={pokemon.id}
+              id={`name-to-image-choice-${index}`}
               type="button"
               className={cn(
                 "display-frame flex items-center justify-center p-6 transition disabled:cursor-not-allowed",
@@ -131,6 +192,7 @@ export function NameToImageRound({ session, onRoundComplete }: RoundProps) {
                   "border-poke-red/40 bg-poke-red/5",
               )}
               onClick={() => handleAnswer(pokemon)}
+              onKeyDown={(event) => handleChoiceKeyDown(event, index)}
               disabled={feedback !== "idle"}
             >
               <div className="relative h-28 w-28">

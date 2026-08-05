@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRef } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { BAC_POKEMON } from "@/data/bac-list";
@@ -36,6 +39,27 @@ const GAMES = [
 ] as const;
 
 export default function HomePage() {
+  const gameLinksRef = useRef<Array<HTMLAnchorElement | null>>([]);
+
+  const handleGameCardKeyDown = (
+    event: React.KeyboardEvent<HTMLAnchorElement>,
+    index: number,
+  ) => {
+    const columns = 2;
+    let nextIndex = index;
+
+    if (event.key === "ArrowRight") nextIndex = index + 1;
+    if (event.key === "ArrowLeft") nextIndex = index - 1;
+    if (event.key === "ArrowDown") nextIndex = index + columns;
+    if (event.key === "ArrowUp") nextIndex = index - columns;
+
+    if (nextIndex === index) return;
+    if (nextIndex < 0 || nextIndex >= GAMES.length) return;
+
+    event.preventDefault();
+    gameLinksRef.current[nextIndex]?.focus();
+  };
+
   return (
     <main className="mx-auto w-full max-w-4xl px-6 py-16 sm:px-8 sm:py-24">
       <header className="mb-20 max-w-2xl">
@@ -57,7 +81,7 @@ export default function HomePage() {
           Mini-jeux
         </h2>
         <div className="grid gap-6 sm:grid-cols-2">
-          {GAMES.map((game) => (
+          {GAMES.map((game, index) => (
             <article
               key={game.href}
               className="surface-hover flex flex-col p-8"
@@ -79,6 +103,10 @@ export default function HomePage() {
 
               <Link
                 href={game.href}
+                ref={(node) => {
+                  gameLinksRef.current[index] = node;
+                }}
+                onKeyDown={(event) => handleGameCardKeyDown(event, index)}
                 className={cn(
                   buttonVariants({ size: "lg" }),
                   "mt-10 w-full justify-center",
