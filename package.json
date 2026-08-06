@@ -6,6 +6,7 @@
         "dev": "next dev --turbopack -p 4000",
         "prebuild": "tsx scripts/generate-pokemon-data.ts",
         "generate:pokemon": "FORCE_GENERATE_POKEMON=1 tsx scripts/generate-pokemon-data.ts",
+        "postinstall": "prisma generate",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:studio": "prisma studio",
