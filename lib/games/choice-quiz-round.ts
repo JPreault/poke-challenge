@@ -11,6 +11,7 @@ import type {
   ChoiceQuizStartResult,
   QuizPool,
 } from "@/lib/games/choice-quiz-types";
+import { normalizeQuizPool } from "@/lib/games/choice-quiz-types";
 import {
   proxyArtworkUrl,
   proxyCryUrl,
@@ -19,18 +20,23 @@ import {
 import { pickRandom } from "@/lib/games/random";
 import {
   findCatalogPokemonById,
-  getBacPokemon,
   getCatalogPokemon,
 } from "@/lib/pokemon/data";
+import { getTrainingQuizPokemon } from "@/lib/pokemon/training-pool";
 import type { QuizPokemon } from "@/lib/pokemon/types";
 
-function pickTarget(pool: QuizPool): QuizPokemon {
-  const catalog = getCatalogPokemon();
-  if (pool === "bac") {
-    const bacEntry = pickRandom(getBacPokemon());
-    return findCatalogPokemonById(bacEntry.id) ?? pickRandom(catalog);
+async function pickTarget(
+  pool: QuizPool,
+  userId?: string,
+): Promise<QuizPokemon | null> {
+  const normalized = normalizeQuizPool(pool);
+  if (normalized === "training") {
+    if (!userId) return null;
+    const training = await getTrainingQuizPokemon(userId);
+    if (training.length === 0) return null;
+    return pickRandom(training);
   }
-  return pickRandom(catalog);
+  return pickRandom(getCatalogPokemon());
 }
 
 function toReveal(pokemon: QuizPokemon): ChoiceQuizReveal {
@@ -47,6 +53,7 @@ function buildStartResult(
   pool: QuizPool,
   target: QuizPokemon,
   choices: QuizPokemon[],
+  userId?: string,
 ): ChoiceQuizStartResult {
   const choiceIds = choices.map((pokemon) => pokemon.id);
   const token = createChoiceQuizToken({
@@ -54,6 +61,7 @@ function buildStartResult(
     choiceIds,
     mode,
     pool,
+    userId,
   });
 
   const result: ChoiceQuizStartResult = {
@@ -80,14 +88,34 @@ function buildStartResult(
   return result;
 }
 
-export function startChoiceQuizRound(
+export async function startChoiceQuizRound(
   mode: ChoiceQuizMode,
   pool: QuizPool,
-): ChoiceQuizStartResult {
-  const target = pickTarget(pool);
+  userId?: string,
+): Promise<ChoiceQuizStartResult | { error: string; status: number }> {
+  const normalized = normalizeQuizPool(pool);
+  if (normalized === "training" && !userId) {
+    return { error: "Connexion requise pour l'entraînement.", status: 401 };
+  }
+
+  const target = await pickTarget(pool, userId);
+  if (!target) {
+    return {
+      error:
+        "Ta liste d'entraînement est vide. Ajoute des Pokémon dans ton profil.",
+      status: 400,
+    };
+  }
+
   const catalog = getCatalogPokemon();
   const choices = buildQuizChoices(target, catalog);
-  return buildStartResult(mode, pool, target, choices);
+  return buildStartResult(
+    mode,
+    normalized,
+    target,
+    choices,
+    normalized === "training" ? userId : undefined,
+  );
 }
 
 export function answerChoiceQuizRound(
@@ -156,11 +184,4 @@ export function skipChoiceQuizRound(token: string): ChoiceQuizSkipResult {
   }
 
   return { status: "ok", reveal: toReveal(target) };
-}
-
-export function getChoiceQuizCorrectReveal(token: string): ChoiceQuizReveal | null {
-  const payload = verifyChoiceQuizToken(token);
-  if (!payload) return null;
-  const target = findCatalogPokemonById(payload.targetId);
-  return target ? toReveal(target) : null;
 }

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { pickRandom } from "@/lib/games/random";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { getBacSearchEntries, getSearchCatalog } from "@/lib/pokemon/client-data";
+import { getSearchCatalog } from "@/lib/pokemon/client-data";
 import { getFirstLetter } from "@/lib/pokemon/normalize";
 import type { ValidationMode, ValidationResult } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
@@ -41,20 +41,6 @@ type FeedbackState =
       correctSpelling?: string;
     };
 
-function getExampleNameForLetter(letter: string, validationMode: ValidationMode): string {
-  if (validationMode !== "catalog") {
-    return (
-      getBacSearchEntries().find((pokemon) => pokemon.letter === letter.toUpperCase())
-        ?.nameFr ?? letter
-    );
-  }
-
-  const matches = getSearchCatalog().filter(
-    (pokemon) => getFirstLetter(pokemon.nameFr) === letter.toUpperCase(),
-  );
-  return matches.length > 0 ? pickRandom(matches).nameFr : letter;
-}
-
 function buildFeedback(
   result: ValidationResult,
   userAnswer: string,
@@ -65,8 +51,16 @@ function buildFeedback(
 ): FeedbackState {
   const example = exampleName ?? fallbackExpected ?? roundLetter;
 
-  if (validationMode === "catalog") {
+  if (validationMode === "catalog" || validationMode === "training") {
     if (!result.correct) {
+      if (result.matched && validationMode === "training") {
+        return {
+          type: "error",
+          message: `${result.matched} ne fait pas partie de ta liste (ou ne commence pas par ${roundLetter}).`,
+          userAnswer,
+          correctSpelling: example,
+        };
+      }
       if (result.matched) {
         return {
           type: "error",
@@ -115,7 +109,7 @@ function buildFeedback(
   if (!result.preferred) {
     return {
       type: "success",
-      message: `Valide, mais pour ce bac c'était ${expected}.`,
+      message: `Valide, mais pour cette lettre c'était ${expected}.`,
       preferred: false,
       userAnswer,
       hasTypo: Boolean(result.hasTypo),
@@ -178,19 +172,66 @@ function FeedbackMessage({ feedback }: { feedback: FeedbackState }) {
 export function LetterInputRound({
   session,
   onRoundComplete,
-  validationMode = "free",
+  validationMode = "training",
 }: RoundProps) {
-  const allPokemon = useMemo(() => getBacSearchEntries(), []);
+  const [trainingNames, setTrainingNames] = useState<string[]>([]);
+  const [poolReady, setPoolReady] = useState(validationMode !== "training");
+  const [poolError, setPoolError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (validationMode !== "training") {
+      setPoolReady(true);
+      return;
+    }
+
+    let active = true;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/training/pool", { cache: "no-store" });
+        if (!response.ok) {
+          if (active) {
+            setPoolError("Impossible de charger ta liste d'entraînement.");
+            setPoolReady(true);
+          }
+          return;
+        }
+        const payload = (await response.json()) as {
+          catalog: Array<{ id: number; nameFr: string }>;
+        };
+        if (!active) return;
+        setTrainingNames(payload.catalog.map((entry) => entry.nameFr));
+        if (payload.catalog.length === 0) {
+          setPoolError(
+            "Ta liste d'entraînement est vide. Ajoute des Pokémon dans ton profil.",
+          );
+        }
+        setPoolReady(true);
+      } catch {
+        if (active) {
+          setPoolError("Impossible de charger ta liste d'entraînement.");
+          setPoolReady(true);
+        }
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [validationMode]);
+
   const availableLetters = useMemo(() => {
-    if (validationMode !== "catalog") {
-      return allPokemon.map((pokemon) => pokemon.letter);
+    if (validationMode === "training") {
+      return Array.from(
+        new Set(trainingNames.map((name) => getFirstLetter(name)).filter(Boolean)),
+      );
     }
 
     const uniqueLetters = new Set(
       getSearchCatalog().map((pokemon) => getFirstLetter(pokemon.nameFr)),
     );
     return Array.from(uniqueLetters).filter(Boolean);
-  }, [allPokemon, validationMode]);
+  }, [trainingNames, validationMode]);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [currentLetter, setCurrentLetter] = useState<string | null>(null);
   const [expectedName, setExpectedName] = useState<string | undefined>(undefined);
@@ -198,19 +239,32 @@ export function LetterInputRound({
   const [feedback, setFeedback] = useState<FeedbackState>({ type: "idle" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const getExampleNameForLetter = useCallback(
+    (letter: string) => {
+      if (validationMode === "training") {
+        const matches = trainingNames.filter(
+          (name) => getFirstLetter(name) === letter.toUpperCase(),
+        );
+        return matches.length > 0 ? pickRandom(matches) : letter;
+      }
+
+      const matches = getSearchCatalog().filter(
+        (pokemon) => getFirstLetter(pokemon.nameFr) === letter.toUpperCase(),
+      );
+      return matches.length > 0 ? pickRandom(matches).nameFr : letter;
+    },
+    [trainingNames, validationMode],
+  );
+
   const startRound = useCallback(() => {
+    if (availableLetters.length === 0) return;
     const letter = pickRandom(availableLetters);
     setCurrentLetter(letter);
-    if (validationMode === "free") {
-      const expected = allPokemon.find((pokemon) => pokemon.letter === letter);
-      setExpectedName(expected?.nameFr);
-    } else {
-      setExpectedName(undefined);
-    }
+    setExpectedName(getExampleNameForLetter(letter));
     setAnswer("");
     setFeedback({ type: "idle" });
     setIsSubmitting(false);
-  }, [allPokemon, availableLetters, validationMode]);
+  }, [availableLetters, getExampleNameForLetter]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -221,9 +275,10 @@ export function LetterInputRound({
   }, [onRoundComplete, startRound]);
 
   useEffect(() => {
+    if (!poolReady || availableLetters.length === 0) return;
     const timeoutId = window.setTimeout(startRound, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [startRound]);
+  }, [availableLetters.length, poolReady, startRound]);
 
   useEffect(() => {
     if (!currentLetter || feedback.type !== "idle") return;
@@ -254,7 +309,7 @@ export function LetterInputRound({
       });
 
       const result = (await response.json()) as ValidationResult;
-      const exampleName = getExampleNameForLetter(currentLetter, validationMode);
+      const exampleName = getExampleNameForLetter(currentLetter);
 
       session.recordRound({
         question: `Nom de Pokémon pour la lettre ${currentLetter}`,
@@ -290,7 +345,7 @@ export function LetterInputRound({
     if (!currentLetter || feedback.type !== "idle") return;
 
     const exampleName =
-      expectedName ?? getExampleNameForLetter(currentLetter, validationMode);
+      expectedName ?? getExampleNameForLetter(currentLetter);
 
     session.recordRound({
       question: `Nom de Pokémon pour la lettre ${currentLetter}`,
@@ -306,9 +361,31 @@ export function LetterInputRound({
       userAnswer: "Abandon",
       correctSpelling: exampleName,
     });
-  }, [currentLetter, expectedName, feedback.type, session, validationMode]);
+  }, [
+    currentLetter,
+    expectedName,
+    feedback.type,
+    getExampleNameForLetter,
+    session,
+  ]);
 
   useRegisterSkip(handleSkip, Boolean(currentLetter) && feedback.type === "idle");
+
+  if (!poolReady) {
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground">
+        Préparation de la manche…
+      </div>
+    );
+  }
+
+  if (poolError) {
+    return (
+      <div className="flex h-64 items-center justify-center px-6 text-center text-muted-foreground">
+        {poolError}
+      </div>
+    );
+  }
 
   if (!currentLetter) {
     return (
@@ -363,13 +440,13 @@ export function LetterInputRound({
 
 export function LetterInputQuiz({
   session,
-  validationMode = "free",
+  validationMode = "training",
 }: LetterInputQuizProps) {
   return (
     <GameShell
       session={session}
       title="Lettre → Nom"
-      description="Entre un Pokémon existant dont le nom français commence par la lettre affichée."
+      description="Entre un Pokémon de ta liste dont le nom français commence par la lettre affichée."
     >
       <LetterInputRound session={session} validationMode={validationMode} />
     </GameShell>

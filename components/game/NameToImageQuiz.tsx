@@ -43,9 +43,11 @@ export function NameToImageRound({
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const startRound = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     setFeedback("idle");
     setSelectedIndex(null);
 
@@ -55,11 +57,15 @@ export function NameToImageRound({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "name-to-image",
-          pool: useBacPool ? "bac" : "catalog",
+          pool: useBacPool ? "training" : "catalog",
         }),
       });
 
       if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        setLoadError(payload?.error ?? "Impossible de démarrer la manche.");
         setRound(null);
         setIsLoading(false);
         return;
@@ -243,6 +249,14 @@ export function NameToImageRound({
     window.addEventListener("keydown", focusChoiceFromArrow);
     return () => window.removeEventListener("keydown", focusChoiceFromArrow);
   }, [round, feedback]);
+
+  if (loadError) {
+    return (
+      <div className="flex h-64 items-center justify-center px-6 text-center text-muted-foreground">
+        {loadError}
+      </div>
+    );
+  }
 
   if (isLoading || !round) {
     return (

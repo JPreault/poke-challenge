@@ -12,16 +12,17 @@ import type {
   MysterySkipResult,
   MysteryStartResult,
 } from "@/lib/games/mystery-types";
+import { normalizeMysteryPool } from "@/lib/games/mystery-types";
 import {
   proxyArtworkUrl,
   proxySpriteUrl,
 } from "@/lib/games/media-token";
 import {
   findCatalogPokemonById,
-  getBacPokemon,
   getCatalogPokemon,
   getFrenchIndex,
 } from "@/lib/pokemon/data";
+import { getTrainingQuizPokemon } from "@/lib/pokemon/training-pool";
 import { normalizeFrenchName } from "@/lib/pokemon/normalize";
 import type { QuizPokemon } from "@/lib/pokemon/types";
 
@@ -45,31 +46,55 @@ function findById(id: number): QuizPokemon | undefined {
   return findCatalogPokemonById(id);
 }
 
-function pickTarget(pool: MysteryPool): QuizPokemon {
-  const catalog = getCatalogPokemon();
-  if (pool === "bac") {
-    const bacEntry = pickRandom(getBacPokemon());
-    return findById(bacEntry.id) ?? pickRandom(catalog);
+async function pickTarget(
+  pool: MysteryPool,
+  userId?: string,
+): Promise<QuizPokemon | null> {
+  const normalized = normalizeMysteryPool(pool);
+  if (normalized === "training") {
+    if (!userId) return null;
+    const training = await getTrainingQuizPokemon(userId);
+    if (training.length === 0) return null;
+    return pickRandom(training);
   }
-  return pickRandom(catalog);
+  return pickRandom(getCatalogPokemon());
 }
 
-export function startMysteryRound(
+export async function startMysteryRound(
   kind: MysteryKind,
   pool: MysteryPool,
-): MysteryStartResult {
-  const target = pickTarget(pool);
-  const token = createMysteryToken(target.id, kind, pool);
+  userId?: string,
+): Promise<MysteryStartResult | { error: string; status: number }> {
+  const normalized = normalizeMysteryPool(pool);
+  if (normalized === "training" && !userId) {
+    return { error: "Connexion requise pour l'entraînement.", status: 401 };
+  }
+
+  const target = await pickTarget(pool, userId);
+  if (!target) {
+    return {
+      error:
+        "Ta liste d'entraînement est vide. Ajoute des Pokémon dans ton profil.",
+      status: 400,
+    };
+  }
+
+  const token = createMysteryToken(
+    target.id,
+    kind,
+    normalized,
+    normalized === "training" ? userId : undefined,
+  );
   return {
     token,
     artworkUrl: mysteryArtworkPath(token),
   };
 }
 
-export function guessMysteryRound(
+export async function guessMysteryRound(
   token: string,
   answer: string,
-): MysteryGuessResult {
+): Promise<MysteryGuessResult> {
   const payload = verifyMysteryToken(token);
   if (!payload) {
     return {
@@ -110,14 +135,21 @@ export function guessMysteryRound(
     };
   }
 
-  if (
-    payload.pool === "bac" &&
-    !getBacPokemon().some((bac) => bac.id === guessed.id)
-  ) {
-    return {
-      status: "not_in_pool",
-      message: "Ce Pokémon ne fait pas partie de la liste du bac.",
-    };
+  const pool = normalizeMysteryPool(payload.pool);
+  if (pool === "training") {
+    if (!payload.userId) {
+      return {
+        status: "invalid_token",
+        message: "Manche invalide.",
+      };
+    }
+    const training = await getTrainingQuizPokemon(payload.userId);
+    if (!training.some((pokemon) => pokemon.id === guessed.id)) {
+      return {
+        status: "not_in_pool",
+        message: "Ce Pokémon ne fait pas partie de ta liste d'entraînement.",
+      };
+    }
   }
 
   if (guessed.id === target.id) {

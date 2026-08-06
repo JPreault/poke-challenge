@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getRequiredSession } from "@/lib/auth/session";
 import { startChoiceQuizRound } from "@/lib/games/choice-quiz-round";
 import type { ChoiceQuizMode, QuizPool } from "@/lib/games/choice-quiz-types";
 
@@ -30,9 +31,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Mode invalide." }, { status: 400 });
   }
 
-  if (pool !== "bac" && pool !== "catalog") {
+  if (pool !== "training" && pool !== "catalog" && pool !== "bac") {
     return NextResponse.json({ error: "Pool invalide." }, { status: 400 });
   }
 
-  return NextResponse.json(startChoiceQuizRound(mode, pool));
+  const session = await getRequiredSession();
+  const result = await startChoiceQuizRound(mode, pool, session?.user.id);
+
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  return NextResponse.json(result);
 }

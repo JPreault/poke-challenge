@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import {
   RoundActionsProvider,
@@ -157,10 +158,97 @@ function GameRecap({
   onReplay: () => void;
 }) {
   const { stats, mode, rounds } = session;
+  const { status } = useSession();
+  const [rankedState, setRankedState] = useState<{
+    loading: boolean;
+    done: boolean;
+    ratingAfter?: number;
+    delta?: number;
+    error?: string;
+  }>({ loading: false, done: false });
   const blurStats =
     mode === "blur-guess" || mode === "zoom-guess"
       ? computeBlurGuessStats(rounds)
       : null;
+  const isRankedMode = mode !== "shuffle";
+
+  const sendRankedResult = useCallback(async () => {
+    if (!isRankedMode || rankedState.loading || rankedState.done) return;
+    if (stats.totalRounds <= 0) {
+      setRankedState({
+        loading: false,
+        done: false,
+        error: "Joue au moins une manche pour enregistrer un score classé.",
+      });
+      return;
+    }
+
+    setRankedState({ loading: true, done: false });
+
+    try {
+      const startResponse = await fetch("/api/ranked/match/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+
+      if (!startResponse.ok) {
+        setRankedState({
+          loading: false,
+          done: false,
+          error: "Impossible de démarrer la partie classée.",
+        });
+        return;
+      }
+
+      const startPayload = (await startResponse.json()) as {
+        match: { id: string };
+      };
+
+      const finishResponse = await fetch("/api/ranked/match/finish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchId: startPayload.match.id,
+          totalRounds: stats.totalRounds,
+          correctCount: stats.correctCount,
+        }),
+      });
+
+      if (!finishResponse.ok) {
+        setRankedState({
+          loading: false,
+          done: false,
+          error: "Impossible d'enregistrer le score classé.",
+        });
+        return;
+      }
+
+      const payload = (await finishResponse.json()) as {
+        match: { ratingAfter: number; deltaRating: number };
+      };
+
+      setRankedState({
+        loading: false,
+        done: true,
+        ratingAfter: payload.match.ratingAfter,
+        delta: payload.match.deltaRating,
+      });
+    } catch {
+      setRankedState({
+        loading: false,
+        done: false,
+        error: "Erreur réseau pendant l'enregistrement classé.",
+      });
+    }
+  }, [
+    isRankedMode,
+    mode,
+    rankedState.done,
+    rankedState.loading,
+    stats.correctCount,
+    stats.totalRounds,
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
@@ -214,6 +302,21 @@ function GameRecap({
           <Button type="button" size="lg" onClick={onReplay}>
             Rejouer
           </Button>
+          {status === "authenticated" && isRankedMode ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => void sendRankedResult()}
+              disabled={rankedState.loading || rankedState.done}
+            >
+              {rankedState.loading
+                ? "Envoi du score classé…"
+                : rankedState.done
+                  ? "Score classé enregistré"
+                  : "Enregistrer en classé"}
+            </Button>
+          ) : null}
           <Link
             href={homeHref}
             className={cn(
@@ -224,6 +327,16 @@ function GameRecap({
             Changer de jeu
           </Link>
         </div>
+        {rankedState.done ? (
+          <p className="mt-4 text-sm text-emerald-600 dark:text-emerald-300">
+            Score classé enregistré. Nouveau rating: {rankedState.ratingAfter} (
+            {rankedState.delta && rankedState.delta > 0 ? "+" : ""}
+            {rankedState.delta})
+          </p>
+        ) : null}
+        {rankedState.error ? (
+          <p className="mt-4 text-sm text-poke-red">{rankedState.error}</p>
+        ) : null}
       </div>
     </div>
   );

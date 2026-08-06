@@ -67,7 +67,7 @@ export function GameClient({
       return (
         <LetterInputQuiz
           session={session}
-          validationMode={useBacPool ? "free" : "catalog"}
+          validationMode={useBacPool ? "training" : "catalog"}
         />
       );
     case "cry-guess":

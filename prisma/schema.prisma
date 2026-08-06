@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum InterfaceMode {
+  ARENA
+  BAC_TRAINING
+}
+
+enum RankedMatchStatus {
+  IN_PROGRESS
+  FINISHED
+  ABANDONED
+}
+
+enum RankedMode {
+  IMAGE_TO_NAME
+  NAME_TO_IMAGE
+  LETTER_INPUT
+  CRY_GUESS
+  POKEDLE
+  DESCRIPTION_GUESS
+  BLUR_GUESS
+  ZOOM_GUESS
+}
+
+model User {
+  id            String           @id @default(cuid())
+  name          String?
+  email         String?          @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+
+  profile            UserProfile?
+  trainingPokemon    TrainingPokemon[]
+  rankedMatches      RankedMatch[]
+  leaderboardEntries LeaderboardEntry[]
+  ratingHistory      RatingHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserProfile {
+  id                 String        @id @default(cuid())
+  userId             String        @unique
+  pseudo             String
+  publicId           String        @unique @db.Char(6)
+  preferredInterface InterfaceMode @default(ARENA)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([pseudo])
+}
+
+model TrainingPokemon {
+  id        String   @id @default(cuid())
+  userId    String
+  pokemonId Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pokemonId])
+  @@index([userId])
+}
+
+model Season {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime?
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matches            RankedMatch[]
+  leaderboardEntries LeaderboardEntry[]
+  ratingHistory      RatingHistory[]
+}
+
+model RankedMatch {
+  id           String            @id @default(cuid())
+  userId       String
+  seasonId     String
+  mode         RankedMode
+  status       RankedMatchStatus @default(IN_PROGRESS)
+  totalRounds  Int?
+  correctCount Int?
+  durationMs   Int?
+  score        Int?
+  accuracy     Float?
+  ratingBefore Int?
+  ratingAfter  Int?
+  deltaRating  Int?
+  createdAt    DateTime          @default(now())
+  finishedAt   DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  season Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([seasonId, mode, createdAt])
+  @@index([status, createdAt])
+}
+
+model LeaderboardEntry {
+  id         String     @id @default(cuid())
+  userId     String
+  seasonId   String
+  mode       RankedMode
+  rating     Int        @default(1000)
+  gamesCount Int        @default(0)
+  winsCount  Int        @default(0)
+  lossesCount Int       @default(0)
+  updatedAt  DateTime   @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  season Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seasonId, mode])
+  @@index([seasonId, mode, rating])
+}
+
+model RatingHistory {
+  id          String     @id @default(cuid())
+  userId      String
+  seasonId    String
+  mode        RankedMode
+  matchId     String
+  ratingBefore Int
+  ratingAfter Int
+  delta       Int
+  createdAt   DateTime   @default(now())
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  season Season     @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, seasonId, mode, createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

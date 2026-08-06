@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { getRequiredSession } from "@/lib/auth/session";
+import { getTrainingSearchCatalog } from "@/lib/pokemon/training-pool";
 import type { ValidationMode } from "@/lib/pokemon/types";
 import { validateAnswer } from "@/lib/pokemon/validate";
 
@@ -37,13 +39,37 @@ export async function POST(request: Request) {
     );
   }
 
-  if (mode !== "strict" && mode !== "free" && mode !== "catalog") {
+  if (
+    mode !== "strict" &&
+    mode !== "free" &&
+    mode !== "catalog" &&
+    mode !== "training"
+  ) {
     return NextResponse.json(
-      { error: "Le mode doit être 'strict', 'free' ou 'catalog'." },
+      { error: "Le mode doit être 'strict', 'free', 'catalog' ou 'training'." },
       { status: 400 },
     );
   }
 
-  const result = validateAnswer(letter, answer, mode);
+  let trainingNames: string[] = [];
+  if (mode === "training") {
+    const session = await getRequiredSession();
+    if (!session) {
+      return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+    }
+    const catalog = await getTrainingSearchCatalog(session.user.id);
+    trainingNames = catalog.map((pokemon) => pokemon.nameFr);
+    if (trainingNames.length === 0) {
+      return NextResponse.json(
+        {
+          correct: false,
+          preferred: false,
+          expected: undefined,
+        },
+      );
+    }
+  }
+
+  const result = validateAnswer(letter, answer, mode, trainingNames);
   return NextResponse.json(result);
 }

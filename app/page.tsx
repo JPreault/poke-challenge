@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useRef } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
-import { BAC_POKEMON } from "@/data/bac-list";
 import { useInterfaceMode } from "@/lib/games/useInterfaceMode";
 import type { GameMode } from "@/lib/games/types";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ const TRAINING_GAMES: GameCard[] = [
     mode: "letter-input",
     title: "Lettre → Nom",
     description:
-      "Entre un Pokémon existant dont le nom français commence par la lettre affichée.",
+      "Entre un Pokémon de ta liste dont le nom français commence par la lettre affichée.",
     tag: "Saisie",
   },
   {
@@ -52,7 +52,7 @@ const TRAINING_GAMES: GameCard[] = [
       "Devine le Pokémon à partir d'une image ultra zoomée. À chaque tentative, l'image se dézoome légèrement.",
     tag: "Visuel",
   },
-] as const;
+];
 
 const ARENA_GAMES: GameCard[] = [
   {
@@ -68,13 +68,6 @@ const ARENA_GAMES: GameCard[] = [
     description:
       "Un nom s'affiche, choisis la bonne image parmi 4 propositions.",
     tag: "QCM",
-  },
-  {
-    mode: "letter-input",
-    title: "Lettre → Nom",
-    description:
-      "Entre un Pokémon existant dont le nom français commence par la lettre affichée.",
-    tag: "Saisie",
   },
   {
     mode: "cry-guess",
@@ -111,12 +104,14 @@ const ARENA_GAMES: GameCard[] = [
       "Devine le Pokémon à partir d'une image ultra zoomée. À chaque tentative, l'image se dézoome légèrement.",
     tag: "Visuel",
   },
-] as const;
+];
 
 export default function HomePage() {
   const selectedInterface = useInterfaceMode();
-  const games =
-    selectedInterface === "bac-training" ? TRAINING_GAMES : ARENA_GAMES;
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
+  const showTraining = isAuthenticated && selectedInterface === "bac-training";
+  const games = showTraining ? TRAINING_GAMES : ARENA_GAMES;
   const gameLinksRef = useRef<Array<HTMLAnchorElement | null>>([]);
 
   const handleGameCardKeyDown = (
@@ -142,43 +137,65 @@ export default function HomePage() {
     <main className="mx-auto w-full max-w-4xl px-6 py-16 sm:px-8 sm:py-24">
       <header className="mb-20 max-w-2xl">
         <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Bac Pokémon
+          {showTraining ? "Entraînement" : "Arène"}
         </p>
         <h1 className="font-heading text-4xl font-bold leading-[1.1] text-foreground sm:text-5xl">
           Poke Challenge
         </h1>
         <p className="mt-6 text-lg leading-8 text-muted-foreground">
-          Choisis ton interface, puis lance un mini-jeu. Tu peux changer de mode
-          à tout moment.
+          {showTraining
+            ? "Entraîne-toi sur ta liste personnelle de Pokémon."
+            : "Joue en mode Arène sur tout le Pokédex. Connecte-toi pour débloquer l'entraînement personnalisé."}
         </p>
       </header>
 
-      <section className="mb-12">
-        <div className="surface flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between">
-          <div className="max-w-xl space-y-2">
-            <h2 className="font-heading text-xl font-semibold text-foreground">
-              Shuffle
-            </h2>
-            <p className="text-base leading-7 text-muted-foreground">
-              Choisis les mini-jeux à mélanger, puis enchaîne des manches
-              aléatoires parmi ta sélection.
-            </p>
+      {showTraining ? (
+        <section className="mb-12">
+          <div className="surface flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-xl space-y-2">
+              <h2 className="font-heading text-xl font-semibold text-foreground">
+                Shuffle
+              </h2>
+              <p className="text-base leading-7 text-muted-foreground">
+                Choisis les mini-jeux à mélanger, puis enchaîne des manches
+                aléatoires parmi ta sélection.
+              </p>
+            </div>
+            <Link
+              href="/game/shuffle?interface=bac-training"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "w-full shrink-0 justify-center sm:w-auto",
+              )}
+            >
+              Configurer
+            </Link>
           </div>
-          <Link
-            href={
-              selectedInterface === "bac-training"
-                ? "/game/shuffle?interface=bac-training"
-                : "/game/shuffle"
-            }
-            className={cn(
-              buttonVariants({ size: "lg" }),
-              "w-full shrink-0 justify-center sm:w-auto",
-            )}
-          >
-            Configurer
-          </Link>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="mb-12">
+          <div className="surface flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-xl space-y-2">
+              <h2 className="font-heading text-xl font-semibold text-foreground">
+                Shuffle
+              </h2>
+              <p className="text-base leading-7 text-muted-foreground">
+                Choisis les mini-jeux à mélanger, puis enchaîne des manches
+                aléatoires parmi ta sélection.
+              </p>
+            </div>
+            <Link
+              href="/game/shuffle"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "w-full shrink-0 justify-center sm:w-auto",
+              )}
+            >
+              Configurer
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="mb-24">
         <h2 className="mb-8 font-heading text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
@@ -207,7 +224,7 @@ export default function HomePage() {
 
               <Link
                 href={
-                  selectedInterface === "bac-training"
+                  showTraining
                     ? `/game/${game.mode}?interface=bac-training`
                     : `/game/${game.mode}`
                 }
@@ -227,38 +244,32 @@ export default function HomePage() {
         </div>
       </section>
 
-      {selectedInterface === "bac-training" ? (
-        <section>
-        <div className="mb-8 space-y-2">
-          <h2 className="font-heading text-2xl font-semibold">Liste du bac</h2>
-          <p className="text-muted-foreground">
-            Les 26 Pokémon à connaître, de A à Z.
+      {!isAuthenticated ? (
+        <section className="surface p-8">
+          <h2 className="font-heading text-xl font-semibold">Entraînement</h2>
+          <p className="mt-3 text-base leading-7 text-muted-foreground">
+            Connecte-toi pour créer ta liste personnelle de Pokémon et débloquer
+            le mode Entraînement.
           </p>
-        </div>
-
-        <div className="surface divide-y divide-border/60 overflow-hidden">
-          <div className="grid sm:grid-cols-2 sm:divide-x sm:divide-border/60">
-            {[BAC_POKEMON.slice(0, 13), BAC_POKEMON.slice(13)].map(
-              (column, columnIndex) => (
-                <ul key={columnIndex}>
-                  {column.map((entry) => (
-                    <li
-                      key={entry.letter}
-                      className="flex items-center gap-5 border-b border-border/40 px-6 py-4 last:border-b-0 sm:last:border-b"
-                    >
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-poke-indigo/8 font-heading text-sm font-bold text-poke-indigo">
-                        {entry.letter}
-                      </span>
-                      <span className="text-base font-medium text-foreground">
-                        {entry.name}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ),
-            )}
-          </div>
-        </div>
+          <Link
+            href="/auth/signin"
+            className={cn(buttonVariants({ size: "lg" }), "mt-6 inline-flex")}
+          >
+            Se connecter
+          </Link>
+        </section>
+      ) : showTraining ? (
+        <section className="surface p-8">
+          <h2 className="font-heading text-xl font-semibold">Ta liste</h2>
+          <p className="mt-3 text-base leading-7 text-muted-foreground">
+            Gère les Pokémon de ton entraînement depuis ton profil.
+          </p>
+          <Link
+            href="/profile"
+            className={cn(buttonVariants({ size: "lg" }), "mt-6 inline-flex")}
+          >
+            Ouvrir le profil
+          </Link>
         </section>
       ) : null}
     </main>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getRequiredSession } from "@/lib/auth/session";
 import { startMysteryRound } from "@/lib/games/mystery-round";
 import type { MysteryKind, MysteryPool } from "@/lib/games/mystery-types";
 
@@ -29,13 +30,19 @@ export async function POST(request: Request) {
     );
   }
 
-  if (pool !== "bac" && pool !== "catalog") {
+  if (pool !== "training" && pool !== "catalog" && pool !== "bac") {
     return NextResponse.json(
-      { error: "Le pool doit être 'bac' ou 'catalog'." },
+      { error: "Le pool doit être 'training' ou 'catalog'." },
       { status: 400 },
     );
   }
 
-  const result = startMysteryRound(kind, pool);
+  const session = await getRequiredSession();
+  const result = await startMysteryRound(kind, pool, session?.user.id);
+
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
   return NextResponse.json(result);
 }

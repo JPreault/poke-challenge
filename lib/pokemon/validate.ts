@@ -109,17 +109,74 @@ function validateCatalog(letter: string, answer: string): ValidationResult {
   };
 }
 
+function validateTraining(
+  letter: string,
+  answer: string,
+  trainingNames: string[],
+): ValidationResult {
+  const matchedName = findMatchingFrenchName(answer);
+  const preferredName =
+    trainingNames.find(
+      (name) => getFirstLetter(name).toUpperCase() === letter.toUpperCase(),
+    ) ?? trainingNames[0];
+
+  if (!matchedName) {
+    return {
+      correct: false,
+      preferred: false,
+      expected: preferredName,
+    };
+  }
+
+  const startsWithLetter =
+    getFirstLetter(matchedName).toUpperCase() === letter.toUpperCase();
+  if (!startsWithLetter) {
+    return {
+      correct: false,
+      preferred: false,
+      expected: preferredName,
+      matched: matchedName,
+    };
+  }
+
+  const inTraining = trainingNames.some((name) =>
+    isWithinTypoTolerance(matchedName, name),
+  );
+  if (!inTraining) {
+    return {
+      correct: false,
+      preferred: false,
+      expected: preferredName,
+      matched: matchedName,
+    };
+  }
+
+  return {
+    correct: true,
+    preferred: true,
+    expected: preferredName,
+    matched: matchedName,
+    hasTypo: !isExactSpelling(answer, matchedName),
+  };
+}
+
 export function validateAnswer(
   letter: string,
   answer: string,
   mode: ValidationMode,
+  trainingNames: string[] = [],
 ): ValidationResult {
   const trimmedAnswer = answer.trim();
   if (!trimmedAnswer) {
     return {
       correct: false,
       preferred: false,
-      expected: getBacPokemonByLetter(letter)?.nameFr,
+      expected:
+        mode === "training"
+          ? trainingNames.find(
+              (name) => getFirstLetter(name).toUpperCase() === letter.toUpperCase(),
+            )
+          : getBacPokemonByLetter(letter)?.nameFr,
     };
   }
 
@@ -129,6 +186,10 @@ export function validateAnswer(
 
   if (mode === "catalog") {
     return validateCatalog(letter, trimmedAnswer);
+  }
+
+  if (mode === "training") {
+    return validateTraining(letter, trimmedAnswer, trainingNames);
   }
 
   return validateFree(letter, trimmedAnswer);

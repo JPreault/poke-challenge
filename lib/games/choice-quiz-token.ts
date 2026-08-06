@@ -7,6 +7,7 @@ export interface ChoiceQuizPayload {
   choiceIds: number[];
   mode: ChoiceQuizMode;
   pool: QuizPool;
+  userId?: string;
   exp: number;
 }
 
@@ -39,7 +40,13 @@ function fromBase64Url(value: string): Buffer {
   return Buffer.from(padded + "=".repeat(padLength), "base64");
 }
 
-export function createChoiceQuizToken(payload: Omit<ChoiceQuizPayload, "exp">): string {
+function isValidPool(pool: unknown): pool is QuizPool {
+  return pool === "training" || pool === "catalog" || pool === "bac";
+}
+
+export function createChoiceQuizToken(
+  payload: Omit<ChoiceQuizPayload, "exp">,
+): string {
   const fullPayload: ChoiceQuizPayload = {
     ...payload,
     exp: Date.now() + TOKEN_TTL_MS,
@@ -81,7 +88,7 @@ export function verifyChoiceQuizToken(token: string): ChoiceQuizPayload | null {
       (payload.mode !== "image-to-name" &&
         payload.mode !== "name-to-image" &&
         payload.mode !== "cry-guess") ||
-      (payload.pool !== "bac" && payload.pool !== "catalog") ||
+      !isValidPool(payload.pool) ||
       typeof payload.exp !== "number"
     ) {
       return null;

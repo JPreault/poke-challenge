@@ -79,17 +79,45 @@ Le script `prebuild` exécute automatiquement la génération des données Poké
 
 ## Variables d’environnement
 
-Aucune variable n’est obligatoire pour le développement local.
+Copie `.env.example` vers `.env` (local) et renseigne les secrets.
 
-Crée un fichier `.env.local` à la racine si tu veux personnaliser le comportement :
+Pour Google OAuth (local) :
+1. Google Cloud Console → Credentials → client OAuth **Application Web**
+2. Redirect URI : `http://localhost:4000/api/auth/callback/google`
+3. Coller `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` dans `.env`, redémarrer `npm run dev`
 
-```env
-# Secret pour chiffrer les jetons de manche et les URLs d’images proxy.
-# À définir en production (sinon une valeur de secours dev est utilisée).
-MYSTERY_ROUND_SECRET=une-longue-chaine-aleatoire-secrete
+En prod (Vercel, etc.) : mêmes clés avec `NEXTAUTH_URL=https://ton-domaine.com`, un autre client Google (ou la 2ᵉ URI de redirect), et les URLs de la **BDD prod**.
+
+`MYSTERY_ROUND_SECRET` / `NEXTAUTH_SECRET` : secrets forts et **différents** en local vs prod.
+
+## Bases de données (local + prod)
+
+Deux projets Supabase distincts. Le schéma vit dans `prisma/migrations/` — les deux BDD doivent recevoir les mêmes migrations.
+
+### Première mise à jour d’une BDD vide
+
+Avec les URLs de **cette** BDD dans `.env` :
+
+```bash
+npm run prisma:generate
+npx prisma migrate deploy
 ```
 
-`MYSTERY_ROUND_SECRET` (ou `NEXTAUTH_SECRET` en alternative) sert à signer les jetons des manches et des médias proxy (`/api/media/...`). **En production, définis toujours un secret fort et unique.**
+`migrate deploy` applique les migrations existantes sans en créer de nouvelles (idéal pour une BDD neuve / prod).
+
+### Workflow quotidien
+
+1. **Local** (`.env` = BDD local) :
+   ```bash
+   npm run prisma:migrate -- --name nom_du_changement
+   ```
+   → crée une migration + l’applique sur le local.
+
+2. **Prod** (sans écraser ton `.env` local) :
+   ```bash
+   DATABASE_URL="…" DIRECT_URL="…" npx prisma migrate deploy
+   ```
+   → applique seulement les migrations manquantes. **Ne jamais** `migrate reset` en prod.
 
 ## Données Pokémon
 

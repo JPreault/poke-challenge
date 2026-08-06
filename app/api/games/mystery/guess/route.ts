@@ -35,6 +35,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = guessMysteryRound(token, answer);
+  const result = await guessMysteryRound(token, answer);
   return NextResponse.json(result);
 }

@@ -108,7 +108,7 @@ export function ShuffleQuiz({
             <LetterInputRound
               session={session}
               onRoundComplete={drawRound}
-              validationMode={useBacPool ? "free" : "catalog"}
+              validationMode={useBacPool ? "training" : "catalog"}
             />
           ) : null}
           {roundType === "cry-guess" ? (

@@ -19,7 +19,7 @@ import type {
 } from "@/lib/games/mystery-types";
 import type { GameSession } from "@/lib/games/useGameSession";
 import { getZoomScale, isFullyDezoomed } from "@/lib/games/zoom-levels";
-import { getBacSearchCatalog, getSearchCatalog } from "@/lib/pokemon/client-data";
+import { getSearchCatalog } from "@/lib/pokemon/client-data";
 import { cn } from "@/lib/utils";
 
 interface MysteryImageRoundProps {
@@ -43,10 +43,34 @@ export function MysteryImageRound({
   enableGrayscaleToggle = false,
 }: MysteryImageRoundProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const searchCatalog = useMemo(
-    () => (useBacPool ? getBacSearchCatalog() : getSearchCatalog()),
-    [useBacPool],
+  const [searchCatalog, setSearchCatalog] = useState(() =>
+    useBacPool ? [] : getSearchCatalog(),
   );
+
+  useEffect(() => {
+    if (!useBacPool) {
+      setSearchCatalog(getSearchCatalog());
+      return;
+    }
+
+    let active = true;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/training/pool", { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = (await response.json()) as {
+          catalog: Array<{ id: number; nameFr: string }>;
+        };
+        if (active) setSearchCatalog(payload.catalog);
+      } catch {
+        // ignore
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [useBacPool]);
 
   const [token, setToken] = useState<string | null>(null);
   const [artworkUrl, setArtworkUrl] = useState<string | null>(null);
@@ -85,12 +109,15 @@ export function MysteryImageRound({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           kind,
-          pool: useBacPool ? "bac" : "catalog",
+          pool: useBacPool ? "training" : "catalog",
         }),
       });
 
       if (!response.ok) {
-        setFeedback("Impossible de démarrer la manche.");
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        setFeedback(payload?.error ?? "Impossible de démarrer la manche.");
         setIsLoadingRound(false);
         return;
       }

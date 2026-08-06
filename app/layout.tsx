@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Geist_Mono, Sora } from "next/font/google";
 
+import { Providers } from "@/app/providers";
 import { PageShell } from "@/components/layout/PageShell";
 
 import "./globals.css";
@@ -44,7 +45,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${dmSans.variable} ${sora.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        <PageShell>{children}</PageShell>
+        <Providers>
+          <PageShell>{children}</PageShell>
+        </Providers>
       </body>
     </html>
   );

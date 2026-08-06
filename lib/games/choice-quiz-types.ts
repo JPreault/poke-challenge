@@ -1,5 +1,10 @@
 export type ChoiceQuizMode = "image-to-name" | "name-to-image" | "cry-guess";
-export type QuizPool = "bac" | "catalog";
+/** `training` = liste perso connectée ; `bac` conservé pour compat tokens anciens. */
+export type QuizPool = "training" | "catalog" | "bac";
+
+export function normalizeQuizPool(pool: QuizPool): "training" | "catalog" {
+  return pool === "catalog" ? "catalog" : "training";
+}
 
 export interface ChoiceQuizChoice {
   choiceIndex: number;

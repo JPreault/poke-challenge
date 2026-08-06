@@ -8,6 +8,7 @@ export interface MysteryPayload {
   pokemonId: number;
   kind: MysteryKind;
   pool: MysteryPool;
+  userId?: string;
   /** Unix timestamp (ms) when the token expires. */
   exp: number;
 }
@@ -41,15 +42,21 @@ function fromBase64Url(value: string): Buffer {
   return Buffer.from(padded + "=".repeat(padLength), "base64");
 }
 
+function isValidPool(pool: unknown): pool is MysteryPool {
+  return pool === "training" || pool === "catalog" || pool === "bac";
+}
+
 export function createMysteryToken(
   pokemonId: number,
   kind: MysteryKind,
   pool: MysteryPool,
+  userId?: string,
 ): string {
   const payload: MysteryPayload = {
     pokemonId,
     kind,
     pool,
+    userId,
     exp: Date.now() + TOKEN_TTL_MS,
   };
 
@@ -86,7 +93,7 @@ export function verifyMysteryToken(token: string): MysteryPayload | null {
     if (
       typeof payload.pokemonId !== "number" ||
       (payload.kind !== "blur" && payload.kind !== "zoom") ||
-      (payload.pool !== "bac" && payload.pool !== "catalog") ||
+      !isValidPool(payload.pool) ||
       typeof payload.exp !== "number"
     ) {
       return null;

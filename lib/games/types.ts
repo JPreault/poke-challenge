@@ -19,7 +19,10 @@ export type BacShuffleRoundType =
   | "zoom-guess";
 
 export type ArenaShuffleRoundType =
-  | BacShuffleRoundType
+  | "image-to-name"
+  | "name-to-image"
+  | "blur-guess"
+  | "zoom-guess"
   | "cry-guess"
   | "pokedle"
   | "description-guess";
@@ -37,7 +40,6 @@ export const BAC_SHUFFLE_ROUND_TYPES: BacShuffleRoundType[] = [
 export const ARENA_SHUFFLE_ROUND_TYPES: ArenaShuffleRoundType[] = [
   "image-to-name",
   "name-to-image",
-  "letter-input",
   "blur-guess",
   "zoom-guess",
   "cry-guess",

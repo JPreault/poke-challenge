@@ -1,5 +1,10 @@
 export type MysteryKind = "blur" | "zoom";
-export type MysteryPool = "bac" | "catalog";
+/** `training` = liste perso connectée ; `bac` conservé pour compat tokens anciens. */
+export type MysteryPool = "training" | "catalog" | "bac";
+
+export function normalizeMysteryPool(pool: MysteryPool): "training" | "catalog" {
+  return pool === "catalog" ? "catalog" : "training";
+}
 
 export interface MysteryReveal {
   id: number;

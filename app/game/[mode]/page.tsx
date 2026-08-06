@@ -1,6 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 
 import { GameClient } from "@/components/game/GameClient";
+import { authOptions } from "@/lib/auth/config";
+import { prisma } from "@/lib/db/prisma";
 import { parseShuffleGamesParam } from "@/lib/games/shuffle";
 import type { GameInterfaceMode, GameMode } from "@/lib/games/types";
 
@@ -16,7 +19,6 @@ const ARENA_MODES: GameMode[] = [
   "shuffle",
   "image-to-name",
   "name-to-image",
-  "letter-input",
   "cry-guess",
   "pokedle",
   "description-guess",
@@ -24,16 +26,24 @@ const ARENA_MODES: GameMode[] = [
   "zoom-guess",
 ];
 
-function parseInterfaceMode(value: string | string[] | undefined): GameInterfaceMode {
+function parseInterfaceMode(
+  value: string | string[] | undefined,
+): GameInterfaceMode | null {
   if (value === "bac-training") {
     return "bac-training";
   }
-
-  return "arena";
+  if (value === "arena") {
+    return "arena";
+  }
+  return null;
 }
 
-function isAllowedGameMode(mode: string, interfaceMode: GameInterfaceMode): mode is GameMode {
-  const allowedModes = interfaceMode === "bac-training" ? TRAINING_MODES : ARENA_MODES;
+function isAllowedGameMode(
+  mode: string,
+  interfaceMode: GameInterfaceMode,
+): mode is GameMode {
+  const allowedModes =
+    interfaceMode === "bac-training" ? TRAINING_MODES : ARENA_MODES;
   return allowedModes.includes(mode as GameMode);
 }
 
@@ -43,7 +53,26 @@ export default async function GamePage({
 }: PageProps<"/game/[mode]">) {
   const { mode } = await params;
   const resolvedSearchParams = await searchParams;
-  const interfaceMode = parseInterfaceMode(resolvedSearchParams?.interface);
+  const session = await getServerSession(authOptions);
+  const isAuthenticated = Boolean(session?.user?.id);
+
+  const queryInterface = parseInterfaceMode(resolvedSearchParams?.interface);
+  let interfaceMode: GameInterfaceMode = queryInterface ?? "arena";
+
+  if (!isAuthenticated) {
+    if (queryInterface === "bac-training") {
+      redirect(`/game/${mode}`);
+    }
+    interfaceMode = "arena";
+  } else if (!queryInterface) {
+    const profile = await prisma.userProfile.findUnique({
+      where: { userId: session!.user.id },
+      select: { preferredInterface: true },
+    });
+    if (profile?.preferredInterface === "BAC_TRAINING") {
+      interfaceMode = "bac-training";
+    }
+  }
 
   if (!isAllowedGameMode(mode, interfaceMode)) {
     notFound();

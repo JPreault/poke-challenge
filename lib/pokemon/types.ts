@@ -35,7 +35,7 @@ export interface PokemonData {
     frenchIndex: Record<string, FrenchPokemonEntry>;
 }
 
-export type ValidationMode = "strict" | "free" | "catalog";
+export type ValidationMode = "strict" | "free" | "catalog" | "training";
 
 export interface ValidationResult {
     correct: boolean;
