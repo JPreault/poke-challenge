@@ -1,36 +1,183 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Poke Challenge
 
-## Getting Started
+Application web de mini-jeux Pokémon en français, construite avec [Next.js](https://nextjs.org) 16 et React 19.
 
-First, run the development server:
+Deux interfaces sont disponibles :
+
+- **Bac training** — entraînement sur les 26 Pokémon du bac (A → Z)
+- **Arène** — tous les Pokémon du Pokédex (~1000 entrées), avec des modes supplémentaires (cri, Pokédle, description…)
+
+## Prérequis
+
+- **Node.js** 20 ou plus récent (LTS recommandé)
+- **npm** (fourni avec Node.js)
+
+Vérifie ta version :
+
+```bash
+node -v
+npm -v
+```
+
+## Dupliquer le projet
+
+### Depuis Git
+
+```bash
+git clone <url-du-depot> poke-challenge
+cd poke-challenge
+```
+
+### Sans Git
+
+Télécharge ou copie le dossier du projet, puis ouvre un terminal à la racine (`poke-challenge/`).
+
+## Installation
+
+À la racine du projet :
+
+```bash
+npm install
+```
+
+Les dépendances sont listées dans `package.json`. Le lockfile `package-lock.json` garantit des versions reproductibles.
+
+## Lancer en développement
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+L’application démarre sur **[http://localhost:4000](http://localhost:4000)** (port **4000**, pas 3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Le serveur utilise Turbopack. Les modifications dans le code sont rechargées automatiquement.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts disponibles
 
-## Learn More
+| Commande | Description |
+|----------|-------------|
+| `npm run dev` | Serveur de développement sur le port 4000 |
+| `npm run build` | Build de production (génère aussi les données Pokémon si besoin) |
+| `npm run start` | Lance le build de production (après `npm run build`) |
+| `npm run lint` | Analyse ESLint |
+| `npm run generate:pokemon` | Régénère `data/pokemon.json` depuis l’API PokéAPI |
 
-To learn more about Next.js, take a look at the following resources:
+## Build et production
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run build
+npm run start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Par défaut, `next start` écoute sur le port **3000**. Pour un autre port :
 
-## Deploy on Vercel
+```bash
+PORT=4000 npm run start
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Le script `prebuild` exécute automatiquement la génération des données Pokémon avant le build. Si `data/pokemon.json` existe déjà (cas normal en clone), le script réutilise ce fichier et met à jour `data/pokemon-search.json`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Variables d’environnement
+
+Aucune variable n’est obligatoire pour le développement local.
+
+Crée un fichier `.env.local` à la racine si tu veux personnaliser le comportement :
+
+```env
+# Secret pour chiffrer les jetons de manche et les URLs d’images proxy.
+# À définir en production (sinon une valeur de secours dev est utilisée).
+MYSTERY_ROUND_SECRET=une-longue-chaine-aleatoire-secrete
+```
+
+`MYSTERY_ROUND_SECRET` (ou `NEXTAUTH_SECRET` en alternative) sert à signer les jetons des manches et des médias proxy (`/api/media/...`). **En production, définis toujours un secret fort et unique.**
+
+## Données Pokémon
+
+Le catalogue est stocké localement :
+
+| Fichier | Rôle |
+|---------|------|
+| `data/pokemon.json` | Catalogue complet (serveur uniquement) : noms, descriptions, stats, URLs upstream |
+| `data/pokemon-search.json` | Index léger côté client : `{ id, nameFr }` pour l’autocomplétion |
+| `data/bac-list.ts` | Les 26 Pokémon du bac |
+
+### Régénérer depuis PokéAPI
+
+Le dépôt inclut déjà `data/pokemon.json`. Pour le recréer depuis [PokéAPI](https://pokeapi.co) (plusieurs minutes, connexion Internet requise) :
+
+```bash
+npm run generate:pokemon
+```
+
+Cela appelle `scripts/generate-pokemon-data.ts` avec `FORCE_GENERATE_POKEMON=1`.
+
+## Modes de jeu
+
+| Mode | URL | Description |
+|------|-----|-------------|
+| Image → Nom | `/game/image-to-name` | QCM : image → nom |
+| Nom → Image | `/game/name-to-image` | QCM : nom → image |
+| Lettre → Nom | `/game/letter-input` | Saisie libre par lettre |
+| Image flou | `/game/blur-guess` | Image floutée qui se dévoile |
+| Image zoom | `/game/zoom-guess` | Image zoomée qui se dézoome |
+| Pokémon → Cri | `/game/cry-guess` | Arène uniquement |
+| Pokédle | `/game/pokedle` | Arène uniquement |
+| Description → Pokémon | `/game/description-guess` | Arène uniquement |
+| Shuffle | `/game/shuffle` | Enchaînement de modes choisis |
+
+Pour le mode **bac training**, ajoute `?interface=bac-training` à l’URL, par exemple :
+
+```
+http://localhost:4000/game/image-to-name?interface=bac-training
+```
+
+## Structure du projet
+
+```
+app/                    Pages et routes API Next.js
+components/game/        Composants des mini-jeux
+components/ui/          Composants UI (shadcn)
+data/                   Données Pokémon (JSON + liste du bac)
+lib/games/              Logique de jeu, jetons, rounds serveur
+lib/pokemon/            Accès aux données et validation des noms
+scripts/                Génération des données depuis PokéAPI
+public/                 Assets statiques
+```
+
+Les images et cris ne sont pas exposés directement avec l’ID PokéAPI côté client : ils passent par des routes proxy (`/api/media/...`) avec jetons chiffrés.
+
+## Déploiement
+
+Le projet est compatible avec tout hébergeur Node.js (Vercel, Railway, Docker, etc.).
+
+Checklist :
+
+1. `npm run build` doit passer sans erreur
+2. Définir `MYSTERY_ROUND_SECRET` dans les variables d’environnement
+3. Commiter `data/pokemon.json` (ou lancer `generate:pokemon` au build — déjà géré par `prebuild`)
+4. S’assurer que `data/pokemon-search.json` est présent (généré par `prebuild`)
+
+Sur **Vercel**, connecte le dépôt : le build exécutera `prebuild` puis `next build` automatiquement.
+
+## Dépannage
+
+**Le port 4000 est déjà utilisé**
+
+```bash
+# macOS / Linux
+lsof -i :4000
+```
+
+Arrête le processus concerné ou modifie le port dans `package.json` (`"dev": "next dev --turbopack -p 4001"`).
+
+**Erreur `next/image` et URLs `/api/media/...`**
+
+Les patterns d’images locales sont configurés dans `next.config.ts`. Redémarre le serveur de dev après toute modification de ce fichier.
+
+**Génération Pokémon qui échoue**
+
+Réessaie avec `npm run generate:pokemon`. En CI, le build continue avec le fichier existant si la génération échoue et que `data/pokemon.json` est déjà présent.
+
+## Licence
+
+Projet privé (`"private": true` dans `package.json`). Adapter selon la politique de ton organisation ou de ton dépôt.

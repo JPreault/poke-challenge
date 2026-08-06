@@ -12,7 +12,16 @@ import type {
   MysterySkipResult,
   MysteryStartResult,
 } from "@/lib/games/mystery-types";
-import { getBacPokemon, getCatalogPokemon, getFrenchIndex } from "@/lib/pokemon/data";
+import {
+  proxyArtworkUrl,
+  proxySpriteUrl,
+} from "@/lib/games/media-token";
+import {
+  findCatalogPokemonById,
+  getBacPokemon,
+  getCatalogPokemon,
+  getFrenchIndex,
+} from "@/lib/pokemon/data";
 import { normalizeFrenchName } from "@/lib/pokemon/normalize";
 import type { QuizPokemon } from "@/lib/pokemon/types";
 
@@ -27,13 +36,13 @@ function toReveal(pokemon: QuizPokemon): MysteryReveal {
   return {
     id: pokemon.id,
     nameFr: pokemon.nameFr,
-    sprite: pokemon.sprite,
-    artwork: pokemon.artwork,
+    sprite: proxySpriteUrl(pokemon.id),
+    artwork: proxyArtworkUrl(pokemon.id),
   };
 }
 
 function findById(id: number): QuizPokemon | undefined {
-  return getCatalogPokemon().find((pokemon) => pokemon.id === id);
+  return findCatalogPokemonById(id);
 }
 
 function pickTarget(pool: MysteryPool): QuizPokemon {

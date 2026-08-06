@@ -1,16 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
-import { buildQuizChoices } from "@/lib/games/distractors";
-import { pickRandom } from "@/lib/games/random";
+import type {
+  ChoiceQuizAnswerResult,
+  ChoiceQuizChoice,
+  ChoiceQuizSkipResult,
+  ChoiceQuizStartResult,
+} from "@/lib/games/choice-quiz-types";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { getBacPokemon, getCatalogPokemon } from "@/lib/pokemon/data";
-import type { QuizPokemon } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
 
 interface RoundProps {
@@ -27,8 +29,11 @@ interface ImageToNameQuizProps {
 type FeedbackState = "idle" | "correct" | "incorrect";
 
 interface RoundState {
-  pokemon: QuizPokemon;
-  choices: QuizPokemon[];
+  token: string;
+  questionImageUrl: string;
+  choices: ChoiceQuizChoice[];
+  correctName?: string;
+  correctIndex?: number;
 }
 
 export function ImageToNameRound({
@@ -36,50 +41,96 @@ export function ImageToNameRound({
   onRoundComplete,
   useBacPool = true,
 }: RoundProps) {
-  const bacPokemon = useMemo(() => getBacPokemon(), []);
-  const catalog = useMemo(() => getCatalogPokemon(), []);
   const [round, setRound] = useState<RoundState | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const startRound = useCallback(() => {
-    const pokemon = useBacPool
-      ? catalog.find((entry) => entry.id === pickRandom(bacPokemon).id)
-      : pickRandom(catalog);
-    if (!pokemon) return;
-    setRound({
-      pokemon,
-      choices: buildQuizChoices(pokemon, catalog),
-    });
+  const startRound = useCallback(async () => {
+    setIsLoading(true);
     setFeedback("idle");
-    setSelectedId(null);
-  }, [bacPokemon, catalog, useBacPool]);
+    setSelectedIndex(null);
+
+    try {
+      const response = await fetch("/api/games/choice-quiz/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "image-to-name",
+          pool: useBacPool ? "bac" : "catalog",
+        }),
+      });
+
+      if (!response.ok) {
+        setRound(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const result = (await response.json()) as ChoiceQuizStartResult;
+      if (!result.questionImageUrl) {
+        setRound(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setRound({
+        token: result.token,
+        questionImageUrl: result.questionImageUrl,
+        choices: result.choices,
+      });
+      setIsLoading(false);
+    } catch {
+      setRound(null);
+      setIsLoading(false);
+    }
+  }, [useBacPool]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
       onRoundComplete();
       return;
     }
-    startRound();
+    void startRound();
   }, [onRoundComplete, startRound]);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(startRound, 0);
+    const timeoutId = window.setTimeout(() => {
+      void startRound();
+    }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [startRound]);
 
-  const handleSkip = useCallback(() => {
+  const handleSkip = useCallback(async () => {
     if (!round || feedback !== "idle") return;
 
-    session.recordRound({
-      question: "Quel est ce Pokémon ?",
-      userAnswer: "Abandon",
-      correctAnswer: round.pokemon.nameFr,
-      isCorrect: false,
-      skipped: true,
-      questionImage: round.pokemon.artwork,
-      correctImage: round.pokemon.artwork,
-    });
+    try {
+      const response = await fetch("/api/games/choice-quiz/skip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: round.token }),
+      });
+      const result = (await response.json()) as ChoiceQuizSkipResult;
+
+      if (result.status === "ok") {
+        session.recordRound({
+          question: "Quel est ce Pokémon ?",
+          userAnswer: "Abandon",
+          correctAnswer: result.reveal.nameFr,
+          isCorrect: false,
+          skipped: true,
+          questionImage: round.questionImageUrl,
+          correctImage: result.reveal.artworkUrl,
+        });
+        setRound((current) =>
+          current
+            ? { ...current, correctName: result.reveal.nameFr }
+            : current,
+        );
+      }
+    } catch {
+      // ignore
+    }
 
     setFeedback("incorrect");
     window.setTimeout(advanceRound, 800);
@@ -87,22 +138,70 @@ export function ImageToNameRound({
 
   useRegisterSkip(handleSkip, Boolean(round) && feedback === "idle");
 
-  const handleAnswer = (pokemon: QuizPokemon) => {
+  const handleAnswer = async (choice: ChoiceQuizChoice) => {
     if (!round || feedback !== "idle") return;
 
-    const isCorrect = pokemon.id === round.pokemon.id;
-    setSelectedId(pokemon.id);
-    setFeedback(isCorrect ? "correct" : "incorrect");
+    setSelectedIndex(choice.choiceIndex);
 
-    session.recordRound({
-      question: "Quel est ce Pokémon ?",
-      userAnswer: pokemon.nameFr,
-      correctAnswer: round.pokemon.nameFr,
-      isCorrect,
-      questionImage: round.pokemon.artwork,
-    });
+    try {
+      const response = await fetch("/api/games/choice-quiz/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: round.token,
+          choiceIndex: choice.choiceIndex,
+        }),
+      });
+      const result = (await response.json()) as ChoiceQuizAnswerResult;
 
-    window.setTimeout(advanceRound, 1000);
+      if (result.status === "correct") {
+        setFeedback("correct");
+        setRound((current) =>
+          current
+            ? {
+                ...current,
+                correctName: result.reveal.nameFr,
+                correctIndex: choice.choiceIndex,
+              }
+            : current,
+        );
+        session.recordRound({
+          question: "Quel est ce Pokémon ?",
+          userAnswer: result.reveal.nameFr,
+          correctAnswer: result.reveal.nameFr,
+          isCorrect: true,
+          questionImage: round.questionImageUrl,
+        });
+        window.setTimeout(advanceRound, 1000);
+        return;
+      }
+
+      if (result.status === "wrong") {
+        const correctChoice = round.choices.find(
+          (entry) => entry.choiceIndex === result.correctIndex,
+        );
+        setFeedback("incorrect");
+        setRound((current) =>
+          current
+            ? {
+                ...current,
+                correctName: correctChoice?.nameFr,
+                correctIndex: result.correctIndex,
+              }
+            : current,
+        );
+        session.recordRound({
+          question: "Quel est ce Pokémon ?",
+          userAnswer: result.reveal.nameFr,
+          correctAnswer: correctChoice?.nameFr ?? "?",
+          isCorrect: false,
+          questionImage: round.questionImageUrl,
+        });
+        window.setTimeout(advanceRound, 1000);
+      }
+    } catch {
+      setSelectedIndex(null);
+    }
   };
 
   const handleChoiceKeyDown = (
@@ -165,7 +264,7 @@ export function ImageToNameRound({
     };
   }, [round, feedback]);
 
-  if (!round) {
+  if (isLoading || !round) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
         Préparation de la manche…
@@ -173,14 +272,17 @@ export function ImageToNameRound({
     );
   }
 
+  const correctIndex = round.correctIndex;
+
   return (
     <div className="flex flex-col items-center gap-10">
       <div className="display-frame flex h-56 w-56 items-center justify-center">
         <Image
-          src={round.pokemon.artwork}
+          src={round.questionImageUrl}
           alt="Pokémon mystère"
           width={192}
           height={192}
+          unoptimized
           className="object-contain"
           priority
         />
@@ -195,39 +297,39 @@ export function ImageToNameRound({
         >
           {feedback === "correct"
             ? "Bravo !"
-            : `Raté — c'était ${round.pokemon.nameFr}.`}
+            : `Raté — c'était ${round.correctName ?? "?"}.`}
         </p>
       ) : (
         <div className="h-6" />
       )}
 
       <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-        {round.choices.map((pokemon, index) => {
-          const isSelected = selectedId === pokemon.id;
-          const isCorrectChoice = pokemon.id === round.pokemon.id;
+        {round.choices.map((choice, index) => {
+          const isSelected = selectedIndex === choice.choiceIndex;
+          const isCorrectChoice =
+            feedback !== "idle" && choice.choiceIndex === correctIndex;
 
           return (
             <Button
-              key={pokemon.id}
+              key={choice.choiceIndex}
               id={`image-to-name-choice-${index}`}
               variant="outline"
               className={cn(
                 "h-auto justify-start px-5 py-4 text-base font-medium",
                 feedback === "idle" &&
                   "hover:border-foreground/20 hover:bg-muted/50",
-                feedback !== "idle" &&
-                  isCorrectChoice &&
+                isCorrectChoice &&
                   "border-emerald-500/50 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300",
                 feedback !== "idle" &&
                   isSelected &&
                   !isCorrectChoice &&
                   "border-poke-red/40 bg-poke-red/5 text-poke-red",
               )}
-              onClick={() => handleAnswer(pokemon)}
+              onClick={() => void handleAnswer(choice)}
               onKeyDown={(event) => handleChoiceKeyDown(event, index)}
               disabled={feedback !== "idle"}
             >
-              {pokemon.nameFr}
+              {choice.nameFr}
             </Button>
           );
         })}

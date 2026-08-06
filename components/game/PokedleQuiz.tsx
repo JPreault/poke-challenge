@@ -7,38 +7,14 @@ import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
-import { pickRandom } from "@/lib/games/random";
+import type {
+  AttemptHints,
+  Direction,
+  PokedleAttempt,
+} from "@/lib/games/pokedle-types";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { getCatalogPokemon, getFrenchIndex } from "@/lib/pokemon/data";
-import { normalizeFrenchName } from "@/lib/pokemon/normalize";
-import type { QuizPokemon } from "@/lib/pokemon/types";
+import { getSearchCatalog } from "@/lib/pokemon/client-data";
 import { cn } from "@/lib/utils";
-
-type HintStatus = "correct" | "partial" | "wrong";
-type Direction = "up" | "down" | "equal";
-
-interface AttemptHints {
-  generation: HintStatus;
-  type1: HintStatus;
-  type2: HintStatus;
-  habitat: HintStatus;
-  colors: HintStatus;
-  evolutionStage: HintStatus;
-  heightM: HintStatus;
-  weightKg: HintStatus;
-}
-
-interface AttemptRow {
-  guess: QuizPokemon;
-  hints: AttemptHints;
-  directions: {
-    generation: Direction;
-    evolutionStage: Direction;
-    heightM: Direction;
-    weightKg: Direction;
-  };
-  isCorrect: boolean;
-}
 
 const POKEDEX_COLUMNS = [
   "Pokémon",
@@ -57,76 +33,10 @@ function formatList(values: string[]) {
   return values.join(", ");
 }
 
-function toUniqueSorted(values: string[]) {
-  return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
-}
-
-function areSameSets(left: string[], right: string[]) {
-  const a = toUniqueSorted(left);
-  const b = toUniqueSorted(right);
-  if (a.length !== b.length) return false;
-  return a.every((value, index) => value === b[index]);
-}
-
-function hasIntersection(left: string[], right: string[]) {
-  const rightSet = new Set(right);
-  return left.some((value) => rightSet.has(value));
-}
-
-function getTypeSlotStatus(
-  guessTypes: string[],
-  targetTypes: string[],
-  slotIndex: 0 | 1,
-): HintStatus {
-  const guessedType = guessTypes[slotIndex] ?? null;
-  const targetType = targetTypes[slotIndex] ?? null;
-
-  if (guessedType === targetType) {
-    return "correct";
-  }
-
-  if (guessedType && targetTypes.includes(guessedType)) {
-    return "partial";
-  }
-
-  return "wrong";
-}
-
-function getSetStatus(guessValues: string[], targetValues: string[]): HintStatus {
-  if (areSameSets(guessValues, targetValues)) {
-    return "correct";
-  }
-
-  if (hasIntersection(guessValues, targetValues)) {
-    return "partial";
-  }
-
-  return "wrong";
-}
-
-function buildHints(guess: QuizPokemon, target: QuizPokemon): AttemptHints {
-  return {
-    generation: guess.generation === target.generation ? "correct" : "wrong",
-    type1: getTypeSlotStatus(guess.types, target.types, 0),
-    type2: getTypeSlotStatus(guess.types, target.types, 1),
-    habitat: guess.habitat === target.habitat ? "correct" : "wrong",
-    colors: getSetStatus(guess.colors, target.colors),
-    evolutionStage:
-      guess.evolutionStage === target.evolutionStage ? "correct" : "wrong",
-    heightM: guess.heightM === target.heightM ? "correct" : "wrong",
-    weightKg: guess.weightKg === target.weightKg ? "correct" : "wrong",
-  };
-}
-
 function getHintAccuracyPercent(hints: AttemptHints): number {
   const values = Object.values(hints);
   const correctCount = values.filter((status) => status === "correct").length;
   return Math.round((correctCount / values.length) * 100);
-}
-
-function getDirection(guessValue: number, targetValue: number): Direction {
-  if (guessValue === targetValue) return "equal";
-  return guessValue < targetValue ? "up" : "down";
 }
 
 function getDirectionSymbol(direction: Direction) {
@@ -135,7 +45,7 @@ function getDirectionSymbol(direction: Direction) {
   return "•";
 }
 
-function hintCellClass(status: HintStatus) {
+function hintCellClass(status: AttemptHints[keyof AttemptHints]) {
   return cn(
     "aspect-square w-28 min-w-28 rounded-lg border px-2 py-2 text-center text-[11px] leading-tight font-medium",
     status === "correct" &&
@@ -155,32 +65,60 @@ export function PokedleRound({
   onRoundComplete?: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const catalog = useMemo(() => getCatalogPokemon(), []);
-  const frenchIndex = useMemo(() => getFrenchIndex(), []);
-  const catalogById = useMemo(
-    () => new Map(catalog.map((pokemon) => [pokemon.id, pokemon])),
-    [catalog],
-  );
-  const [target, setTarget] = useState<QuizPokemon>(() => pickRandom(catalog));
-  const [attempts, setAttempts] = useState<AttemptRow[]>([]);
+  const catalog = useMemo(() => getSearchCatalog(), []);
+  const [token, setToken] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState<PokedleAttempt[]>([]);
   const [guessName, setGuessName] = useState("");
   const [feedback, setFeedback] = useState<string>("");
   const [isSolved, setIsSolved] = useState(false);
   const [wasAbandoned, setWasAbandoned] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [solvedName, setSolvedName] = useState<string | null>(null);
+  const [solvedArtworkUrl, setSolvedArtworkUrl] = useState<string | null>(null);
 
   const excludedIds = useMemo(
-    () => attempts.map((attempt) => attempt.guess.id),
-    [attempts],
+    () => attempts.map((attempt) => {
+      const match = catalog.find((entry) => entry.nameFr === attempt.nameFr);
+      return match?.id ?? -1;
+    }).filter((id) => id >= 0),
+    [attempts, catalog],
   );
 
-  const resetRound = useCallback(() => {
-    setTarget(pickRandom(catalog));
+  const startRound = useCallback(async () => {
+    setIsLoading(true);
+    setToken(null);
     setAttempts([]);
     setGuessName("");
     setFeedback("");
     setIsSolved(false);
     setWasAbandoned(false);
-  }, [catalog]);
+    setSolvedName(null);
+    setSolvedArtworkUrl(null);
+
+    try {
+      const response = await fetch("/api/games/pokedle/start", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await response.json();
+      setToken(result.token);
+      setIsLoading(false);
+      window.setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    } catch {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const resetRound = useCallback(() => {
+    void startRound();
+  }, [startRound]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -189,6 +127,13 @@ export function PokedleRound({
     }
     resetRound();
   }, [onRoundComplete, resetRound]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void startRound();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [startRound]);
 
   useEffect(() => {
     if (!isSolved || !onRoundComplete) return;
@@ -210,94 +155,108 @@ export function PokedleRound({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isSolved, advanceRound]);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const normalized = normalizeFrenchName(guessName);
+    if (!token || isSolved || !guessName.trim()) return;
 
-    if (!normalized) return;
-
-    const indexed = frenchIndex[normalized];
-    if (!indexed) {
-      setFeedback("Ce Pokémon est introuvable dans le Pokédex.");
-      return;
-    }
-
-    const guessedPokemon = catalogById.get(indexed.id);
-    if (!guessedPokemon) {
-      setFeedback("Impossible de charger les données de ce Pokémon.");
-      return;
-    }
-
-    const isCorrect = guessedPokemon.id === target.id;
-    const nextAttempt: AttemptRow = {
-      guess: guessedPokemon,
-      hints: buildHints(guessedPokemon, target),
-      directions: {
-        generation: getDirection(guessedPokemon.generation, target.generation),
-        evolutionStage: getDirection(
-          guessedPokemon.evolutionStage,
-          target.evolutionStage,
-        ),
-        heightM: getDirection(guessedPokemon.heightM, target.heightM),
-        weightKg: getDirection(guessedPokemon.weightKg, target.weightKg),
-      },
-      isCorrect,
-    };
-
-    setAttempts((current) => [nextAttempt, ...current]);
-    setGuessName("");
-    setIsSolved(isCorrect);
-    setFeedback(
-      isCorrect
-        ? `Bravo ! Le Pokémon à trouver était ${target.nameFr}.`
-        : "Continue, les indices sont mis à jour.",
-    );
-    window.setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
-
-    if (isCorrect) {
-      session.recordRound({
-        question: "Trouve le Pokémon mystère",
-        userAnswer: guessedPokemon.nameFr,
-        correctAnswer: target.nameFr,
-        isCorrect: true,
-        attemptCount: attempts.length + 1,
-        chosenImage: guessedPokemon.artwork,
-        chosenLabel: guessedPokemon.nameFr,
-        correctImage: target.artwork,
-        hintAccuracyPercent: 100,
+    try {
+      const response = await fetch("/api/games/pokedle/guess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, answer: guessName }),
       });
+      const result = await response.json();
+
+      if (result.status === "not_found" || result.status === "invalid_token") {
+        setFeedback(result.message);
+        return;
+      }
+
+      if (result.status === "correct") {
+        setAttempts((current) => [result.attempt, ...current]);
+        setGuessName("");
+        setIsSolved(true);
+        setSolvedName(result.targetNameFr);
+        setSolvedArtworkUrl(result.targetArtworkUrl);
+        setFeedback(`Bravo ! Le Pokémon à trouver était ${result.targetNameFr}.`);
+        session.recordRound({
+          question: "Trouve le Pokémon mystère",
+          userAnswer: result.attempt.nameFr,
+          correctAnswer: result.targetNameFr,
+          isCorrect: true,
+          attemptCount: attempts.length + 1,
+          chosenLabel: result.attempt.nameFr,
+          correctImage: result.targetArtworkUrl,
+          hintAccuracyPercent: 100,
+        });
+        return;
+      }
+
+      if (result.status === "wrong") {
+        setAttempts((current) => [result.attempt, ...current]);
+        setGuessName("");
+        setFeedback("Continue, les indices sont mis à jour.");
+        window.setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+      }
+    } catch {
+      setFeedback("Erreur de validation. Réessaie.");
     }
   };
 
-  const handleSkip = useCallback(() => {
-    if (isSolved) return;
+  const handleSkip = useCallback(async () => {
+    if (!token || isSolved) return;
 
-    const lastAttempt = attempts[0];
+    try {
+      const response = await fetch("/api/games/pokedle/skip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const result = await response.json();
 
-    session.recordRound({
-      question: "Trouve le Pokémon mystère",
-      userAnswer: "Abandon",
-      correctAnswer: target.nameFr,
-      isCorrect: false,
-      skipped: true,
-      attemptCount: attempts.length,
-      chosenImage: lastAttempt?.guess.artwork,
-      chosenLabel: lastAttempt?.guess.nameFr,
-      correctImage: target.artwork,
-      hintAccuracyPercent: lastAttempt
-        ? getHintAccuracyPercent(lastAttempt.hints)
-        : 0,
-    });
+      if (result.status !== "ok") {
+        setFeedback(result.message);
+        return;
+      }
 
-    setGuessName("");
-    setWasAbandoned(true);
-    setIsSolved(true);
-    setFeedback(`Abandonné. C'était ${target.nameFr}.`);
-  }, [attempts, isSolved, session, target.artwork, target.nameFr]);
+      const lastAttempt = attempts[0];
 
-  useRegisterSkip(handleSkip, !isSolved);
+      session.recordRound({
+        question: "Trouve le Pokémon mystère",
+        userAnswer: "Abandon",
+        correctAnswer: result.targetNameFr,
+        isCorrect: false,
+        skipped: true,
+        attemptCount: attempts.length,
+        chosenLabel: lastAttempt?.nameFr,
+        correctImage: result.targetArtworkUrl,
+        hintAccuracyPercent: lastAttempt
+          ? getHintAccuracyPercent(lastAttempt.hints)
+          : 0,
+      });
+
+      setSolvedName(result.targetNameFr);
+      setSolvedArtworkUrl(result.targetArtworkUrl);
+      setGuessName("");
+      setWasAbandoned(true);
+      setIsSolved(true);
+      setFeedback(`Abandonné. C'était ${result.targetNameFr}.`);
+    } catch {
+      setFeedback("Impossible d'abandonner la manche.");
+    }
+  }, [attempts, isSolved, session, token]);
+
+  useRegisterSkip(handleSkip, Boolean(token) && !isSolved);
+
+  if (isLoading || !token) {
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground">
+        Préparation de la manche…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -329,14 +288,15 @@ export function PokedleRound({
       </form>
 
       <div className="space-y-4">
-        {isSolved ? (
+        {isSolved && solvedArtworkUrl ? (
           <div className="flex flex-col items-center gap-2">
             <div className="relative h-40 w-40">
               <Image
-                src={target.artwork}
-                alt={target.nameFr}
+                src={solvedArtworkUrl}
+                alt={solvedName ?? "Pokémon"}
                 fill
                 sizes="160px"
+                unoptimized
                 className="object-contain"
               />
             </div>
@@ -369,7 +329,7 @@ export function PokedleRound({
             ))}
 
             {attempts.map((attempt, index) => (
-              <AttemptCells key={`${attempt.guess.id}-${index}`} attempt={attempt} />
+              <AttemptCells key={`${attempt.nameFr}-${index}`} attempt={attempt} />
             ))}
           </div>
         </div>
@@ -391,8 +351,8 @@ export function PokedleQuiz({ session }: { session: GameSession }) {
   );
 }
 
-function AttemptCells({ attempt }: { attempt: AttemptRow }) {
-  const { guess, hints, isCorrect, directions } = attempt;
+function AttemptCells({ attempt }: { attempt: PokedleAttempt }) {
+  const { hints, isCorrect, directions } = attempt;
 
   return (
     <>
@@ -400,10 +360,11 @@ function AttemptCells({ attempt }: { attempt: AttemptRow }) {
         <div className="flex h-full items-center justify-center">
           <div className="relative h-16 w-16">
             <Image
-              src={guess.sprite}
-              alt={guess.nameFr}
+              src={attempt.spriteUrl}
+              alt={attempt.nameFr}
               fill
               sizes="64px"
+              unoptimized
               className="object-contain"
             />
           </div>
@@ -411,29 +372,29 @@ function AttemptCells({ attempt }: { attempt: AttemptRow }) {
       </div>
       <div className={hintCellClass(hints.generation)}>
         <div className="flex h-full items-center justify-center gap-1">
-          <span>{`Gen ${guess.generation}`}</span>
+          <span>{`Gen ${attempt.generation}`}</span>
           {hints.generation !== "correct" ? (
             <span className="text-base">{getDirectionSymbol(directions.generation)}</span>
           ) : null}
         </div>
       </div>
       <div className={hintCellClass(hints.type1)}>
-        <div className="flex h-full items-center justify-center">{guess.types[0] ?? "Aucun"}</div>
+        <div className="flex h-full items-center justify-center">{attempt.types[0] ?? "Aucun"}</div>
       </div>
       <div className={hintCellClass(hints.type2)}>
-        <div className="flex h-full items-center justify-center">{guess.types[1] ?? "Aucun"}</div>
+        <div className="flex h-full items-center justify-center">{attempt.types[1] ?? "Aucun"}</div>
       </div>
       <div className={hintCellClass(hints.habitat)}>
         <div className="flex h-full items-center justify-center">
-          {guess.habitat ?? "Aucun"}
+          {attempt.habitat ?? "Aucun"}
         </div>
       </div>
       <div className={hintCellClass(hints.colors)}>
-        <div className="flex h-full items-center justify-center">{formatList(guess.colors)}</div>
+        <div className="flex h-full items-center justify-center">{formatList(attempt.colors)}</div>
       </div>
       <div className={hintCellClass(hints.evolutionStage)}>
         <div className="flex h-full items-center justify-center gap-1">
-          <span>{guess.evolutionStage}</span>
+          <span>{attempt.evolutionStage}</span>
           {hints.evolutionStage !== "correct" ? (
             <span className="text-base">
               {getDirectionSymbol(directions.evolutionStage)}
@@ -443,7 +404,7 @@ function AttemptCells({ attempt }: { attempt: AttemptRow }) {
       </div>
       <div className={hintCellClass(hints.heightM)}>
         <div className="flex h-full items-center justify-center gap-1">
-          <span>{`${guess.heightM} m`}</span>
+          <span>{`${attempt.heightM} m`}</span>
           {hints.heightM !== "correct" ? (
             <span className="text-base">{getDirectionSymbol(directions.heightM)}</span>
           ) : null}
@@ -451,7 +412,7 @@ function AttemptCells({ attempt }: { attempt: AttemptRow }) {
       </div>
       <div className={hintCellClass(hints.weightKg)}>
         <div className="flex h-full items-center justify-center gap-1">
-          <span>{`${guess.weightKg} kg`}</span>
+          <span>{`${attempt.weightKg} kg`}</span>
           {hints.weightKg !== "correct" ? (
             <span className="text-base">{getDirectionSymbol(directions.weightKg)}</span>
           ) : null}

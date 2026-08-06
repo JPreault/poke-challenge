@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { pickRandom } from "@/lib/games/random";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { getBacPokemon, getCatalogPokemon } from "@/lib/pokemon/data";
+import { getBacSearchEntries, getSearchCatalog } from "@/lib/pokemon/client-data";
 import { getFirstLetter } from "@/lib/pokemon/normalize";
 import type { ValidationMode, ValidationResult } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
@@ -44,12 +44,12 @@ type FeedbackState =
 function getExampleNameForLetter(letter: string, validationMode: ValidationMode): string {
   if (validationMode !== "catalog") {
     return (
-      getBacPokemon().find((pokemon) => pokemon.letter === letter.toUpperCase())
+      getBacSearchEntries().find((pokemon) => pokemon.letter === letter.toUpperCase())
         ?.nameFr ?? letter
     );
   }
 
-  const matches = getCatalogPokemon().filter(
+  const matches = getSearchCatalog().filter(
     (pokemon) => getFirstLetter(pokemon.nameFr) === letter.toUpperCase(),
   );
   return matches.length > 0 ? pickRandom(matches).nameFr : letter;
@@ -180,14 +180,14 @@ export function LetterInputRound({
   onRoundComplete,
   validationMode = "free",
 }: RoundProps) {
-  const allPokemon = useMemo(() => getBacPokemon(), []);
+  const allPokemon = useMemo(() => getBacSearchEntries(), []);
   const availableLetters = useMemo(() => {
     if (validationMode !== "catalog") {
       return allPokemon.map((pokemon) => pokemon.letter);
     }
 
     const uniqueLetters = new Set(
-      getCatalogPokemon().map((pokemon) => getFirstLetter(pokemon.nameFr)),
+      getSearchCatalog().map((pokemon) => getFirstLetter(pokemon.nameFr)),
     );
     return Array.from(uniqueLetters).filter(Boolean);
   }, [allPokemon, validationMode]);

@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { BAC_POKEMON } from "../data/bac-list";
@@ -9,6 +9,7 @@ const POKEAPI_BASE = "https://pokeapi.co/api/v2";
 const FETCH_CONCURRENCY = 12;
 const FETCH_MAX_ATTEMPTS = 5;
 const OUTPUT_PATH = join(process.cwd(), "data", "pokemon.json");
+const SEARCH_OUTPUT_PATH = join(process.cwd(), "data", "pokemon-search.json");
 
 interface SpeciesName {
     language: { name: string };
@@ -455,7 +456,17 @@ async function generatePokemonData() {
 
     const data: PokemonData = { bac, catalog, frenchIndex };
     writeFileSync(OUTPUT_PATH, JSON.stringify(data, null, 2));
+    writeSearchIndex(data);
     console.log(`\nWrote ${OUTPUT_PATH} (${bac.length} bac Pokémon, ${catalog.length} catalog)`);
+}
+
+function writeSearchIndex(data: PokemonData) {
+    const search = {
+        catalog: data.catalog.map(({ id, nameFr }) => ({ id, nameFr })),
+        bac: data.bac.map(({ letter, id, nameFr }) => ({ letter, id, nameFr })),
+    };
+    writeFileSync(SEARCH_OUTPUT_PATH, JSON.stringify(search, null, 2));
+    console.log(`Wrote ${SEARCH_OUTPUT_PATH}`);
 }
 
 async function main() {
@@ -465,6 +476,10 @@ async function main() {
     // On Vercel/CI, reuse committed data by default to avoid PokéAPI flakiness.
     if (hasExistingData && !forceGenerate) {
         console.log(`Using existing ${OUTPUT_PATH} (set FORCE_GENERATE_POKEMON=1 to regenerate from PokéAPI)`);
+        const existing = JSON.parse(
+            readFileSync(OUTPUT_PATH, "utf8"),
+        ) as PokemonData;
+        writeSearchIndex(existing);
         return;
     }
 

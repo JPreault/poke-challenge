@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState, type RefObject } from "react";
 
 import { Input } from "@/components/ui/input";
+import type { SearchPokemon } from "@/lib/pokemon/client-data";
 import { normalizeFrenchName } from "@/lib/pokemon/normalize";
-import type { QuizPokemon } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
 
 interface PokemonSearchInputProps {
@@ -13,7 +12,7 @@ interface PokemonSearchInputProps {
   value: string;
   onChange: (value: string) => void;
   onInputActivity?: () => void;
-  catalog: QuizPokemon[];
+  catalog: SearchPokemon[];
   disabled?: boolean;
   readOnly?: boolean;
   placeholder?: string;
@@ -58,7 +57,7 @@ export function PokemonSearchInput({
   const canShowSuggestions =
     showSuggestions && filteredSuggestions.length > 0 && !readOnly && !disabled;
 
-  const handleSelectSuggestion = (pokemon: QuizPokemon) => {
+  const handleSelectSuggestion = (pokemon: SearchPokemon) => {
     onChange(pokemon.nameFr);
     setShowSuggestions(false);
     setHighlightedSuggestionIndex(-1);
@@ -176,21 +175,12 @@ export function PokemonSearchInput({
                 onFocus={() => setHighlightedSuggestionIndex(index)}
                 onKeyDown={(event) => handleSuggestionKeyDown(event, index)}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/60",
+                  "flex w-full items-center rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/60",
                   highlightedSuggestionIndex >= 0 &&
                     filteredSuggestions[highlightedSuggestionIndex]?.id === pokemon.id &&
                     "bg-muted/70",
                 )}
               >
-                <div className="relative h-8 w-8 shrink-0">
-                  <Image
-                    src={pokemon.sprite}
-                    alt={pokemon.nameFr}
-                    fill
-                    sizes="32px"
-                    className="object-contain"
-                  />
-                </div>
                 <span>{pokemon.nameFr}</span>
               </button>
             </li>

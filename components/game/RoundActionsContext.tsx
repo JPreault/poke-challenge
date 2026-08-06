@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -55,14 +56,24 @@ export function useRegisterSkip(
   enabled: boolean,
 ) {
   const { setSkipAction } = useRoundActions();
+  const onSkipRef = useRef(onSkip);
 
   useEffect(() => {
-    if (!onSkip || !enabled) {
+    onSkipRef.current = onSkip;
+  }, [onSkip]);
+
+  useEffect(() => {
+    if (!enabled) {
       setSkipAction(null);
       return;
     }
 
-    setSkipAction({ onSkip, disabled: false });
+    setSkipAction({
+      onSkip: () => {
+        onSkipRef.current?.();
+      },
+      disabled: false,
+    });
     return () => setSkipAction(null);
-  }, [onSkip, enabled, setSkipAction]);
+  }, [enabled, setSkipAction]);
 }

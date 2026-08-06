@@ -15,6 +15,12 @@ import type { RoundRecord } from "@/lib/games/types";
 import type { GameSession } from "@/lib/games/useGameSession";
 import { cn } from "@/lib/utils";
 
+function isOpaqueMediaUrl(src: string) {
+  return (
+    src.startsWith("/api/media/") || src.startsWith("/api/games/mystery/")
+  );
+}
+
 interface GameShellProps {
   session: GameSession;
   title: string;
@@ -248,6 +254,7 @@ function ErrorRoundItem({
                 alt={round.correctAnswer}
                 fill
                 sizes="40px"
+                unoptimized={isOpaqueMediaUrl(round.questionImage)}
                 className="object-contain"
               />
             </div>
@@ -293,6 +300,7 @@ function ErrorRoundItem({
                       alt={round.chosenLabel ?? round.userAnswer}
                       fill
                       sizes="64px"
+                      unoptimized={isOpaqueMediaUrl(round.chosenImage)}
                       className="object-contain"
                     />
                   </div>
@@ -324,6 +332,7 @@ function ErrorRoundItem({
                     alt={round.correctAnswer}
                     fill
                     sizes="64px"
+                    unoptimized={isOpaqueMediaUrl(round.correctImage)}
                     className="object-contain"
                   />
                 </div>
@@ -364,6 +373,7 @@ function AnswerCard({
                 alt={name ?? label}
                 fill
                 sizes="64px"
+                unoptimized={isOpaqueMediaUrl(image)}
                 className="object-contain"
               />
             </div>

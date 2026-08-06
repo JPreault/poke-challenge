@@ -1,15 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
-import { buildQuizChoices } from "@/lib/games/distractors";
-import { pickRandom } from "@/lib/games/random";
+import type {
+  ChoiceQuizAnswerResult,
+  ChoiceQuizChoice,
+  ChoiceQuizSkipResult,
+  ChoiceQuizStartResult,
+} from "@/lib/games/choice-quiz-types";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { getBacPokemon, getCatalogPokemon } from "@/lib/pokemon/data";
-import type { QuizPokemon } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
 
 interface RoundProps {
@@ -26,8 +28,10 @@ interface NameToImageQuizProps {
 type FeedbackState = "idle" | "correct" | "incorrect";
 
 interface RoundState {
-  pokemon: QuizPokemon;
-  choices: QuizPokemon[];
+  token: string;
+  questionName: string;
+  choices: ChoiceQuizChoice[];
+  correctIndex?: number;
 }
 
 export function NameToImageRound({
@@ -35,49 +39,90 @@ export function NameToImageRound({
   onRoundComplete,
   useBacPool = true,
 }: RoundProps) {
-  const bacPokemon = useMemo(() => getBacPokemon(), []);
-  const catalog = useMemo(() => getCatalogPokemon(), []);
   const [round, setRound] = useState<RoundState | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const startRound = useCallback(() => {
-    const pokemon = useBacPool
-      ? catalog.find((entry) => entry.id === pickRandom(bacPokemon).id)
-      : pickRandom(catalog);
-    if (!pokemon) return;
-    setRound({
-      pokemon,
-      choices: buildQuizChoices(pokemon, catalog),
-    });
+  const startRound = useCallback(async () => {
+    setIsLoading(true);
     setFeedback("idle");
-    setSelectedId(null);
-  }, [bacPokemon, catalog, useBacPool]);
+    setSelectedIndex(null);
+
+    try {
+      const response = await fetch("/api/games/choice-quiz/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "name-to-image",
+          pool: useBacPool ? "bac" : "catalog",
+        }),
+      });
+
+      if (!response.ok) {
+        setRound(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const result = (await response.json()) as ChoiceQuizStartResult;
+      if (!result.questionName) {
+        setRound(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setRound({
+        token: result.token,
+        questionName: result.questionName,
+        choices: result.choices,
+      });
+      setIsLoading(false);
+    } catch {
+      setRound(null);
+      setIsLoading(false);
+    }
+  }, [useBacPool]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
       onRoundComplete();
       return;
     }
-    startRound();
+    void startRound();
   }, [onRoundComplete, startRound]);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(startRound, 0);
+    const timeoutId = window.setTimeout(() => {
+      void startRound();
+    }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [startRound]);
 
-  const handleSkip = useCallback(() => {
+  const handleSkip = useCallback(async () => {
     if (!round || feedback !== "idle") return;
 
-    session.recordRound({
-      question: `Quelle image correspond à ${round.pokemon.nameFr} ?`,
-      userAnswer: "Abandon",
-      correctAnswer: round.pokemon.nameFr,
-      isCorrect: false,
-      skipped: true,
-      correctImage: round.pokemon.artwork,
-    });
+    try {
+      const response = await fetch("/api/games/choice-quiz/skip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: round.token }),
+      });
+      const result = (await response.json()) as ChoiceQuizSkipResult;
+
+      if (result.status === "ok") {
+        session.recordRound({
+          question: `Quelle image correspond à ${round.questionName} ?`,
+          userAnswer: "Abandon",
+          correctAnswer: result.reveal.nameFr,
+          isCorrect: false,
+          skipped: true,
+          correctImage: result.reveal.artworkUrl,
+        });
+      }
+    } catch {
+      // ignore
+    }
 
     setFeedback("incorrect");
     window.setTimeout(advanceRound, 800);
@@ -85,24 +130,60 @@ export function NameToImageRound({
 
   useRegisterSkip(handleSkip, Boolean(round) && feedback === "idle");
 
-  const handleAnswer = (pokemon: QuizPokemon) => {
-    if (!round || feedback !== "idle") return;
+  const handleAnswer = async (choice: ChoiceQuizChoice) => {
+    if (!round || feedback !== "idle" || !choice.imageUrl) return;
 
-    const isCorrect = pokemon.id === round.pokemon.id;
-    setSelectedId(pokemon.id);
-    setFeedback(isCorrect ? "correct" : "incorrect");
+    setSelectedIndex(choice.choiceIndex);
 
-    session.recordRound({
-      question: `Quelle image correspond à ${round.pokemon.nameFr} ?`,
-      userAnswer: pokemon.nameFr,
-      correctAnswer: round.pokemon.nameFr,
-      isCorrect,
-      chosenImage: pokemon.artwork,
-      chosenLabel: pokemon.nameFr,
-      correctImage: round.pokemon.artwork,
-    });
+    try {
+      const response = await fetch("/api/games/choice-quiz/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: round.token,
+          choiceIndex: choice.choiceIndex,
+        }),
+      });
+      const result = (await response.json()) as ChoiceQuizAnswerResult;
 
-    window.setTimeout(advanceRound, 1000);
+      if (result.status === "correct") {
+        setFeedback("correct");
+        setRound((current) =>
+          current ? { ...current, correctIndex: choice.choiceIndex } : current,
+        );
+        session.recordRound({
+          question: `Quelle image correspond à ${round.questionName} ?`,
+          userAnswer: result.reveal.nameFr,
+          correctAnswer: result.reveal.nameFr,
+          isCorrect: true,
+          chosenImage: choice.imageUrl,
+          chosenLabel: result.reveal.nameFr,
+          correctImage: result.reveal.artworkUrl,
+        });
+        window.setTimeout(advanceRound, 1000);
+        return;
+      }
+
+      if (result.status === "wrong") {
+        setFeedback("incorrect");
+        setRound((current) =>
+          current
+            ? { ...current, correctIndex: result.correctIndex }
+            : current,
+        );
+        session.recordRound({
+          question: `Quelle image correspond à ${round.questionName} ?`,
+          userAnswer: result.reveal.nameFr,
+          correctAnswer: round.questionName,
+          isCorrect: false,
+          chosenImage: choice.imageUrl,
+          chosenLabel: result.reveal.nameFr,
+        });
+        window.setTimeout(advanceRound, 1000);
+      }
+    } catch {
+      setSelectedIndex(null);
+    }
   };
 
   const handleChoiceKeyDown = (
@@ -160,12 +241,10 @@ export function NameToImageRound({
     };
 
     window.addEventListener("keydown", focusChoiceFromArrow);
-    return () => {
-      window.removeEventListener("keydown", focusChoiceFromArrow);
-    };
+    return () => window.removeEventListener("keydown", focusChoiceFromArrow);
   }, [round, feedback]);
 
-  if (!round) {
+  if (isLoading || !round) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
         Préparation de la manche…
@@ -179,7 +258,7 @@ export function NameToImageRound({
         <p className="mb-2 text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
           Trouve l&apos;image de
         </p>
-        <p className="font-heading text-4xl font-bold">{round.pokemon.nameFr}</p>
+        <p className="font-heading text-4xl font-bold">{round.questionName}</p>
       </div>
 
       {feedback !== "idle" ? (
@@ -191,47 +270,50 @@ export function NameToImageRound({
         >
           {feedback === "correct"
             ? "Bravo !"
-            : `Raté — c'était ${round.pokemon.nameFr}.`}
+            : `Raté — c'était ${round.questionName}.`}
         </p>
       ) : (
         <div className="h-6" />
       )}
 
       <div className="grid w-full grid-cols-2 gap-4">
-        {round.choices.map((pokemon, index) => {
-          const isSelected = selectedId === pokemon.id;
-          const isCorrectChoice = pokemon.id === round.pokemon.id;
+        {round.choices.map((choice, index) => {
+          const isSelected = selectedIndex === choice.choiceIndex;
+          const isCorrectChoice =
+            feedback !== "idle" && choice.choiceIndex === round.correctIndex;
 
           return (
             <button
-              key={pokemon.id}
+              key={choice.choiceIndex}
               id={`name-to-image-choice-${index}`}
               type="button"
               className={cn(
                 "display-frame flex items-center justify-center p-6 transition disabled:cursor-not-allowed",
                 feedback === "idle" &&
                   "hover:border-foreground/20 hover:bg-muted/50",
-                feedback !== "idle" &&
-                  isCorrectChoice &&
+                isCorrectChoice &&
                   "border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/30",
                 feedback !== "idle" &&
                   isSelected &&
                   !isCorrectChoice &&
                   "border-poke-red/40 bg-poke-red/5",
               )}
-              onClick={() => handleAnswer(pokemon)}
+              onClick={() => void handleAnswer(choice)}
               onKeyDown={(event) => handleChoiceKeyDown(event, index)}
-              disabled={feedback !== "idle"}
+              disabled={feedback !== "idle" || !choice.imageUrl}
             >
               <div className="relative h-28 w-28">
-                <Image
-                  src={pokemon.artwork}
-                  alt={pokemon.nameFr}
-                  fill
-                  sizes="112px"
-                  loading="eager"
-                  className="object-contain"
-                />
+                {choice.imageUrl ? (
+                  <Image
+                    src={choice.imageUrl}
+                    alt="Proposition"
+                    fill
+                    sizes="112px"
+                    unoptimized
+                    loading="eager"
+                    className="object-contain"
+                  />
+                ) : null}
               </div>
             </button>
           );

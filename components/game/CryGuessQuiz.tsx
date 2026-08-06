@@ -1,16 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
-import { buildQuizChoices } from "@/lib/games/distractors";
-import { pickRandom } from "@/lib/games/random";
+import type {
+  ChoiceQuizAnswerResult,
+  ChoiceQuizChoice,
+  ChoiceQuizSkipResult,
+  ChoiceQuizStartResult,
+} from "@/lib/games/choice-quiz-types";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { getCatalogPokemon } from "@/lib/pokemon/data";
-import type { QuizPokemon } from "@/lib/pokemon/types";
 import { cn } from "@/lib/utils";
 
 interface RoundProps {
@@ -28,127 +30,214 @@ type FeedbackState =
   | { type: "incorrect"; message: string };
 
 interface RoundState {
-  pokemon: QuizPokemon;
-  choices: QuizPokemon[];
+  token: string;
+  questionName: string;
+  questionImageUrl: string;
+  choices: ChoiceQuizChoice[];
+  correctIndex?: number;
 }
 
 export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
-  const catalog = useMemo(() => getCatalogPokemon(), []);
   const [round, setRound] = useState<RoundState | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState>({ type: "idle" });
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [isPlayingId, setIsPlayingId] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isPlayingIndex, setIsPlayingIndex] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const startRound = useCallback(() => {
-    const pokemon = pickRandom(catalog);
-    setRound({
-      pokemon,
-      choices: buildQuizChoices(pokemon, catalog),
-    });
+  const startRound = useCallback(async () => {
+    setIsLoading(true);
     setFeedback({ type: "idle" });
-    setSelectedId(null);
-    setIsPlayingId(null);
-  }, [catalog]);
+    setSelectedIndex(null);
+    setIsPlayingIndex(null);
+
+    try {
+      const response = await fetch("/api/games/choice-quiz/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "cry-guess", pool: "catalog" }),
+      });
+
+      if (!response.ok) {
+        setRound(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const result = (await response.json()) as ChoiceQuizStartResult;
+      if (!result.questionName || !result.questionImageUrl) {
+        setRound(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setRound({
+        token: result.token,
+        questionName: result.questionName,
+        questionImageUrl: result.questionImageUrl,
+        choices: result.choices,
+      });
+      setIsLoading(false);
+    } catch {
+      setRound(null);
+      setIsLoading(false);
+    }
+  }, []);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
       onRoundComplete();
       return;
     }
-    startRound();
+    void startRound();
   }, [onRoundComplete, startRound]);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(startRound, 0);
+    const timeoutId = window.setTimeout(() => {
+      void startRound();
+    }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [startRound]);
 
-  const playCry = useCallback((pokemon: QuizPokemon) => {
-    setIsPlayingId(pokemon.id);
-    const audio = new Audio(pokemon.cryLatest);
+  const playCry = useCallback((choice: ChoiceQuizChoice) => {
+    if (!choice.cryUrl) return;
+    setIsPlayingIndex(choice.choiceIndex);
+    const audio = new Audio(choice.cryUrl);
     audio.volume = 0.35;
     audio.play().catch(() => undefined);
-    audio.onended = () => setIsPlayingId((current) => (current === pokemon.id ? null : current));
+    audio.onended = () =>
+      setIsPlayingIndex((current) =>
+        current === choice.choiceIndex ? null : current,
+      );
   }, []);
 
-  const handleSkip = useCallback(() => {
+  const handleSkip = useCallback(async () => {
     if (!round || feedback.type !== "idle") return;
 
-    session.recordRound({
-      question: `Quel cri correspond à ${round.pokemon.nameFr} ?`,
-      userAnswer: "Abandon",
-      correctAnswer: round.pokemon.nameFr,
-      isCorrect: false,
-      skipped: true,
-      questionImage: round.pokemon.artwork,
-      correctImage: round.pokemon.artwork,
-      correctAnswerCry: round.pokemon.cryLatest,
-    });
+    try {
+      const response = await fetch("/api/games/choice-quiz/skip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: round.token }),
+      });
+      const result = (await response.json()) as ChoiceQuizSkipResult;
+
+      if (result.status === "ok") {
+        session.recordRound({
+          question: `Quel cri correspond à ${round.questionName} ?`,
+          userAnswer: "Abandon",
+          correctAnswer: result.reveal.nameFr,
+          isCorrect: false,
+          skipped: true,
+          questionImage: round.questionImageUrl,
+          correctImage: result.reveal.artworkUrl,
+          correctAnswerCry: result.reveal.cryUrl,
+        });
+        if (result.reveal.cryUrl) {
+          const audio = new Audio(result.reveal.cryUrl);
+          audio.volume = 0.35;
+          audio.play().catch(() => undefined);
+        }
+      }
+    } catch {
+      // ignore
+    }
 
     setFeedback({
       type: "incorrect",
-      message: `Abandonné. C'était ${round.pokemon.nameFr}.`,
+      message: `Abandonné. C'était ${round.questionName}.`,
     });
-    playCry(round.pokemon);
     window.setTimeout(advanceRound, 1800);
-  }, [advanceRound, feedback.type, playCry, round, session]);
+  }, [advanceRound, feedback.type, round, session]);
 
   useRegisterSkip(handleSkip, Boolean(round) && feedback.type === "idle");
 
-  const validateChoice = (pokemon: QuizPokemon) => {
+  const validateChoice = async (choice: ChoiceQuizChoice) => {
     if (!round || feedback.type !== "idle") return;
 
-    setSelectedId(pokemon.id);
-    const isCorrect = pokemon.id === round.pokemon.id;
+    setSelectedIndex(choice.choiceIndex);
 
-    if (isCorrect) {
-      setFeedback({ type: "correct", message: "Bravo !" });
-    } else {
-      const correctIndex =
-        round.choices.findIndex((choice) => choice.id === round.pokemon.id) + 1;
-      setFeedback({
-        type: "incorrect",
-        message: `Raté, c'était la proposition ${correctIndex}.`,
+    try {
+      const response = await fetch("/api/games/choice-quiz/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: round.token,
+          choiceIndex: choice.choiceIndex,
+        }),
       });
-      playCry(round.pokemon);
+      const result = (await response.json()) as ChoiceQuizAnswerResult;
+
+      if (result.status === "correct") {
+        setFeedback({ type: "correct", message: "Bravo !" });
+        setRound((current) =>
+          current
+            ? { ...current, correctIndex: choice.choiceIndex }
+            : current,
+        );
+        session.recordRound({
+          question: `Quel cri correspond à ${round.questionName} ?`,
+          userAnswer: result.reveal.nameFr,
+          correctAnswer: result.reveal.nameFr,
+          isCorrect: true,
+          questionImage: round.questionImageUrl,
+          userAnswerCry: choice.cryUrl,
+          correctAnswerCry: result.reveal.cryUrl,
+        });
+        window.setTimeout(advanceRound, 1200);
+        return;
+      }
+
+      if (result.status === "wrong") {
+        const correctIndex = result.correctIndex + 1;
+        setRound((current) =>
+          current
+            ? { ...current, correctIndex: result.correctIndex }
+            : current,
+        );
+        setFeedback({
+          type: "incorrect",
+          message: `Raté, c'était la proposition ${correctIndex}.`,
+        });
+        session.recordRound({
+          question: `Quel cri correspond à ${round.questionName} ?`,
+          userAnswer: `Proposition ${choice.choiceIndex + 1}`,
+          correctAnswer: round.questionName,
+          isCorrect: false,
+          questionImage: round.questionImageUrl,
+          userAnswerCry: choice.cryUrl,
+        });
+        window.setTimeout(advanceRound, 2200);
+      }
+    } catch {
+      setSelectedIndex(null);
     }
-
-    session.recordRound({
-      question: `Quel cri correspond à ${round.pokemon.nameFr} ?`,
-      userAnswer: pokemon.nameFr,
-      correctAnswer: round.pokemon.nameFr,
-      isCorrect,
-      questionImage: round.pokemon.artwork,
-      userAnswerCry: pokemon.cryLatest,
-      correctAnswerCry: round.pokemon.cryLatest,
-    });
-
-    window.setTimeout(advanceRound, isCorrect ? 1200 : 2200);
   };
 
   const handleValidateSelected = () => {
-    if (!round || feedback.type !== "idle" || selectedId === null) return;
-    const selected = round.choices.find((choice) => choice.id === selectedId);
+    if (!round || feedback.type !== "idle" || selectedIndex === null) return;
+    const selected = round.choices.find(
+      (choice) => choice.choiceIndex === selectedIndex,
+    );
     if (!selected) return;
-    validateChoice(selected);
+    void validateChoice(selected);
   };
 
   const handleChoiceKeyDown = (
     event: React.KeyboardEvent<HTMLButtonElement>,
     index: number,
-    pokemon: QuizPokemon,
+    choice: ChoiceQuizChoice,
   ) => {
     if (!round || feedback.type !== "idle") return;
 
     if (event.key === " ") {
       event.preventDefault();
-      playCry(pokemon);
+      playCry(choice);
       return;
     }
 
     if (event.key === "Enter") {
       event.preventDefault();
-      validateChoice(pokemon);
+      void validateChoice(choice);
       return;
     }
 
@@ -167,7 +256,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
     const nextButton = document.getElementById(
       `cry-choice-${nextIndex}`,
     ) as HTMLButtonElement | null;
-    setSelectedId(round.choices[nextIndex]?.id ?? null);
+    setSelectedIndex(round.choices[nextIndex]?.choiceIndex ?? null);
     nextButton?.focus();
   };
 
@@ -198,7 +287,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       if (!target) return;
 
       event.preventDefault();
-      setSelectedId(round.choices[targetIndex]?.id ?? null);
+      setSelectedIndex(round.choices[targetIndex]?.choiceIndex ?? null);
       target.focus();
     };
 
@@ -206,7 +295,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
     return () => window.removeEventListener("keydown", focusChoiceFromArrow);
   }, [round, feedback]);
 
-  if (!round) {
+  if (isLoading || !round) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
         Préparation de la manche…
@@ -219,14 +308,15 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       <div className="display-frame w-full text-center">
         <div className="mx-auto mb-4 flex h-40 w-40 items-center justify-center">
           <Image
-            src={round.pokemon.artwork}
-            alt={round.pokemon.nameFr}
+            src={round.questionImageUrl}
+            alt="Pokémon mystère"
             width={160}
             height={160}
+            unoptimized
             className="object-contain"
           />
         </div>
-        <p className="font-heading text-3xl font-bold">{round.pokemon.nameFr}</p>
+        <p className="font-heading text-3xl font-bold">{round.questionName}</p>
       </div>
 
       {feedback.type !== "idle" ? (
@@ -243,11 +333,11 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       )}
 
       <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-        {round.choices.map((pokemon, index) => {
-          const isSelected = selectedId === pokemon.id;
+        {round.choices.map((choice, index) => {
+          const isSelected = selectedIndex === choice.choiceIndex;
           return (
             <Button
-              key={pokemon.id}
+              key={choice.choiceIndex}
               id={`cry-choice-${index}`}
               type="button"
               variant={isSelected ? "default" : "outline"}
@@ -256,11 +346,11 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
                 feedback.type === "idle" && "hover:border-foreground/20",
               )}
               onClick={() => {
-                setSelectedId(pokemon.id);
-                playCry(pokemon);
+                setSelectedIndex(choice.choiceIndex);
+                playCry(choice);
               }}
-              onFocus={() => setSelectedId(pokemon.id)}
-              onKeyDown={(event) => handleChoiceKeyDown(event, index, pokemon)}
+              onFocus={() => setSelectedIndex(choice.choiceIndex)}
+              onKeyDown={(event) => handleChoiceKeyDown(event, index, choice)}
               disabled={feedback.type !== "idle"}
               aria-label={`Proposition ${index + 1} - appuie sur espace pour écouter le cri, entrée pour valider`}
             >
@@ -269,7 +359,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
                 aria-hidden
                 className={cn(
                   "inline-flex items-center rounded-md border border-border/60 px-2 py-1 text-sm",
-                  isPlayingId === pokemon.id && "text-primary",
+                  isPlayingIndex === choice.choiceIndex && "text-primary",
                 )}
               >
                 ▶
@@ -284,7 +374,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
         size="lg"
         className="w-full max-w-sm"
         onClick={handleValidateSelected}
-        disabled={feedback.type !== "idle" || selectedId === null}
+        disabled={feedback.type !== "idle" || selectedIndex === null}
       >
         Valider le cri
       </Button>
@@ -303,4 +393,3 @@ export function CryGuessQuiz({ session }: CryGuessQuizProps) {
     </GameShell>
   );
 }
-

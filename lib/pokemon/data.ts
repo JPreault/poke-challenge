@@ -1,3 +1,5 @@
+import "server-only";
+
 import pokemonData from "@/data/pokemon.json";
 import type { PokemonData } from "@/lib/pokemon/types";
 
@@ -19,4 +21,8 @@ export function getBacPokemonByLetter(letter: string) {
   return POKEMON_DATA.bac.find(
     (pokemon) => pokemon.letter.toUpperCase() === letter.toUpperCase(),
   );
+}
+
+export function findCatalogPokemonById(id: number) {
+  return POKEMON_DATA.catalog.find((pokemon) => pokemon.id === id);
 }

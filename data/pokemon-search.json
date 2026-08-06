@@ -1,0 +1,4236 @@
+{
+  "catalog": [
+    {
+      "id": 1,
+      "nameFr": "Bulbizarre"
+    },
+    {
+      "id": 2,
+      "nameFr": "Herbizarre"
+    },
+    {
+      "id": 3,
+      "nameFr": "Florizarre"
+    },
+    {
+      "id": 4,
+      "nameFr": "Salamèche"
+    },
+    {
+      "id": 5,
+      "nameFr": "Reptincel"
+    },
+    {
+      "id": 6,
+      "nameFr": "Dracaufeu"
+    },
+    {
+      "id": 7,
+      "nameFr": "Carapuce"
+    },
+    {
+      "id": 8,
+      "nameFr": "Carabaffe"
+    },
+    {
+      "id": 9,
+      "nameFr": "Tortank"
+    },
+    {
+      "id": 10,
+      "nameFr": "Chenipan"
+    },
+    {
+      "id": 11,
+      "nameFr": "Chrysacier"
+    },
+    {
+      "id": 12,
+      "nameFr": "Papilusion"
+    },
+    {
+      "id": 13,
+      "nameFr": "Aspicot"
+    },
+    {
+      "id": 14,
+      "nameFr": "Coconfort"
+    },
+    {
+      "id": 15,
+      "nameFr": "Dardargnan"
+    },
+    {
+      "id": 16,
+      "nameFr": "Roucool"
+    },
+    {
+      "id": 17,
+      "nameFr": "Roucoups"
+    },
+    {
+      "id": 18,
+      "nameFr": "Roucarnage"
+    },
+    {
+      "id": 19,
+      "nameFr": "Rattata"
+    },
+    {
+      "id": 20,
+      "nameFr": "Rattatac"
+    },
+    {
+      "id": 21,
+      "nameFr": "Piafabec"
+    },
+    {
+      "id": 22,
+      "nameFr": "Rapasdepic"
+    },
+    {
+      "id": 23,
+      "nameFr": "Abo"
+    },
+    {
+      "id": 24,
+      "nameFr": "Arbok"
+    },
+    {
+      "id": 25,
+      "nameFr": "Pikachu"
+    },
+    {
+      "id": 26,
+      "nameFr": "Raichu"
+    },
+    {
+      "id": 27,
+      "nameFr": "Sabelette"
+    },
+    {
+      "id": 28,
+      "nameFr": "Sablaireau"
+    },
+    {
+      "id": 29,
+      "nameFr": "Nidoran♀"
+    },
+    {
+      "id": 30,
+      "nameFr": "Nidorina"
+    },
+    {
+      "id": 31,
+      "nameFr": "Nidoqueen"
+    },
+    {
+      "id": 32,
+      "nameFr": "Nidoran♂"
+    },
+    {
+      "id": 33,
+      "nameFr": "Nidorino"
+    },
+    {
+      "id": 34,
+      "nameFr": "Nidoking"
+    },
+    {
+      "id": 35,
+      "nameFr": "Mélofée"
+    },
+    {
+      "id": 36,
+      "nameFr": "Mélodelfe"
+    },
+    {
+      "id": 37,
+      "nameFr": "Goupix"
+    },
+    {
+      "id": 38,
+      "nameFr": "Feunard"
+    },
+    {
+      "id": 39,
+      "nameFr": "Rondoudou"
+    },
+    {
+      "id": 40,
+      "nameFr": "Grodoudou"
+    },
+    {
+      "id": 41,
+      "nameFr": "Nosferapti"
+    },
+    {
+      "id": 42,
+      "nameFr": "Nosferalto"
+    },
+    {
+      "id": 43,
+      "nameFr": "Mystherbe"
+    },
+    {
+      "id": 44,
+      "nameFr": "Ortide"
+    },
+    {
+      "id": 45,
+      "nameFr": "Rafflesia"
+    },
+    {
+      "id": 46,
+      "nameFr": "Paras"
+    },
+    {
+      "id": 47,
+      "nameFr": "Parasect"
+    },
+    {
+      "id": 48,
+      "nameFr": "Mimitoss"
+    },
+    {
+      "id": 49,
+      "nameFr": "Aéromite"
+    },
+    {
+      "id": 50,
+      "nameFr": "Taupiqueur"
+    },
+    {
+      "id": 51,
+      "nameFr": "Triopikeur"
+    },
+    {
+      "id": 52,
+      "nameFr": "Miaouss"
+    },
+    {
+      "id": 53,
+      "nameFr": "Persian"
+    },
+    {
+      "id": 54,
+      "nameFr": "Psykokwak"
+    },
+    {
+      "id": 55,
+      "nameFr": "Akwakwak"
+    },
+    {
+      "id": 56,
+      "nameFr": "Férosinge"
+    },
+    {
+      "id": 57,
+      "nameFr": "Colossinge"
+    },
+    {
+      "id": 58,
+      "nameFr": "Caninos"
+    },
+    {
+      "id": 59,
+      "nameFr": "Arcanin"
+    },
+    {
+      "id": 60,
+      "nameFr": "Ptitard"
+    },
+    {
+      "id": 61,
+      "nameFr": "Têtarte"
+    },
+    {
+      "id": 62,
+      "nameFr": "Tartard"
+    },
+    {
+      "id": 63,
+      "nameFr": "Abra"
+    },
+    {
+      "id": 64,
+      "nameFr": "Kadabra"
+    },
+    {
+      "id": 65,
+      "nameFr": "Alakazam"
+    },
+    {
+      "id": 66,
+      "nameFr": "Machoc"
+    },
+    {
+      "id": 67,
+      "nameFr": "Machopeur"
+    },
+    {
+      "id": 68,
+      "nameFr": "Mackogneur"
+    },
+    {
+      "id": 69,
+      "nameFr": "Chétiflor"
+    },
+    {
+      "id": 70,
+      "nameFr": "Boustiflor"
+    },
+    {
+      "id": 71,
+      "nameFr": "Empiflor"
+    },
+    {
+      "id": 72,
+      "nameFr": "Tentacool"
+    },
+    {
+      "id": 73,
+      "nameFr": "Tentacruel"
+    },
+    {
+      "id": 74,
+      "nameFr": "Racaillou"
+    },
+    {
+      "id": 75,
+      "nameFr": "Gravalanch"
+    },
+    {
+      "id": 76,
+      "nameFr": "Grolem"
+    },
+    {
+      "id": 77,
+      "nameFr": "Ponyta"
+    },
+    {
+      "id": 78,
+      "nameFr": "Galopa"
+    },
+    {
+      "id": 79,
+      "nameFr": "Ramoloss"
+    },
+    {
+      "id": 80,
+      "nameFr": "Flagadoss"
+    },
+    {
+      "id": 81,
+      "nameFr": "Magnéti"
+    },
+    {
+      "id": 82,
+      "nameFr": "Magnéton"
+    },
+    {
+      "id": 83,
+      "nameFr": "Canarticho"
+    },
+    {
+      "id": 84,
+      "nameFr": "Doduo"
+    },
+    {
+      "id": 85,
+      "nameFr": "Dodrio"
+    },
+    {
+      "id": 86,
+      "nameFr": "Otaria"
+    },
+    {
+      "id": 87,
+      "nameFr": "Lamantine"
+    },
+    {
+      "id": 88,
+      "nameFr": "Tadmorv"
+    },
+    {
+      "id": 89,
+      "nameFr": "Grotadmorv"
+    },
+    {
+      "id": 90,
+      "nameFr": "Kokiyas"
+    },
+    {
+      "id": 91,
+      "nameFr": "Crustabri"
+    },
+    {
+      "id": 92,
+      "nameFr": "Fantominus"
+    },
+    {
+      "id": 93,
+      "nameFr": "Spectrum"
+    },
+    {
+      "id": 94,
+      "nameFr": "Ectoplasma"
+    },
+    {
+      "id": 95,
+      "nameFr": "Onix"
+    },
+    {
+      "id": 96,
+      "nameFr": "Soporifik"
+    },
+    {
+      "id": 97,
+      "nameFr": "Hypnomade"
+    },
+    {
+      "id": 98,
+      "nameFr": "Krabby"
+    },
+    {
+      "id": 99,
+      "nameFr": "Krabboss"
+    },
+    {
+      "id": 100,
+      "nameFr": "Voltorbe"
+    },
+    {
+      "id": 101,
+      "nameFr": "Électrode"
+    },
+    {
+      "id": 102,
+      "nameFr": "Noeunoeuf"
+    },
+    {
+      "id": 103,
+      "nameFr": "Noadkoko"
+    },
+    {
+      "id": 104,
+      "nameFr": "Osselait"
+    },
+    {
+      "id": 105,
+      "nameFr": "Ossatueur"
+    },
+    {
+      "id": 106,
+      "nameFr": "Kicklee"
+    },
+    {
+      "id": 107,
+      "nameFr": "Tygnon"
+    },
+    {
+      "id": 108,
+      "nameFr": "Excelangue"
+    },
+    {
+      "id": 109,
+      "nameFr": "Smogo"
+    },
+    {
+      "id": 110,
+      "nameFr": "Smogogo"
+    },
+    {
+      "id": 111,
+      "nameFr": "Rhinocorne"
+    },
+    {
+      "id": 112,
+      "nameFr": "Rhinoféros"
+    },
+    {
+      "id": 113,
+      "nameFr": "Leveinard"
+    },
+    {
+      "id": 114,
+      "nameFr": "Saquedeneu"
+    },
+    {
+      "id": 115,
+      "nameFr": "Kangourex"
+    },
+    {
+      "id": 116,
+      "nameFr": "Hypotrempe"
+    },
+    {
+      "id": 117,
+      "nameFr": "Hypocéan"
+    },
+    {
+      "id": 118,
+      "nameFr": "Poissirène"
+    },
+    {
+      "id": 119,
+      "nameFr": "Poissoroy"
+    },
+    {
+      "id": 120,
+      "nameFr": "Stari"
+    },
+    {
+      "id": 121,
+      "nameFr": "Staross"
+    },
+    {
+      "id": 122,
+      "nameFr": "M. Mime"
+    },
+    {
+      "id": 123,
+      "nameFr": "Insécateur"
+    },
+    {
+      "id": 124,
+      "nameFr": "Lippoutou"
+    },
+    {
+      "id": 125,
+      "nameFr": "Élektek"
+    },
+    {
+      "id": 126,
+      "nameFr": "Magmar"
+    },
+    {
+      "id": 127,
+      "nameFr": "Scarabrute"
+    },
+    {
+      "id": 128,
+      "nameFr": "Tauros"
+    },
+    {
+      "id": 129,
+      "nameFr": "Magicarpe"
+    },
+    {
+      "id": 130,
+      "nameFr": "Léviator"
+    },
+    {
+      "id": 131,
+      "nameFr": "Lokhlass"
+    },
+    {
+      "id": 132,
+      "nameFr": "Métamorph"
+    },
+    {
+      "id": 133,
+      "nameFr": "Évoli"
+    },
+    {
+      "id": 134,
+      "nameFr": "Aquali"
+    },
+    {
+      "id": 135,
+      "nameFr": "Voltali"
+    },
+    {
+      "id": 136,
+      "nameFr": "Pyroli"
+    },
+    {
+      "id": 137,
+      "nameFr": "Porygon"
+    },
+    {
+      "id": 138,
+      "nameFr": "Amonita"
+    },
+    {
+      "id": 139,
+      "nameFr": "Amonistar"
+    },
+    {
+      "id": 140,
+      "nameFr": "Kabuto"
+    },
+    {
+      "id": 141,
+      "nameFr": "Kabutops"
+    },
+    {
+      "id": 142,
+      "nameFr": "Ptéra"
+    },
+    {
+      "id": 143,
+      "nameFr": "Ronflex"
+    },
+    {
+      "id": 144,
+      "nameFr": "Artikodin"
+    },
+    {
+      "id": 145,
+      "nameFr": "Électhor"
+    },
+    {
+      "id": 146,
+      "nameFr": "Sulfura"
+    },
+    {
+      "id": 147,
+      "nameFr": "Minidraco"
+    },
+    {
+      "id": 148,
+      "nameFr": "Draco"
+    },
+    {
+      "id": 149,
+      "nameFr": "Dracolosse"
+    },
+    {
+      "id": 150,
+      "nameFr": "Mewtwo"
+    },
+    {
+      "id": 151,
+      "nameFr": "Mew"
+    },
+    {
+      "id": 152,
+      "nameFr": "Germignon"
+    },
+    {
+      "id": 153,
+      "nameFr": "Macronium"
+    },
+    {
+      "id": 154,
+      "nameFr": "Méganium"
+    },
+    {
+      "id": 155,
+      "nameFr": "Héricendre"
+    },
+    {
+      "id": 156,
+      "nameFr": "Feurisson"
+    },
+    {
+      "id": 157,
+      "nameFr": "Typhlosion"
+    },
+    {
+      "id": 158,
+      "nameFr": "Kaiminus"
+    },
+    {
+      "id": 159,
+      "nameFr": "Crocrodil"
+    },
+    {
+      "id": 160,
+      "nameFr": "Aligatueur"
+    },
+    {
+      "id": 161,
+      "nameFr": "Fouinette"
+    },
+    {
+      "id": 162,
+      "nameFr": "Fouinar"
+    },
+    {
+      "id": 163,
+      "nameFr": "Hoothoot"
+    },
+    {
+      "id": 164,
+      "nameFr": "Noarfang"
+    },
+    {
+      "id": 165,
+      "nameFr": "Coxy"
+    },
+    {
+      "id": 166,
+      "nameFr": "Coxyclaque"
+    },
+    {
+      "id": 167,
+      "nameFr": "Mimigal"
+    },
+    {
+      "id": 168,
+      "nameFr": "Migalos"
+    },
+    {
+      "id": 169,
+      "nameFr": "Nostenfer"
+    },
+    {
+      "id": 170,
+      "nameFr": "Loupio"
+    },
+    {
+      "id": 171,
+      "nameFr": "Lanturn"
+    },
+    {
+      "id": 172,
+      "nameFr": "Pichu"
+    },
+    {
+      "id": 173,
+      "nameFr": "Mélo"
+    },
+    {
+      "id": 174,
+      "nameFr": "Toudoudou"
+    },
+    {
+      "id": 175,
+      "nameFr": "Togepi"
+    },
+    {
+      "id": 176,
+      "nameFr": "Togetic"
+    },
+    {
+      "id": 177,
+      "nameFr": "Natu"
+    },
+    {
+      "id": 178,
+      "nameFr": "Xatu"
+    },
+    {
+      "id": 179,
+      "nameFr": "Wattouat"
+    },
+    {
+      "id": 180,
+      "nameFr": "Lainergie"
+    },
+    {
+      "id": 181,
+      "nameFr": "Pharamp"
+    },
+    {
+      "id": 182,
+      "nameFr": "Joliflor"
+    },
+    {
+      "id": 183,
+      "nameFr": "Marill"
+    },
+    {
+      "id": 184,
+      "nameFr": "Azumarill"
+    },
+    {
+      "id": 185,
+      "nameFr": "Simularbre"
+    },
+    {
+      "id": 186,
+      "nameFr": "Tarpaud"
+    },
+    {
+      "id": 187,
+      "nameFr": "Granivol"
+    },
+    {
+      "id": 188,
+      "nameFr": "Floravol"
+    },
+    {
+      "id": 189,
+      "nameFr": "Cotovol"
+    },
+    {
+      "id": 190,
+      "nameFr": "Capumain"
+    },
+    {
+      "id": 191,
+      "nameFr": "Tournegrin"
+    },
+    {
+      "id": 192,
+      "nameFr": "Héliatronc"
+    },
+    {
+      "id": 193,
+      "nameFr": "Yanma"
+    },
+    {
+      "id": 194,
+      "nameFr": "Axoloto"
+    },
+    {
+      "id": 195,
+      "nameFr": "Maraiste"
+    },
+    {
+      "id": 196,
+      "nameFr": "Mentali"
+    },
+    {
+      "id": 197,
+      "nameFr": "Noctali"
+    },
+    {
+      "id": 198,
+      "nameFr": "Cornèbre"
+    },
+    {
+      "id": 199,
+      "nameFr": "Roigada"
+    },
+    {
+      "id": 200,
+      "nameFr": "Feuforêve"
+    },
+    {
+      "id": 201,
+      "nameFr": "Zarbi"
+    },
+    {
+      "id": 202,
+      "nameFr": "Qulbutoké"
+    },
+    {
+      "id": 203,
+      "nameFr": "Girafarig"
+    },
+    {
+      "id": 204,
+      "nameFr": "Pomdepik"
+    },
+    {
+      "id": 205,
+      "nameFr": "Foretress"
+    },
+    {
+      "id": 206,
+      "nameFr": "Insolourdo"
+    },
+    {
+      "id": 207,
+      "nameFr": "Scorplane"
+    },
+    {
+      "id": 208,
+      "nameFr": "Steelix"
+    },
+    {
+      "id": 209,
+      "nameFr": "Snubbull"
+    },
+    {
+      "id": 210,
+      "nameFr": "Granbull"
+    },
+    {
+      "id": 211,
+      "nameFr": "Qwilfish"
+    },
+    {
+      "id": 212,
+      "nameFr": "Cizayox"
+    },
+    {
+      "id": 213,
+      "nameFr": "Caratroc"
+    },
+    {
+      "id": 214,
+      "nameFr": "Scarhino"
+    },
+    {
+      "id": 215,
+      "nameFr": "Farfuret"
+    },
+    {
+      "id": 216,
+      "nameFr": "Teddiursa"
+    },
+    {
+      "id": 217,
+      "nameFr": "Ursaring"
+    },
+    {
+      "id": 218,
+      "nameFr": "Limagma"
+    },
+    {
+      "id": 219,
+      "nameFr": "Volcaropod"
+    },
+    {
+      "id": 220,
+      "nameFr": "Marcacrin"
+    },
+    {
+      "id": 221,
+      "nameFr": "Cochignon"
+    },
+    {
+      "id": 222,
+      "nameFr": "Corayon"
+    },
+    {
+      "id": 223,
+      "nameFr": "Rémoraid"
+    },
+    {
+      "id": 224,
+      "nameFr": "Octillery"
+    },
+    {
+      "id": 225,
+      "nameFr": "Cadoizo"
+    },
+    {
+      "id": 226,
+      "nameFr": "Démanta"
+    },
+    {
+      "id": 227,
+      "nameFr": "Airmure"
+    },
+    {
+      "id": 228,
+      "nameFr": "Malosse"
+    },
+    {
+      "id": 229,
+      "nameFr": "Démolosse"
+    },
+    {
+      "id": 230,
+      "nameFr": "Hyporoi"
+    },
+    {
+      "id": 231,
+      "nameFr": "Phanpy"
+    },
+    {
+      "id": 232,
+      "nameFr": "Donphan"
+    },
+    {
+      "id": 233,
+      "nameFr": "Porygon2"
+    },
+    {
+      "id": 234,
+      "nameFr": "Cerfrousse"
+    },
+    {
+      "id": 235,
+      "nameFr": "Queulorior"
+    },
+    {
+      "id": 236,
+      "nameFr": "Debugant"
+    },
+    {
+      "id": 237,
+      "nameFr": "Kapoera"
+    },
+    {
+      "id": 238,
+      "nameFr": "Lippouti"
+    },
+    {
+      "id": 239,
+      "nameFr": "Élekid"
+    },
+    {
+      "id": 240,
+      "nameFr": "Magby"
+    },
+    {
+      "id": 241,
+      "nameFr": "Écrémeuh"
+    },
+    {
+      "id": 242,
+      "nameFr": "Leuphorie"
+    },
+    {
+      "id": 243,
+      "nameFr": "Raikou"
+    },
+    {
+      "id": 244,
+      "nameFr": "Entei"
+    },
+    {
+      "id": 245,
+      "nameFr": "Suicune"
+    },
+    {
+      "id": 246,
+      "nameFr": "Embrylex"
+    },
+    {
+      "id": 247,
+      "nameFr": "Ymphect"
+    },
+    {
+      "id": 248,
+      "nameFr": "Tyranocif"
+    },
+    {
+      "id": 249,
+      "nameFr": "Lugia"
+    },
+    {
+      "id": 250,
+      "nameFr": "Ho-Oh"
+    },
+    {
+      "id": 251,
+      "nameFr": "Celebi"
+    },
+    {
+      "id": 252,
+      "nameFr": "Arcko"
+    },
+    {
+      "id": 253,
+      "nameFr": "Massko"
+    },
+    {
+      "id": 254,
+      "nameFr": "Jungko"
+    },
+    {
+      "id": 255,
+      "nameFr": "Poussifeu"
+    },
+    {
+      "id": 256,
+      "nameFr": "Galifeu"
+    },
+    {
+      "id": 257,
+      "nameFr": "Braségali"
+    },
+    {
+      "id": 258,
+      "nameFr": "Gobou"
+    },
+    {
+      "id": 259,
+      "nameFr": "Flobio"
+    },
+    {
+      "id": 260,
+      "nameFr": "Laggron"
+    },
+    {
+      "id": 261,
+      "nameFr": "Medhyèna"
+    },
+    {
+      "id": 262,
+      "nameFr": "Grahyèna"
+    },
+    {
+      "id": 263,
+      "nameFr": "Zigzaton"
+    },
+    {
+      "id": 264,
+      "nameFr": "Linéon"
+    },
+    {
+      "id": 265,
+      "nameFr": "Chenipotte"
+    },
+    {
+      "id": 266,
+      "nameFr": "Armulys"
+    },
+    {
+      "id": 267,
+      "nameFr": "Charmillon"
+    },
+    {
+      "id": 268,
+      "nameFr": "Blindalys"
+    },
+    {
+      "id": 269,
+      "nameFr": "Papinox"
+    },
+    {
+      "id": 270,
+      "nameFr": "Nénupiot"
+    },
+    {
+      "id": 271,
+      "nameFr": "Lombre"
+    },
+    {
+      "id": 272,
+      "nameFr": "Ludicolo"
+    },
+    {
+      "id": 273,
+      "nameFr": "Grainipiot"
+    },
+    {
+      "id": 274,
+      "nameFr": "Pifeuil"
+    },
+    {
+      "id": 275,
+      "nameFr": "Tengalice"
+    },
+    {
+      "id": 276,
+      "nameFr": "Nirondelle"
+    },
+    {
+      "id": 277,
+      "nameFr": "Hélédelle"
+    },
+    {
+      "id": 278,
+      "nameFr": "Goélise"
+    },
+    {
+      "id": 279,
+      "nameFr": "Bekipan"
+    },
+    {
+      "id": 280,
+      "nameFr": "Tarsal"
+    },
+    {
+      "id": 281,
+      "nameFr": "Kirlia"
+    },
+    {
+      "id": 282,
+      "nameFr": "Gardevoir"
+    },
+    {
+      "id": 283,
+      "nameFr": "Arakdo"
+    },
+    {
+      "id": 284,
+      "nameFr": "Maskadra"
+    },
+    {
+      "id": 285,
+      "nameFr": "Balignon"
+    },
+    {
+      "id": 286,
+      "nameFr": "Chapignon"
+    },
+    {
+      "id": 287,
+      "nameFr": "Parecool"
+    },
+    {
+      "id": 288,
+      "nameFr": "Vigoroth"
+    },
+    {
+      "id": 289,
+      "nameFr": "Monaflèmit"
+    },
+    {
+      "id": 290,
+      "nameFr": "Ningale"
+    },
+    {
+      "id": 291,
+      "nameFr": "Ninjask"
+    },
+    {
+      "id": 292,
+      "nameFr": "Munja"
+    },
+    {
+      "id": 293,
+      "nameFr": "Chuchmur"
+    },
+    {
+      "id": 294,
+      "nameFr": "Ramboum"
+    },
+    {
+      "id": 295,
+      "nameFr": "Brouhabam"
+    },
+    {
+      "id": 296,
+      "nameFr": "Makuhita"
+    },
+    {
+      "id": 297,
+      "nameFr": "Hariyama"
+    },
+    {
+      "id": 298,
+      "nameFr": "Azurill"
+    },
+    {
+      "id": 299,
+      "nameFr": "Tarinor"
+    },
+    {
+      "id": 300,
+      "nameFr": "Skitty"
+    },
+    {
+      "id": 301,
+      "nameFr": "Delcatty"
+    },
+    {
+      "id": 302,
+      "nameFr": "Ténéfix"
+    },
+    {
+      "id": 303,
+      "nameFr": "Mysdibule"
+    },
+    {
+      "id": 304,
+      "nameFr": "Galekid"
+    },
+    {
+      "id": 305,
+      "nameFr": "Galegon"
+    },
+    {
+      "id": 306,
+      "nameFr": "Galeking"
+    },
+    {
+      "id": 307,
+      "nameFr": "Méditikka"
+    },
+    {
+      "id": 308,
+      "nameFr": "Charmina"
+    },
+    {
+      "id": 309,
+      "nameFr": "Dynavolt"
+    },
+    {
+      "id": 310,
+      "nameFr": "Élecsprint"
+    },
+    {
+      "id": 311,
+      "nameFr": "Posipi"
+    },
+    {
+      "id": 312,
+      "nameFr": "Négapi"
+    },
+    {
+      "id": 313,
+      "nameFr": "Muciole"
+    },
+    {
+      "id": 314,
+      "nameFr": "Lumivole"
+    },
+    {
+      "id": 315,
+      "nameFr": "Rosélia"
+    },
+    {
+      "id": 316,
+      "nameFr": "Gloupti"
+    },
+    {
+      "id": 317,
+      "nameFr": "Avaltout"
+    },
+    {
+      "id": 318,
+      "nameFr": "Carvanha"
+    },
+    {
+      "id": 319,
+      "nameFr": "Sharpedo"
+    },
+    {
+      "id": 320,
+      "nameFr": "Wailmer"
+    },
+    {
+      "id": 321,
+      "nameFr": "Wailord"
+    },
+    {
+      "id": 322,
+      "nameFr": "Chamallot"
+    },
+    {
+      "id": 323,
+      "nameFr": "Camérupt"
+    },
+    {
+      "id": 324,
+      "nameFr": "Chartor"
+    },
+    {
+      "id": 325,
+      "nameFr": "Spoink"
+    },
+    {
+      "id": 326,
+      "nameFr": "Groret"
+    },
+    {
+      "id": 327,
+      "nameFr": "Spinda"
+    },
+    {
+      "id": 328,
+      "nameFr": "Kraknoix"
+    },
+    {
+      "id": 329,
+      "nameFr": "Vibraninf"
+    },
+    {
+      "id": 330,
+      "nameFr": "Libégon"
+    },
+    {
+      "id": 331,
+      "nameFr": "Cacnea"
+    },
+    {
+      "id": 332,
+      "nameFr": "Cacturne"
+    },
+    {
+      "id": 333,
+      "nameFr": "Tylton"
+    },
+    {
+      "id": 334,
+      "nameFr": "Altaria"
+    },
+    {
+      "id": 335,
+      "nameFr": "Mangriff"
+    },
+    {
+      "id": 336,
+      "nameFr": "Séviper"
+    },
+    {
+      "id": 337,
+      "nameFr": "Séléroc"
+    },
+    {
+      "id": 338,
+      "nameFr": "Solaroc"
+    },
+    {
+      "id": 339,
+      "nameFr": "Barloche"
+    },
+    {
+      "id": 340,
+      "nameFr": "Barbicha"
+    },
+    {
+      "id": 341,
+      "nameFr": "Écrapince"
+    },
+    {
+      "id": 342,
+      "nameFr": "Colhomard"
+    },
+    {
+      "id": 343,
+      "nameFr": "Balbuto"
+    },
+    {
+      "id": 344,
+      "nameFr": "Kaorine"
+    },
+    {
+      "id": 345,
+      "nameFr": "Lilia"
+    },
+    {
+      "id": 346,
+      "nameFr": "Vacilys"
+    },
+    {
+      "id": 347,
+      "nameFr": "Anorith"
+    },
+    {
+      "id": 348,
+      "nameFr": "Armaldo"
+    },
+    {
+      "id": 349,
+      "nameFr": "Barpau"
+    },
+    {
+      "id": 350,
+      "nameFr": "Milobellus"
+    },
+    {
+      "id": 351,
+      "nameFr": "Morphéo"
+    },
+    {
+      "id": 352,
+      "nameFr": "Kecleon"
+    },
+    {
+      "id": 353,
+      "nameFr": "Polichombr"
+    },
+    {
+      "id": 354,
+      "nameFr": "Branette"
+    },
+    {
+      "id": 355,
+      "nameFr": "Skelénox"
+    },
+    {
+      "id": 356,
+      "nameFr": "Téraclope"
+    },
+    {
+      "id": 357,
+      "nameFr": "Tropius"
+    },
+    {
+      "id": 358,
+      "nameFr": "Éoko"
+    },
+    {
+      "id": 359,
+      "nameFr": "Absol"
+    },
+    {
+      "id": 360,
+      "nameFr": "Okéoké"
+    },
+    {
+      "id": 361,
+      "nameFr": "Stalgamin"
+    },
+    {
+      "id": 362,
+      "nameFr": "Oniglali"
+    },
+    {
+      "id": 363,
+      "nameFr": "Obalie"
+    },
+    {
+      "id": 364,
+      "nameFr": "Phogleur"
+    },
+    {
+      "id": 365,
+      "nameFr": "Kaimorse"
+    },
+    {
+      "id": 366,
+      "nameFr": "Coquiperl"
+    },
+    {
+      "id": 367,
+      "nameFr": "Serpang"
+    },
+    {
+      "id": 368,
+      "nameFr": "Rosabyss"
+    },
+    {
+      "id": 369,
+      "nameFr": "Relicanth"
+    },
+    {
+      "id": 370,
+      "nameFr": "Lovdisc"
+    },
+    {
+      "id": 371,
+      "nameFr": "Draby"
+    },
+    {
+      "id": 372,
+      "nameFr": "Drackhaus"
+    },
+    {
+      "id": 373,
+      "nameFr": "Drattak"
+    },
+    {
+      "id": 374,
+      "nameFr": "Terhal"
+    },
+    {
+      "id": 375,
+      "nameFr": "Métang"
+    },
+    {
+      "id": 376,
+      "nameFr": "Métalosse"
+    },
+    {
+      "id": 377,
+      "nameFr": "Regirock"
+    },
+    {
+      "id": 378,
+      "nameFr": "Regice"
+    },
+    {
+      "id": 379,
+      "nameFr": "Registeel"
+    },
+    {
+      "id": 380,
+      "nameFr": "Latias"
+    },
+    {
+      "id": 381,
+      "nameFr": "Latios"
+    },
+    {
+      "id": 382,
+      "nameFr": "Kyogre"
+    },
+    {
+      "id": 383,
+      "nameFr": "Groudon"
+    },
+    {
+      "id": 384,
+      "nameFr": "Rayquaza"
+    },
+    {
+      "id": 385,
+      "nameFr": "Jirachi"
+    },
+    {
+      "id": 386,
+      "nameFr": "Deoxys"
+    },
+    {
+      "id": 387,
+      "nameFr": "Tortipouss"
+    },
+    {
+      "id": 388,
+      "nameFr": "Boskara"
+    },
+    {
+      "id": 389,
+      "nameFr": "Torterra"
+    },
+    {
+      "id": 390,
+      "nameFr": "Ouisticram"
+    },
+    {
+      "id": 391,
+      "nameFr": "Chimpenfeu"
+    },
+    {
+      "id": 392,
+      "nameFr": "Simiabraz"
+    },
+    {
+      "id": 393,
+      "nameFr": "Tiplouf"
+    },
+    {
+      "id": 394,
+      "nameFr": "Prinplouf"
+    },
+    {
+      "id": 395,
+      "nameFr": "Pingoléon"
+    },
+    {
+      "id": 396,
+      "nameFr": "Étourmi"
+    },
+    {
+      "id": 397,
+      "nameFr": "Étourvol"
+    },
+    {
+      "id": 398,
+      "nameFr": "Étouraptor"
+    },
+    {
+      "id": 399,
+      "nameFr": "Keunotor"
+    },
+    {
+      "id": 400,
+      "nameFr": "Castorno"
+    },
+    {
+      "id": 401,
+      "nameFr": "Crikzik"
+    },
+    {
+      "id": 402,
+      "nameFr": "Mélokrik"
+    },
+    {
+      "id": 403,
+      "nameFr": "Lixy"
+    },
+    {
+      "id": 404,
+      "nameFr": "Luxio"
+    },
+    {
+      "id": 405,
+      "nameFr": "Luxray"
+    },
+    {
+      "id": 406,
+      "nameFr": "Rozbouton"
+    },
+    {
+      "id": 407,
+      "nameFr": "Roserade"
+    },
+    {
+      "id": 408,
+      "nameFr": "Kranidos"
+    },
+    {
+      "id": 409,
+      "nameFr": "Charkos"
+    },
+    {
+      "id": 410,
+      "nameFr": "Dinoclier"
+    },
+    {
+      "id": 411,
+      "nameFr": "Bastiodon"
+    },
+    {
+      "id": 412,
+      "nameFr": "Cheniti"
+    },
+    {
+      "id": 413,
+      "nameFr": "Cheniselle"
+    },
+    {
+      "id": 414,
+      "nameFr": "Papilord"
+    },
+    {
+      "id": 415,
+      "nameFr": "Apitrini"
+    },
+    {
+      "id": 416,
+      "nameFr": "Apireine"
+    },
+    {
+      "id": 417,
+      "nameFr": "Pachirisu"
+    },
+    {
+      "id": 418,
+      "nameFr": "Mustébouée"
+    },
+    {
+      "id": 419,
+      "nameFr": "Mustéflott"
+    },
+    {
+      "id": 420,
+      "nameFr": "Ceribou"
+    },
+    {
+      "id": 421,
+      "nameFr": "Ceriflor"
+    },
+    {
+      "id": 422,
+      "nameFr": "Sancoki"
+    },
+    {
+      "id": 423,
+      "nameFr": "Tritosor"
+    },
+    {
+      "id": 424,
+      "nameFr": "Capidextre"
+    },
+    {
+      "id": 425,
+      "nameFr": "Baudrive"
+    },
+    {
+      "id": 426,
+      "nameFr": "Grodrive"
+    },
+    {
+      "id": 427,
+      "nameFr": "Laporeille"
+    },
+    {
+      "id": 428,
+      "nameFr": "Lockpin"
+    },
+    {
+      "id": 429,
+      "nameFr": "Magirêve"
+    },
+    {
+      "id": 430,
+      "nameFr": "Corboss"
+    },
+    {
+      "id": 431,
+      "nameFr": "Chaglam"
+    },
+    {
+      "id": 432,
+      "nameFr": "Chaffreux"
+    },
+    {
+      "id": 433,
+      "nameFr": "Korillon"
+    },
+    {
+      "id": 434,
+      "nameFr": "Moufouette"
+    },
+    {
+      "id": 435,
+      "nameFr": "Moufflair"
+    },
+    {
+      "id": 436,
+      "nameFr": "Archéomire"
+    },
+    {
+      "id": 437,
+      "nameFr": "Archéodong"
+    },
+    {
+      "id": 438,
+      "nameFr": "Manzaï"
+    },
+    {
+      "id": 439,
+      "nameFr": "Mime Jr."
+    },
+    {
+      "id": 440,
+      "nameFr": "Ptiravi"
+    },
+    {
+      "id": 441,
+      "nameFr": "Pijako"
+    },
+    {
+      "id": 442,
+      "nameFr": "Spiritomb"
+    },
+    {
+      "id": 443,
+      "nameFr": "Griknot"
+    },
+    {
+      "id": 444,
+      "nameFr": "Carmache"
+    },
+    {
+      "id": 445,
+      "nameFr": "Carchacrok"
+    },
+    {
+      "id": 446,
+      "nameFr": "Goinfrex"
+    },
+    {
+      "id": 447,
+      "nameFr": "Riolu"
+    },
+    {
+      "id": 448,
+      "nameFr": "Lucario"
+    },
+    {
+      "id": 449,
+      "nameFr": "Hippopotas"
+    },
+    {
+      "id": 450,
+      "nameFr": "Hippodocus"
+    },
+    {
+      "id": 451,
+      "nameFr": "Rapion"
+    },
+    {
+      "id": 452,
+      "nameFr": "Drascore"
+    },
+    {
+      "id": 453,
+      "nameFr": "Cradopaud"
+    },
+    {
+      "id": 454,
+      "nameFr": "Coatox"
+    },
+    {
+      "id": 455,
+      "nameFr": "Vortente"
+    },
+    {
+      "id": 456,
+      "nameFr": "Écayon"
+    },
+    {
+      "id": 457,
+      "nameFr": "Luminéon"
+    },
+    {
+      "id": 458,
+      "nameFr": "Babimanta"
+    },
+    {
+      "id": 459,
+      "nameFr": "Blizzi"
+    },
+    {
+      "id": 460,
+      "nameFr": "Blizzaroi"
+    },
+    {
+      "id": 461,
+      "nameFr": "Dimoret"
+    },
+    {
+      "id": 462,
+      "nameFr": "Magnézone"
+    },
+    {
+      "id": 463,
+      "nameFr": "Coudlangue"
+    },
+    {
+      "id": 464,
+      "nameFr": "Rhinastoc"
+    },
+    {
+      "id": 465,
+      "nameFr": "Bouldeneu"
+    },
+    {
+      "id": 466,
+      "nameFr": "Élekable"
+    },
+    {
+      "id": 467,
+      "nameFr": "Maganon"
+    },
+    {
+      "id": 468,
+      "nameFr": "Togekiss"
+    },
+    {
+      "id": 469,
+      "nameFr": "Yanmega"
+    },
+    {
+      "id": 470,
+      "nameFr": "Phyllali"
+    },
+    {
+      "id": 471,
+      "nameFr": "Givrali"
+    },
+    {
+      "id": 472,
+      "nameFr": "Scorvol"
+    },
+    {
+      "id": 473,
+      "nameFr": "Mammochon"
+    },
+    {
+      "id": 474,
+      "nameFr": "Porygon-Z"
+    },
+    {
+      "id": 475,
+      "nameFr": "Gallame"
+    },
+    {
+      "id": 476,
+      "nameFr": "Tarinorme"
+    },
+    {
+      "id": 477,
+      "nameFr": "Noctunoir"
+    },
+    {
+      "id": 478,
+      "nameFr": "Momartik"
+    },
+    {
+      "id": 479,
+      "nameFr": "Motisma"
+    },
+    {
+      "id": 480,
+      "nameFr": "Créhelf"
+    },
+    {
+      "id": 481,
+      "nameFr": "Créfollet"
+    },
+    {
+      "id": 482,
+      "nameFr": "Créfadet"
+    },
+    {
+      "id": 483,
+      "nameFr": "Dialga"
+    },
+    {
+      "id": 484,
+      "nameFr": "Palkia"
+    },
+    {
+      "id": 485,
+      "nameFr": "Heatran"
+    },
+    {
+      "id": 486,
+      "nameFr": "Regigigas"
+    },
+    {
+      "id": 487,
+      "nameFr": "Giratina"
+    },
+    {
+      "id": 488,
+      "nameFr": "Cresselia"
+    },
+    {
+      "id": 489,
+      "nameFr": "Phione"
+    },
+    {
+      "id": 490,
+      "nameFr": "Manaphy"
+    },
+    {
+      "id": 491,
+      "nameFr": "Darkrai"
+    },
+    {
+      "id": 492,
+      "nameFr": "Shaymin"
+    },
+    {
+      "id": 493,
+      "nameFr": "Arceus"
+    },
+    {
+      "id": 494,
+      "nameFr": "Victini"
+    },
+    {
+      "id": 495,
+      "nameFr": "Vipélierre"
+    },
+    {
+      "id": 496,
+      "nameFr": "Lianaja"
+    },
+    {
+      "id": 497,
+      "nameFr": "Majaspic"
+    },
+    {
+      "id": 498,
+      "nameFr": "Gruikui"
+    },
+    {
+      "id": 499,
+      "nameFr": "Grotichon"
+    },
+    {
+      "id": 500,
+      "nameFr": "Roitiflam"
+    },
+    {
+      "id": 501,
+      "nameFr": "Moustillon"
+    },
+    {
+      "id": 502,
+      "nameFr": "Mateloutre"
+    },
+    {
+      "id": 503,
+      "nameFr": "Clamiral"
+    },
+    {
+      "id": 504,
+      "nameFr": "Ratentif"
+    },
+    {
+      "id": 505,
+      "nameFr": "Miradar"
+    },
+    {
+      "id": 506,
+      "nameFr": "Ponchiot"
+    },
+    {
+      "id": 507,
+      "nameFr": "Ponchien"
+    },
+    {
+      "id": 508,
+      "nameFr": "Mastouffe"
+    },
+    {
+      "id": 509,
+      "nameFr": "Chacripan"
+    },
+    {
+      "id": 510,
+      "nameFr": "Léopardus"
+    },
+    {
+      "id": 511,
+      "nameFr": "Feuillajou"
+    },
+    {
+      "id": 512,
+      "nameFr": "Feuiloutan"
+    },
+    {
+      "id": 513,
+      "nameFr": "Flamajou"
+    },
+    {
+      "id": 514,
+      "nameFr": "Flamoutan"
+    },
+    {
+      "id": 515,
+      "nameFr": "Flotajou"
+    },
+    {
+      "id": 516,
+      "nameFr": "Flotoutan"
+    },
+    {
+      "id": 517,
+      "nameFr": "Munna"
+    },
+    {
+      "id": 518,
+      "nameFr": "Mushana"
+    },
+    {
+      "id": 519,
+      "nameFr": "Poichigeon"
+    },
+    {
+      "id": 520,
+      "nameFr": "Colombeau"
+    },
+    {
+      "id": 521,
+      "nameFr": "Déflaisan"
+    },
+    {
+      "id": 522,
+      "nameFr": "Zébibron"
+    },
+    {
+      "id": 523,
+      "nameFr": "Zéblitz"
+    },
+    {
+      "id": 524,
+      "nameFr": "Nodulithe"
+    },
+    {
+      "id": 525,
+      "nameFr": "Géolithe"
+    },
+    {
+      "id": 526,
+      "nameFr": "Gigalithe"
+    },
+    {
+      "id": 527,
+      "nameFr": "Chovsourir"
+    },
+    {
+      "id": 528,
+      "nameFr": "Rhinolove"
+    },
+    {
+      "id": 529,
+      "nameFr": "Rototaupe"
+    },
+    {
+      "id": 530,
+      "nameFr": "Minotaupe"
+    },
+    {
+      "id": 531,
+      "nameFr": "Nanméouïe"
+    },
+    {
+      "id": 532,
+      "nameFr": "Charpenti"
+    },
+    {
+      "id": 533,
+      "nameFr": "Ouvrifier"
+    },
+    {
+      "id": 534,
+      "nameFr": "Bétochef"
+    },
+    {
+      "id": 535,
+      "nameFr": "Tritonde"
+    },
+    {
+      "id": 536,
+      "nameFr": "Batracné"
+    },
+    {
+      "id": 537,
+      "nameFr": "Crapustule"
+    },
+    {
+      "id": 538,
+      "nameFr": "Judokrak"
+    },
+    {
+      "id": 539,
+      "nameFr": "Karaclée"
+    },
+    {
+      "id": 540,
+      "nameFr": "Larveyette"
+    },
+    {
+      "id": 541,
+      "nameFr": "Couverdure"
+    },
+    {
+      "id": 542,
+      "nameFr": "Manternel"
+    },
+    {
+      "id": 543,
+      "nameFr": "Venipatte"
+    },
+    {
+      "id": 544,
+      "nameFr": "Scobolide"
+    },
+    {
+      "id": 545,
+      "nameFr": "Brutapode"
+    },
+    {
+      "id": 546,
+      "nameFr": "Doudouvet"
+    },
+    {
+      "id": 547,
+      "nameFr": "Farfaduvet"
+    },
+    {
+      "id": 548,
+      "nameFr": "Chlorobule"
+    },
+    {
+      "id": 549,
+      "nameFr": "Fragilady"
+    },
+    {
+      "id": 550,
+      "nameFr": "Bargantua"
+    },
+    {
+      "id": 551,
+      "nameFr": "Mascaïman"
+    },
+    {
+      "id": 552,
+      "nameFr": "Escroco"
+    },
+    {
+      "id": 553,
+      "nameFr": "Crocorible"
+    },
+    {
+      "id": 554,
+      "nameFr": "Darumarond"
+    },
+    {
+      "id": 555,
+      "nameFr": "Darumacho"
+    },
+    {
+      "id": 556,
+      "nameFr": "Maracachi"
+    },
+    {
+      "id": 557,
+      "nameFr": "Crabicoque"
+    },
+    {
+      "id": 558,
+      "nameFr": "Crabaraque"
+    },
+    {
+      "id": 559,
+      "nameFr": "Baggiguane"
+    },
+    {
+      "id": 560,
+      "nameFr": "Baggaïd"
+    },
+    {
+      "id": 561,
+      "nameFr": "Cryptéro"
+    },
+    {
+      "id": 562,
+      "nameFr": "Tutafeh"
+    },
+    {
+      "id": 563,
+      "nameFr": "Tutankafer"
+    },
+    {
+      "id": 564,
+      "nameFr": "Carapagos"
+    },
+    {
+      "id": 565,
+      "nameFr": "Mégapagos"
+    },
+    {
+      "id": 566,
+      "nameFr": "Arkéapti"
+    },
+    {
+      "id": 567,
+      "nameFr": "Aéroptéryx"
+    },
+    {
+      "id": 568,
+      "nameFr": "Miamiasme"
+    },
+    {
+      "id": 569,
+      "nameFr": "Miasmax"
+    },
+    {
+      "id": 570,
+      "nameFr": "Zorua"
+    },
+    {
+      "id": 571,
+      "nameFr": "Zoroark"
+    },
+    {
+      "id": 572,
+      "nameFr": "Chinchidou"
+    },
+    {
+      "id": 573,
+      "nameFr": "Pashmilla"
+    },
+    {
+      "id": 574,
+      "nameFr": "Scrutella"
+    },
+    {
+      "id": 575,
+      "nameFr": "Mesmérella"
+    },
+    {
+      "id": 576,
+      "nameFr": "Sidérella"
+    },
+    {
+      "id": 577,
+      "nameFr": "Nucléos"
+    },
+    {
+      "id": 578,
+      "nameFr": "Méios"
+    },
+    {
+      "id": 579,
+      "nameFr": "Symbios"
+    },
+    {
+      "id": 580,
+      "nameFr": "Couaneton"
+    },
+    {
+      "id": 581,
+      "nameFr": "Lakmécygne"
+    },
+    {
+      "id": 582,
+      "nameFr": "Sorbébé"
+    },
+    {
+      "id": 583,
+      "nameFr": "Sorboul"
+    },
+    {
+      "id": 584,
+      "nameFr": "Sorbouboul"
+    },
+    {
+      "id": 585,
+      "nameFr": "Vivaldaim"
+    },
+    {
+      "id": 586,
+      "nameFr": "Haydaim"
+    },
+    {
+      "id": 587,
+      "nameFr": "Emolga"
+    },
+    {
+      "id": 588,
+      "nameFr": "Carabing"
+    },
+    {
+      "id": 589,
+      "nameFr": "Lançargot"
+    },
+    {
+      "id": 590,
+      "nameFr": "Trompignon"
+    },
+    {
+      "id": 591,
+      "nameFr": "Gaulet"
+    },
+    {
+      "id": 592,
+      "nameFr": "Viskuse"
+    },
+    {
+      "id": 593,
+      "nameFr": "Moyade"
+    },
+    {
+      "id": 594,
+      "nameFr": "Mamanbo"
+    },
+    {
+      "id": 595,
+      "nameFr": "Statitik"
+    },
+    {
+      "id": 596,
+      "nameFr": "Mygavolt"
+    },
+    {
+      "id": 597,
+      "nameFr": "Grindur"
+    },
+    {
+      "id": 598,
+      "nameFr": "Noacier"
+    },
+    {
+      "id": 599,
+      "nameFr": "Tic"
+    },
+    {
+      "id": 600,
+      "nameFr": "Clic"
+    },
+    {
+      "id": 601,
+      "nameFr": "Cliticlic"
+    },
+    {
+      "id": 602,
+      "nameFr": "Anchwatt"
+    },
+    {
+      "id": 603,
+      "nameFr": "Lampéroie"
+    },
+    {
+      "id": 604,
+      "nameFr": "Ohmassacre"
+    },
+    {
+      "id": 605,
+      "nameFr": "Lewsor"
+    },
+    {
+      "id": 606,
+      "nameFr": "Neitram"
+    },
+    {
+      "id": 607,
+      "nameFr": "Funécire"
+    },
+    {
+      "id": 608,
+      "nameFr": "Mélancolux"
+    },
+    {
+      "id": 609,
+      "nameFr": "Lugulabre"
+    },
+    {
+      "id": 610,
+      "nameFr": "Coupenotte"
+    },
+    {
+      "id": 611,
+      "nameFr": "Incisache"
+    },
+    {
+      "id": 612,
+      "nameFr": "Tranchodon"
+    },
+    {
+      "id": 613,
+      "nameFr": "Polarhume"
+    },
+    {
+      "id": 614,
+      "nameFr": "Polagriffe"
+    },
+    {
+      "id": 615,
+      "nameFr": "Hexagel"
+    },
+    {
+      "id": 616,
+      "nameFr": "Escargaume"
+    },
+    {
+      "id": 617,
+      "nameFr": "Limaspeed"
+    },
+    {
+      "id": 618,
+      "nameFr": "Limonde"
+    },
+    {
+      "id": 619,
+      "nameFr": "Kungfouine"
+    },
+    {
+      "id": 620,
+      "nameFr": "Shaofouine"
+    },
+    {
+      "id": 621,
+      "nameFr": "Drakkarmin"
+    },
+    {
+      "id": 622,
+      "nameFr": "Gringolem"
+    },
+    {
+      "id": 623,
+      "nameFr": "Golemastoc"
+    },
+    {
+      "id": 624,
+      "nameFr": "Scalpion"
+    },
+    {
+      "id": 625,
+      "nameFr": "Scalproie"
+    },
+    {
+      "id": 626,
+      "nameFr": "Frison"
+    },
+    {
+      "id": 627,
+      "nameFr": "Furaiglon"
+    },
+    {
+      "id": 628,
+      "nameFr": "Gueriaigle"
+    },
+    {
+      "id": 629,
+      "nameFr": "Vostourno"
+    },
+    {
+      "id": 630,
+      "nameFr": "Vaututrice"
+    },
+    {
+      "id": 631,
+      "nameFr": "Aflamanoir"
+    },
+    {
+      "id": 632,
+      "nameFr": "Fermite"
+    },
+    {
+      "id": 633,
+      "nameFr": "Solochi"
+    },
+    {
+      "id": 634,
+      "nameFr": "Diamat"
+    },
+    {
+      "id": 635,
+      "nameFr": "Trioxhydre"
+    },
+    {
+      "id": 636,
+      "nameFr": "Pyronille"
+    },
+    {
+      "id": 637,
+      "nameFr": "Pyrax"
+    },
+    {
+      "id": 638,
+      "nameFr": "Cobaltium"
+    },
+    {
+      "id": 639,
+      "nameFr": "Terrakium"
+    },
+    {
+      "id": 640,
+      "nameFr": "Viridium"
+    },
+    {
+      "id": 641,
+      "nameFr": "Boréas"
+    },
+    {
+      "id": 642,
+      "nameFr": "Fulguris"
+    },
+    {
+      "id": 643,
+      "nameFr": "Reshiram"
+    },
+    {
+      "id": 644,
+      "nameFr": "Zekrom"
+    },
+    {
+      "id": 645,
+      "nameFr": "Démétéros"
+    },
+    {
+      "id": 646,
+      "nameFr": "Kyurem"
+    },
+    {
+      "id": 647,
+      "nameFr": "Keldeo"
+    },
+    {
+      "id": 648,
+      "nameFr": "Meloetta"
+    },
+    {
+      "id": 649,
+      "nameFr": "Genesect"
+    },
+    {
+      "id": 650,
+      "nameFr": "Marisson"
+    },
+    {
+      "id": 651,
+      "nameFr": "Boguérisse"
+    },
+    {
+      "id": 652,
+      "nameFr": "Blindépique"
+    },
+    {
+      "id": 653,
+      "nameFr": "Feunnec"
+    },
+    {
+      "id": 654,
+      "nameFr": "Roussil"
+    },
+    {
+      "id": 655,
+      "nameFr": "Goupelin"
+    },
+    {
+      "id": 656,
+      "nameFr": "Grenousse"
+    },
+    {
+      "id": 657,
+      "nameFr": "Croâporal"
+    },
+    {
+      "id": 658,
+      "nameFr": "Amphinobi"
+    },
+    {
+      "id": 659,
+      "nameFr": "Sapereau"
+    },
+    {
+      "id": 660,
+      "nameFr": "Excavarenne"
+    },
+    {
+      "id": 661,
+      "nameFr": "Passerouge"
+    },
+    {
+      "id": 662,
+      "nameFr": "Braisillon"
+    },
+    {
+      "id": 663,
+      "nameFr": "Flambusard"
+    },
+    {
+      "id": 664,
+      "nameFr": "Lépidonille"
+    },
+    {
+      "id": 665,
+      "nameFr": "Pérégrain"
+    },
+    {
+      "id": 666,
+      "nameFr": "Prismillon"
+    },
+    {
+      "id": 667,
+      "nameFr": "Hélionceau"
+    },
+    {
+      "id": 668,
+      "nameFr": "Némélios"
+    },
+    {
+      "id": 669,
+      "nameFr": "Flabébé"
+    },
+    {
+      "id": 670,
+      "nameFr": "Floette"
+    },
+    {
+      "id": 671,
+      "nameFr": "Florges"
+    },
+    {
+      "id": 672,
+      "nameFr": "Cabriolaine"
+    },
+    {
+      "id": 673,
+      "nameFr": "Chevroum"
+    },
+    {
+      "id": 674,
+      "nameFr": "Pandespiègle"
+    },
+    {
+      "id": 675,
+      "nameFr": "Pandarbare"
+    },
+    {
+      "id": 676,
+      "nameFr": "Couafarel"
+    },
+    {
+      "id": 677,
+      "nameFr": "Psystigri"
+    },
+    {
+      "id": 678,
+      "nameFr": "Mistigrix"
+    },
+    {
+      "id": 679,
+      "nameFr": "Monorpale"
+    },
+    {
+      "id": 680,
+      "nameFr": "Dimoclès"
+    },
+    {
+      "id": 681,
+      "nameFr": "Exagide"
+    },
+    {
+      "id": 682,
+      "nameFr": "Fluvetin"
+    },
+    {
+      "id": 683,
+      "nameFr": "Cocotine"
+    },
+    {
+      "id": 684,
+      "nameFr": "Sucroquin"
+    },
+    {
+      "id": 685,
+      "nameFr": "Cupcanaille"
+    },
+    {
+      "id": 686,
+      "nameFr": "Sepiatop"
+    },
+    {
+      "id": 687,
+      "nameFr": "Sepiatroce"
+    },
+    {
+      "id": 688,
+      "nameFr": "Opermine"
+    },
+    {
+      "id": 689,
+      "nameFr": "Golgopathe"
+    },
+    {
+      "id": 690,
+      "nameFr": "Venalgue"
+    },
+    {
+      "id": 691,
+      "nameFr": "Kravarech"
+    },
+    {
+      "id": 692,
+      "nameFr": "Flingouste"
+    },
+    {
+      "id": 693,
+      "nameFr": "Gamblast"
+    },
+    {
+      "id": 694,
+      "nameFr": "Galvaran"
+    },
+    {
+      "id": 695,
+      "nameFr": "Iguolta"
+    },
+    {
+      "id": 696,
+      "nameFr": "Ptyranidur"
+    },
+    {
+      "id": 697,
+      "nameFr": "Rexillius"
+    },
+    {
+      "id": 698,
+      "nameFr": "Amagara"
+    },
+    {
+      "id": 699,
+      "nameFr": "Dragmara"
+    },
+    {
+      "id": 700,
+      "nameFr": "Nymphali"
+    },
+    {
+      "id": 701,
+      "nameFr": "Brutalibré"
+    },
+    {
+      "id": 702,
+      "nameFr": "Dedenne"
+    },
+    {
+      "id": 703,
+      "nameFr": "Strassie"
+    },
+    {
+      "id": 704,
+      "nameFr": "Mucuscule"
+    },
+    {
+      "id": 705,
+      "nameFr": "Colimucus"
+    },
+    {
+      "id": 706,
+      "nameFr": "Muplodocus"
+    },
+    {
+      "id": 707,
+      "nameFr": "Trousselin"
+    },
+    {
+      "id": 708,
+      "nameFr": "Brocélôme"
+    },
+    {
+      "id": 709,
+      "nameFr": "Desséliande"
+    },
+    {
+      "id": 710,
+      "nameFr": "Pitrouille"
+    },
+    {
+      "id": 711,
+      "nameFr": "Banshitrouye"
+    },
+    {
+      "id": 712,
+      "nameFr": "Grelaçon"
+    },
+    {
+      "id": 713,
+      "nameFr": "Séracrawl"
+    },
+    {
+      "id": 714,
+      "nameFr": "Sonistrelle"
+    },
+    {
+      "id": 715,
+      "nameFr": "Bruyverne"
+    },
+    {
+      "id": 716,
+      "nameFr": "Xerneas"
+    },
+    {
+      "id": 717,
+      "nameFr": "Yveltal"
+    },
+    {
+      "id": 718,
+      "nameFr": "Zygarde"
+    },
+    {
+      "id": 719,
+      "nameFr": "Diancie"
+    },
+    {
+      "id": 720,
+      "nameFr": "Hoopa"
+    },
+    {
+      "id": 721,
+      "nameFr": "Volcanion"
+    },
+    {
+      "id": 722,
+      "nameFr": "Brindibou"
+    },
+    {
+      "id": 723,
+      "nameFr": "Efflèche"
+    },
+    {
+      "id": 724,
+      "nameFr": "Archéduc"
+    },
+    {
+      "id": 725,
+      "nameFr": "Flamiaou"
+    },
+    {
+      "id": 726,
+      "nameFr": "Matoufeu"
+    },
+    {
+      "id": 727,
+      "nameFr": "Félinferno"
+    },
+    {
+      "id": 728,
+      "nameFr": "Otaquin"
+    },
+    {
+      "id": 729,
+      "nameFr": "Otarlette"
+    },
+    {
+      "id": 730,
+      "nameFr": "Oratoria"
+    },
+    {
+      "id": 731,
+      "nameFr": "Picassaut"
+    },
+    {
+      "id": 732,
+      "nameFr": "Piclairon"
+    },
+    {
+      "id": 733,
+      "nameFr": "Bazoucan"
+    },
+    {
+      "id": 734,
+      "nameFr": "Manglouton"
+    },
+    {
+      "id": 735,
+      "nameFr": "Argouste"
+    },
+    {
+      "id": 736,
+      "nameFr": "Larvibule"
+    },
+    {
+      "id": 737,
+      "nameFr": "Chrysapile"
+    },
+    {
+      "id": 738,
+      "nameFr": "Lucanon"
+    },
+    {
+      "id": 739,
+      "nameFr": "Crabagarre"
+    },
+    {
+      "id": 740,
+      "nameFr": "Crabominable"
+    },
+    {
+      "id": 741,
+      "nameFr": "Plumeline"
+    },
+    {
+      "id": 742,
+      "nameFr": "Bombydou"
+    },
+    {
+      "id": 743,
+      "nameFr": "Rubombelle"
+    },
+    {
+      "id": 744,
+      "nameFr": "Rocabot"
+    },
+    {
+      "id": 745,
+      "nameFr": "Lougaroc"
+    },
+    {
+      "id": 746,
+      "nameFr": "Froussardine"
+    },
+    {
+      "id": 747,
+      "nameFr": "Vorastérie"
+    },
+    {
+      "id": 748,
+      "nameFr": "Prédastérie"
+    },
+    {
+      "id": 749,
+      "nameFr": "Tiboudet"
+    },
+    {
+      "id": 750,
+      "nameFr": "Bourrinos"
+    },
+    {
+      "id": 751,
+      "nameFr": "Araqua"
+    },
+    {
+      "id": 752,
+      "nameFr": "Tarenbulle"
+    },
+    {
+      "id": 753,
+      "nameFr": "Mimantis"
+    },
+    {
+      "id": 754,
+      "nameFr": "Floramantis"
+    },
+    {
+      "id": 755,
+      "nameFr": "Spododo"
+    },
+    {
+      "id": 756,
+      "nameFr": "Lampignon"
+    },
+    {
+      "id": 757,
+      "nameFr": "Tritox"
+    },
+    {
+      "id": 758,
+      "nameFr": "Malamandre"
+    },
+    {
+      "id": 759,
+      "nameFr": "Nounourson"
+    },
+    {
+      "id": 760,
+      "nameFr": "Chelours"
+    },
+    {
+      "id": 761,
+      "nameFr": "Croquine"
+    },
+    {
+      "id": 762,
+      "nameFr": "Candine"
+    },
+    {
+      "id": 763,
+      "nameFr": "Sucreine"
+    },
+    {
+      "id": 764,
+      "nameFr": "Guérilande"
+    },
+    {
+      "id": 765,
+      "nameFr": "Gouroutan"
+    },
+    {
+      "id": 766,
+      "nameFr": "Quartermac"
+    },
+    {
+      "id": 767,
+      "nameFr": "Sovkipou"
+    },
+    {
+      "id": 768,
+      "nameFr": "Sarmuraï"
+    },
+    {
+      "id": 769,
+      "nameFr": "Bacabouh"
+    },
+    {
+      "id": 770,
+      "nameFr": "Trépassable"
+    },
+    {
+      "id": 771,
+      "nameFr": "Concombaffe"
+    },
+    {
+      "id": 772,
+      "nameFr": "Type:0"
+    },
+    {
+      "id": 773,
+      "nameFr": "Silvallié"
+    },
+    {
+      "id": 774,
+      "nameFr": "Météno"
+    },
+    {
+      "id": 775,
+      "nameFr": "Dodoala"
+    },
+    {
+      "id": 776,
+      "nameFr": "Boumata"
+    },
+    {
+      "id": 777,
+      "nameFr": "Togedemaru"
+    },
+    {
+      "id": 778,
+      "nameFr": "Mimiqui"
+    },
+    {
+      "id": 779,
+      "nameFr": "Denticrisse"
+    },
+    {
+      "id": 780,
+      "nameFr": "Draïeul"
+    },
+    {
+      "id": 781,
+      "nameFr": "Sinistrail"
+    },
+    {
+      "id": 782,
+      "nameFr": "Bébécaille"
+    },
+    {
+      "id": 783,
+      "nameFr": "Écaïd"
+    },
+    {
+      "id": 784,
+      "nameFr": "Ékaïser"
+    },
+    {
+      "id": 785,
+      "nameFr": "Tokorico"
+    },
+    {
+      "id": 786,
+      "nameFr": "Tokopiyon"
+    },
+    {
+      "id": 787,
+      "nameFr": "Tokotoro"
+    },
+    {
+      "id": 788,
+      "nameFr": "Tokopisco"
+    },
+    {
+      "id": 789,
+      "nameFr": "Cosmog"
+    },
+    {
+      "id": 790,
+      "nameFr": "Cosmovum"
+    },
+    {
+      "id": 791,
+      "nameFr": "Solgaleo"
+    },
+    {
+      "id": 792,
+      "nameFr": "Lunala"
+    },
+    {
+      "id": 793,
+      "nameFr": "Zéroïd"
+    },
+    {
+      "id": 794,
+      "nameFr": "Mouscoto"
+    },
+    {
+      "id": 795,
+      "nameFr": "Cancrelove"
+    },
+    {
+      "id": 796,
+      "nameFr": "Câblifère"
+    },
+    {
+      "id": 797,
+      "nameFr": "Bamboiselle"
+    },
+    {
+      "id": 798,
+      "nameFr": "Katagami"
+    },
+    {
+      "id": 799,
+      "nameFr": "Engloutyran"
+    },
+    {
+      "id": 800,
+      "nameFr": "Necrozma"
+    },
+    {
+      "id": 801,
+      "nameFr": "Magearna"
+    },
+    {
+      "id": 802,
+      "nameFr": "Marshadow"
+    },
+    {
+      "id": 803,
+      "nameFr": "Vémini"
+    },
+    {
+      "id": 804,
+      "nameFr": "Mandrillon"
+    },
+    {
+      "id": 805,
+      "nameFr": "Ama-Ama"
+    },
+    {
+      "id": 806,
+      "nameFr": "Pierroteknik"
+    },
+    {
+      "id": 807,
+      "nameFr": "Zeraora"
+    },
+    {
+      "id": 808,
+      "nameFr": "Meltan"
+    },
+    {
+      "id": 809,
+      "nameFr": "Melmetal"
+    },
+    {
+      "id": 810,
+      "nameFr": "Ouistempo"
+    },
+    {
+      "id": 811,
+      "nameFr": "Badabouin"
+    },
+    {
+      "id": 812,
+      "nameFr": "Gorythmic"
+    },
+    {
+      "id": 813,
+      "nameFr": "Flambino"
+    },
+    {
+      "id": 814,
+      "nameFr": "Lapyro"
+    },
+    {
+      "id": 815,
+      "nameFr": "Pyrobut"
+    },
+    {
+      "id": 816,
+      "nameFr": "Larméléon"
+    },
+    {
+      "id": 817,
+      "nameFr": "Arrozard"
+    },
+    {
+      "id": 818,
+      "nameFr": "Lézargus"
+    },
+    {
+      "id": 819,
+      "nameFr": "Rongourmand"
+    },
+    {
+      "id": 820,
+      "nameFr": "Rongrigou"
+    },
+    {
+      "id": 821,
+      "nameFr": "Minisange"
+    },
+    {
+      "id": 822,
+      "nameFr": "Bleuseille"
+    },
+    {
+      "id": 823,
+      "nameFr": "Corvaillus"
+    },
+    {
+      "id": 824,
+      "nameFr": "Larvadar"
+    },
+    {
+      "id": 825,
+      "nameFr": "Coléodôme"
+    },
+    {
+      "id": 826,
+      "nameFr": "Astronelle"
+    },
+    {
+      "id": 827,
+      "nameFr": "Goupilou"
+    },
+    {
+      "id": 828,
+      "nameFr": "Roublenard"
+    },
+    {
+      "id": 829,
+      "nameFr": "Tournicoton"
+    },
+    {
+      "id": 830,
+      "nameFr": "Blancoton"
+    },
+    {
+      "id": 831,
+      "nameFr": "Moumouton"
+    },
+    {
+      "id": 832,
+      "nameFr": "Moumouflon"
+    },
+    {
+      "id": 833,
+      "nameFr": "Khélocrok"
+    },
+    {
+      "id": 834,
+      "nameFr": "Torgamord"
+    },
+    {
+      "id": 835,
+      "nameFr": "Voltoutou"
+    },
+    {
+      "id": 836,
+      "nameFr": "Fulgudog"
+    },
+    {
+      "id": 837,
+      "nameFr": "Charbi"
+    },
+    {
+      "id": 838,
+      "nameFr": "Wagomine"
+    },
+    {
+      "id": 839,
+      "nameFr": "Monthracite"
+    },
+    {
+      "id": 840,
+      "nameFr": "Verpom"
+    },
+    {
+      "id": 841,
+      "nameFr": "Pomdrapi"
+    },
+    {
+      "id": 842,
+      "nameFr": "Dratatin"
+    },
+    {
+      "id": 843,
+      "nameFr": "Dunaja"
+    },
+    {
+      "id": 844,
+      "nameFr": "Dunaconda"
+    },
+    {
+      "id": 845,
+      "nameFr": "Nigosier"
+    },
+    {
+      "id": 846,
+      "nameFr": "Embrochet"
+    },
+    {
+      "id": 847,
+      "nameFr": "Hastacuda"
+    },
+    {
+      "id": 848,
+      "nameFr": "Toxizap"
+    },
+    {
+      "id": 849,
+      "nameFr": "Salarsen"
+    },
+    {
+      "id": 850,
+      "nameFr": "Grillepattes"
+    },
+    {
+      "id": 851,
+      "nameFr": "Scolocendre"
+    },
+    {
+      "id": 852,
+      "nameFr": "Poulpaf"
+    },
+    {
+      "id": 853,
+      "nameFr": "Krakos"
+    },
+    {
+      "id": 854,
+      "nameFr": "Théffroi"
+    },
+    {
+      "id": 855,
+      "nameFr": "Polthégeist"
+    },
+    {
+      "id": 856,
+      "nameFr": "Bibichut"
+    },
+    {
+      "id": 857,
+      "nameFr": "Chapotus"
+    },
+    {
+      "id": 858,
+      "nameFr": "Sorcilence"
+    },
+    {
+      "id": 859,
+      "nameFr": "Grimalin"
+    },
+    {
+      "id": 860,
+      "nameFr": "Fourbelin"
+    },
+    {
+      "id": 861,
+      "nameFr": "Angoliath"
+    },
+    {
+      "id": 862,
+      "nameFr": "Ixon"
+    },
+    {
+      "id": 863,
+      "nameFr": "Berserkatt"
+    },
+    {
+      "id": 864,
+      "nameFr": "Corayôme"
+    },
+    {
+      "id": 865,
+      "nameFr": "Palarticho"
+    },
+    {
+      "id": 866,
+      "nameFr": "M. Glaquette"
+    },
+    {
+      "id": 867,
+      "nameFr": "Tutétékri"
+    },
+    {
+      "id": 868,
+      "nameFr": "Crèmy"
+    },
+    {
+      "id": 869,
+      "nameFr": "Charmilly"
+    },
+    {
+      "id": 870,
+      "nameFr": "Hexadron"
+    },
+    {
+      "id": 871,
+      "nameFr": "Wattapik"
+    },
+    {
+      "id": 872,
+      "nameFr": "Frissonille"
+    },
+    {
+      "id": 873,
+      "nameFr": "Beldeneige"
+    },
+    {
+      "id": 874,
+      "nameFr": "Dolman"
+    },
+    {
+      "id": 875,
+      "nameFr": "Bekaglaçon"
+    },
+    {
+      "id": 876,
+      "nameFr": "Wimessir"
+    },
+    {
+      "id": 877,
+      "nameFr": "Morpeko"
+    },
+    {
+      "id": 878,
+      "nameFr": "Charibari"
+    },
+    {
+      "id": 879,
+      "nameFr": "Pachyradjah"
+    },
+    {
+      "id": 880,
+      "nameFr": "Galvagon"
+    },
+    {
+      "id": 881,
+      "nameFr": "Galvagla"
+    },
+    {
+      "id": 882,
+      "nameFr": "Hydragon"
+    },
+    {
+      "id": 883,
+      "nameFr": "Hydragla"
+    },
+    {
+      "id": 884,
+      "nameFr": "Duralugon"
+    },
+    {
+      "id": 885,
+      "nameFr": "Fantyrm"
+    },
+    {
+      "id": 886,
+      "nameFr": "Dispareptil"
+    },
+    {
+      "id": 887,
+      "nameFr": "Lanssorien"
+    },
+    {
+      "id": 888,
+      "nameFr": "Zacian"
+    },
+    {
+      "id": 889,
+      "nameFr": "Zamazenta"
+    },
+    {
+      "id": 890,
+      "nameFr": "Éthernatos"
+    },
+    {
+      "id": 891,
+      "nameFr": "Wushours"
+    },
+    {
+      "id": 892,
+      "nameFr": "Shifours"
+    },
+    {
+      "id": 893,
+      "nameFr": "Zarude"
+    },
+    {
+      "id": 894,
+      "nameFr": "Regieleki"
+    },
+    {
+      "id": 895,
+      "nameFr": "Regidrago"
+    },
+    {
+      "id": 896,
+      "nameFr": "Blizzeval"
+    },
+    {
+      "id": 897,
+      "nameFr": "Spectreval"
+    },
+    {
+      "id": 898,
+      "nameFr": "Sylveroy"
+    },
+    {
+      "id": 899,
+      "nameFr": "Cerbyllin"
+    },
+    {
+      "id": 900,
+      "nameFr": "Hachécateur"
+    },
+    {
+      "id": 901,
+      "nameFr": "Ursaking"
+    },
+    {
+      "id": 902,
+      "nameFr": "Paragruel"
+    },
+    {
+      "id": 903,
+      "nameFr": "Farfurex"
+    },
+    {
+      "id": 904,
+      "nameFr": "Qwilpik"
+    },
+    {
+      "id": 905,
+      "nameFr": "Amovénus"
+    },
+    {
+      "id": 906,
+      "nameFr": "Poussacha"
+    },
+    {
+      "id": 907,
+      "nameFr": "Matourgeon"
+    },
+    {
+      "id": 908,
+      "nameFr": "Miascarade"
+    },
+    {
+      "id": 909,
+      "nameFr": "Chochodile"
+    },
+    {
+      "id": 910,
+      "nameFr": "Crocogril"
+    },
+    {
+      "id": 911,
+      "nameFr": "Flâmigator"
+    },
+    {
+      "id": 912,
+      "nameFr": "Coiffeton"
+    },
+    {
+      "id": 913,
+      "nameFr": "Canarbello"
+    },
+    {
+      "id": 914,
+      "nameFr": "Palmaval"
+    },
+    {
+      "id": 915,
+      "nameFr": "Gourmelet"
+    },
+    {
+      "id": 916,
+      "nameFr": "Fragroin"
+    },
+    {
+      "id": 917,
+      "nameFr": "Tissenboule"
+    },
+    {
+      "id": 918,
+      "nameFr": "Filentrappe"
+    },
+    {
+      "id": 919,
+      "nameFr": "Lilliterelle"
+    },
+    {
+      "id": 920,
+      "nameFr": "Gambex"
+    },
+    {
+      "id": 921,
+      "nameFr": "Pohm"
+    },
+    {
+      "id": 922,
+      "nameFr": "Pohmotte"
+    },
+    {
+      "id": 923,
+      "nameFr": "Pohmarmotte"
+    },
+    {
+      "id": 924,
+      "nameFr": "Compagnol"
+    },
+    {
+      "id": 925,
+      "nameFr": "Famignol"
+    },
+    {
+      "id": 926,
+      "nameFr": "Pâtachiot"
+    },
+    {
+      "id": 927,
+      "nameFr": "Briochien"
+    },
+    {
+      "id": 928,
+      "nameFr": "Olivini"
+    },
+    {
+      "id": 929,
+      "nameFr": "Olivado"
+    },
+    {
+      "id": 930,
+      "nameFr": "Arboliva"
+    },
+    {
+      "id": 931,
+      "nameFr": "Tapatoès"
+    },
+    {
+      "id": 932,
+      "nameFr": "Selutin"
+    },
+    {
+      "id": 933,
+      "nameFr": "Amassel"
+    },
+    {
+      "id": 934,
+      "nameFr": "Gigansel"
+    },
+    {
+      "id": 935,
+      "nameFr": "Charbambin"
+    },
+    {
+      "id": 936,
+      "nameFr": "Carmadura"
+    },
+    {
+      "id": 937,
+      "nameFr": "Malvalame"
+    },
+    {
+      "id": 938,
+      "nameFr": "Têtampoule"
+    },
+    {
+      "id": 939,
+      "nameFr": "Ampibidou"
+    },
+    {
+      "id": 940,
+      "nameFr": "Zapétrel"
+    },
+    {
+      "id": 941,
+      "nameFr": "Fulgulairo"
+    },
+    {
+      "id": 942,
+      "nameFr": "Grondogue"
+    },
+    {
+      "id": 943,
+      "nameFr": "Dogrino"
+    },
+    {
+      "id": 944,
+      "nameFr": "Gribouraigne"
+    },
+    {
+      "id": 945,
+      "nameFr": "Tag-Tag"
+    },
+    {
+      "id": 946,
+      "nameFr": "Virovent"
+    },
+    {
+      "id": 947,
+      "nameFr": "Virevorreur"
+    },
+    {
+      "id": 948,
+      "nameFr": "Terracool"
+    },
+    {
+      "id": 949,
+      "nameFr": "Terracruel"
+    },
+    {
+      "id": 950,
+      "nameFr": "Craparoi"
+    },
+    {
+      "id": 951,
+      "nameFr": "Pimito"
+    },
+    {
+      "id": 952,
+      "nameFr": "Scovilain"
+    },
+    {
+      "id": 953,
+      "nameFr": "Léboulérou"
+    },
+    {
+      "id": 954,
+      "nameFr": "Bérasca"
+    },
+    {
+      "id": 955,
+      "nameFr": "Flotillon"
+    },
+    {
+      "id": 956,
+      "nameFr": "Cléopsytra"
+    },
+    {
+      "id": 957,
+      "nameFr": "Forgerette"
+    },
+    {
+      "id": 958,
+      "nameFr": "Forgella"
+    },
+    {
+      "id": 959,
+      "nameFr": "Forgelina"
+    },
+    {
+      "id": 960,
+      "nameFr": "Taupikeau"
+    },
+    {
+      "id": 961,
+      "nameFr": "Triopikeau"
+    },
+    {
+      "id": 962,
+      "nameFr": "Lestombaile"
+    },
+    {
+      "id": 963,
+      "nameFr": "Dofin"
+    },
+    {
+      "id": 964,
+      "nameFr": "Superdofin"
+    },
+    {
+      "id": 965,
+      "nameFr": "Vrombi"
+    },
+    {
+      "id": 966,
+      "nameFr": "Vrombotor"
+    },
+    {
+      "id": 967,
+      "nameFr": "Motorizard"
+    },
+    {
+      "id": 968,
+      "nameFr": "Ferdeter"
+    },
+    {
+      "id": 969,
+      "nameFr": "Germéclat"
+    },
+    {
+      "id": 970,
+      "nameFr": "Floréclat"
+    },
+    {
+      "id": 971,
+      "nameFr": "Toutombe"
+    },
+    {
+      "id": 972,
+      "nameFr": "Tomberro"
+    },
+    {
+      "id": 973,
+      "nameFr": "Flamenroule"
+    },
+    {
+      "id": 974,
+      "nameFr": "Piétacé"
+    },
+    {
+      "id": 975,
+      "nameFr": "Balbalèze"
+    },
+    {
+      "id": 976,
+      "nameFr": "Délestin"
+    },
+    {
+      "id": 977,
+      "nameFr": "Oyacata"
+    },
+    {
+      "id": 978,
+      "nameFr": "Nigirigon"
+    },
+    {
+      "id": 979,
+      "nameFr": "Courrousinge"
+    },
+    {
+      "id": 980,
+      "nameFr": "Terraiste"
+    },
+    {
+      "id": 981,
+      "nameFr": "Farigiraf"
+    },
+    {
+      "id": 982,
+      "nameFr": "Deusolourdo"
+    },
+    {
+      "id": 983,
+      "nameFr": "Scalpereur"
+    },
+    {
+      "id": 984,
+      "nameFr": "Fort-Ivoire"
+    },
+    {
+      "id": 985,
+      "nameFr": "Hurle-Queue"
+    },
+    {
+      "id": 986,
+      "nameFr": "Fongus-Furie"
+    },
+    {
+      "id": 987,
+      "nameFr": "Flotte-Mèche"
+    },
+    {
+      "id": 988,
+      "nameFr": "Rampe-Ailes"
+    },
+    {
+      "id": 989,
+      "nameFr": "Pelage-Sablé"
+    },
+    {
+      "id": 990,
+      "nameFr": "Roue-de-Fer"
+    },
+    {
+      "id": 991,
+      "nameFr": "Hotte-de-Fer"
+    },
+    {
+      "id": 992,
+      "nameFr": "Paume-de-Fer"
+    },
+    {
+      "id": 993,
+      "nameFr": "Têtes-de-Fer"
+    },
+    {
+      "id": 994,
+      "nameFr": "Mite-de-Fer"
+    },
+    {
+      "id": 995,
+      "nameFr": "Épine-de-Fer"
+    },
+    {
+      "id": 996,
+      "nameFr": "Frigodo"
+    },
+    {
+      "id": 997,
+      "nameFr": "Cryodo"
+    },
+    {
+      "id": 998,
+      "nameFr": "Glaivodo"
+    },
+    {
+      "id": 999,
+      "nameFr": "Mordudor"
+    },
+    {
+      "id": 1000,
+      "nameFr": "Gromago"
+    },
+    {
+      "id": 1001,
+      "nameFr": "Chongjian"
+    },
+    {
+      "id": 1002,
+      "nameFr": "Baojian"
+    },
+    {
+      "id": 1003,
+      "nameFr": "Dinglu"
+    },
+    {
+      "id": 1004,
+      "nameFr": "Yuyu"
+    },
+    {
+      "id": 1005,
+      "nameFr": "Rugit-Lune"
+    },
+    {
+      "id": 1006,
+      "nameFr": "Garde-de-Fer"
+    },
+    {
+      "id": 1007,
+      "nameFr": "Koraidon"
+    },
+    {
+      "id": 1008,
+      "nameFr": "Miraidon"
+    },
+    {
+      "id": 1009,
+      "nameFr": "Serpente-Eau"
+    },
+    {
+      "id": 1010,
+      "nameFr": "Vert-de-Fer"
+    },
+    {
+      "id": 1011,
+      "nameFr": "Pomdramour"
+    },
+    {
+      "id": 1012,
+      "nameFr": "Poltchageist"
+    },
+    {
+      "id": 1013,
+      "nameFr": "Théffroyable"
+    },
+    {
+      "id": 1014,
+      "nameFr": "Félicanis"
+    },
+    {
+      "id": 1015,
+      "nameFr": "Fortusimia"
+    },
+    {
+      "id": 1016,
+      "nameFr": "Favianos"
+    },
+    {
+      "id": 1017,
+      "nameFr": "Ogerpon"
+    },
+    {
+      "id": 1018,
+      "nameFr": "Pondralugon"
+    },
+    {
+      "id": 1019,
+      "nameFr": "Pomdorochi"
+    },
+    {
+      "id": 1020,
+      "nameFr": "Feu-Perçant"
+    },
+    {
+      "id": 1021,
+      "nameFr": "Ire-Foudre"
+    },
+    {
+      "id": 1022,
+      "nameFr": "Roc-de-Fer"
+    },
+    {
+      "id": 1023,
+      "nameFr": "Chef-de-Fer"
+    },
+    {
+      "id": 1024,
+      "nameFr": "Terapagos"
+    },
+    {
+      "id": 1025,
+      "nameFr": "Pêchaminus"
+    }
+  ],
+  "bac": [
+    {
+      "letter": "A",
+      "id": 23,
+      "nameFr": "Abo"
+    },
+    {
+      "letter": "B",
+      "id": 782,
+      "nameFr": "Bébécaille"
+    },
+    {
+      "letter": "C",
+      "id": 760,
+      "nameFr": "Chelours"
+    },
+    {
+      "letter": "D",
+      "id": 963,
+      "nameFr": "Dofin"
+    },
+    {
+      "letter": "E",
+      "id": 552,
+      "nameFr": "Escroco"
+    },
+    {
+      "letter": "F",
+      "id": 161,
+      "nameFr": "Fouinette"
+    },
+    {
+      "letter": "G",
+      "id": 40,
+      "nameFr": "Grodoudou"
+    },
+    {
+      "letter": "H",
+      "id": 117,
+      "nameFr": "Hypocéan"
+    },
+    {
+      "letter": "I",
+      "id": 123,
+      "nameFr": "Insécateur"
+    },
+    {
+      "letter": "J",
+      "id": 385,
+      "nameFr": "Jirachi"
+    },
+    {
+      "letter": "K",
+      "id": 99,
+      "nameFr": "Krabboss"
+    },
+    {
+      "letter": "L",
+      "id": 124,
+      "nameFr": "Lippoutou"
+    },
+    {
+      "letter": "M",
+      "id": 831,
+      "nameFr": "Moumouton"
+    },
+    {
+      "letter": "N",
+      "id": 531,
+      "nameFr": "Nanméouïe"
+    },
+    {
+      "letter": "O",
+      "id": 95,
+      "nameFr": "Onix"
+    },
+    {
+      "letter": "P",
+      "id": 25,
+      "nameFr": "Pikachu"
+    },
+    {
+      "letter": "Q",
+      "id": 235,
+      "nameFr": "Queulorior"
+    },
+    {
+      "letter": "R",
+      "id": 143,
+      "nameFr": "Ronflex"
+    },
+    {
+      "letter": "S",
+      "id": 582,
+      "nameFr": "Sorbébé"
+    },
+    {
+      "letter": "T",
+      "id": 393,
+      "nameFr": "Tiplouf"
+    },
+    {
+      "letter": "U",
+      "id": 901,
+      "nameFr": "Ursaking"
+    },
+    {
+      "letter": "V",
+      "id": 835,
+      "nameFr": "Voltoutou"
+    },
+    {
+      "letter": "W",
+      "id": 876,
+      "nameFr": "Wimessir"
+    },
+    {
+      "letter": "X",
+      "id": 178,
+      "nameFr": "Xatu"
+    },
+    {
+      "letter": "Y",
+      "id": 1004,
+      "nameFr": "Yuyu"
+    },
+    {
+      "letter": "Z",
+      "id": 201,
+      "nameFr": "Zarbi"
+    }
+  ]
+}

@@ -7,12 +7,9 @@ import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { Button } from "@/components/ui/button";
-import { pickRandom } from "@/lib/games/random";
+import type { DescriptionStartResult } from "@/lib/games/description-types";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { censorPokemonNameInText } from "@/lib/pokemon/censor";
-import { getCatalogPokemon, getFrenchIndex } from "@/lib/pokemon/data";
-import { normalizeFrenchName } from "@/lib/pokemon/normalize";
-import type { QuizPokemon } from "@/lib/pokemon/types";
+import { getSearchCatalog } from "@/lib/pokemon/client-data";
 import { cn } from "@/lib/utils";
 
 interface RoundProps {
@@ -22,61 +19,81 @@ interface RoundProps {
 
 const EXTRA_DESCRIPTION_EVERY = 3;
 
-function truncateDescription(text: string, maxLength = 120): string {
-    if (text.length <= maxLength) return text;
-    return `${text.slice(0, maxLength)}…`;
-}
-
-function pickRandomWithDescription(catalog: QuizPokemon[]): QuizPokemon {
-    const withDescription = catalog.filter((pokemon) => pokemon.descriptionsFr.length > 0);
-    return pickRandom(withDescription);
-}
-
-function visibleDescriptionCount(wrongAttempts: number, total: number): number {
-    const unlocked = 1 + Math.floor(wrongAttempts / EXTRA_DESCRIPTION_EVERY);
-    return Math.min(unlocked, total);
+interface WrongGuess {
+    id: number;
+    nameFr: string;
+    spriteUrl: string;
 }
 
 export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) {
     const inputRef = useRef<HTMLInputElement>(null);
-    const catalog = useMemo(() => getCatalogPokemon(), []);
-    const frenchIndex = useMemo(() => getFrenchIndex(), []);
-    const catalogById = useMemo(() => new Map(catalog.map((pokemon) => [pokemon.id, pokemon])), [catalog]);
+    const catalog = useMemo(() => getSearchCatalog(), []);
 
-    const [target, setTarget] = useState<QuizPokemon | null>(null);
-    const [wrongGuesses, setWrongGuesses] = useState<QuizPokemon[]>([]);
+    const [token, setToken] = useState<string | null>(null);
+    const [totalDescriptions, setTotalDescriptions] = useState(0);
+    const [visibleDescriptions, setVisibleDescriptions] = useState<string[]>([]);
+    const [wrongGuesses, setWrongGuesses] = useState<WrongGuess[]>([]);
     const [wrongAttempts, setWrongAttempts] = useState(0);
     const [guessName, setGuessName] = useState("");
     const [feedback, setFeedback] = useState("");
     const [isSolved, setIsSolved] = useState(false);
     const [wasAbandoned, setWasAbandoned] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [solvedName, setSolvedName] = useState<string | null>(null);
+    const [solvedArtworkUrl, setSolvedArtworkUrl] = useState<string | null>(null);
 
     const excludedIds = useMemo(() => wrongGuesses.map((pokemon) => pokemon.id), [wrongGuesses]);
 
-    const startRound = useCallback(() => {
-        setTarget(pickRandomWithDescription(catalog));
+    const startRound = useCallback(async () => {
+        setIsLoading(true);
+        setToken(null);
+        setTotalDescriptions(0);
+        setVisibleDescriptions([]);
         setWrongGuesses([]);
         setWrongAttempts(0);
         setGuessName("");
         setFeedback("");
         setIsSolved(false);
         setWasAbandoned(false);
-        window.setTimeout(() => {
-            inputRef.current?.focus();
-        }, 0);
-    }, [catalog]);
+        setSolvedName(null);
+        setSolvedArtworkUrl(null);
+
+        try {
+            const response = await fetch("/api/games/description/start", {
+                method: "POST",
+            });
+
+            if (!response.ok) {
+                setIsLoading(false);
+                return;
+            }
+
+            const result = (await response.json()) as DescriptionStartResult;
+            setToken(result.token);
+            setTotalDescriptions(result.totalDescriptions);
+            setVisibleDescriptions(result.visibleDescriptions);
+            setIsLoading(false);
+            window.setTimeout(() => {
+                inputRef.current?.focus();
+            }, 0);
+        } catch {
+            setIsLoading(false);
+        }
+    }, []);
 
     const advanceRound = useCallback(() => {
         if (onRoundComplete) {
             onRoundComplete();
             return;
         }
-        startRound();
+        void startRound();
     }, [onRoundComplete, startRound]);
 
     useEffect(() => {
-        startRound();
-        // Mount-only init (also re-runs when Shuffle remounts the round via key).
+        const timeoutId = window.setTimeout(() => {
+            void startRound();
+        }, 0);
+        return () => window.clearTimeout(timeoutId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -100,117 +117,132 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [isSolved, advanceRound]);
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        if (!target || isSolved) return;
+        if (!token || isSolved) return;
 
-        const normalized = normalizeFrenchName(guessName);
-        if (!normalized) return;
-
-        const indexed = frenchIndex[normalized];
-        if (!indexed) {
-            setFeedback("Ce Pokémon est introuvable dans le Pokédex.");
-            return;
-        }
-
-        const guessedPokemon = catalogById.get(indexed.id);
-        if (!guessedPokemon) {
-            setFeedback("Impossible de charger les données de ce Pokémon.");
-            return;
-        }
-
-        const isCorrect = guessedPokemon.id === target.id;
-        const primaryDescription = target.descriptionsFr[0] ?? "";
-
-        if (isCorrect) {
-            session.recordRound({
-                question: truncateDescription(primaryDescription),
-                userAnswer: guessedPokemon.nameFr,
-                correctAnswer: target.nameFr,
-                isCorrect: true,
-                attemptCount: wrongAttempts + 1,
-                chosenImage: guessedPokemon.artwork,
-                chosenLabel: guessedPokemon.nameFr,
-                correctImage: target.artwork,
+        try {
+            const response = await fetch("/api/games/description/guess", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    token,
+                    answer: guessName,
+                    wrongAttempts,
+                }),
             });
-            setIsSolved(true);
-            setGuessName("");
-            setFeedback(`Bravo ! C'était ${target.nameFr}.`);
-            return;
-        }
+            const result = await response.json();
 
-        const nextAttempts = wrongAttempts + 1;
-        const previousVisible = visibleDescriptionCount(wrongAttempts, target.descriptionsFr.length);
-        const nextVisible = visibleDescriptionCount(nextAttempts, target.descriptionsFr.length);
-
-        setWrongGuesses((current) => {
-            if (current.some((pokemon) => pokemon.id === guessedPokemon.id)) {
-                return current;
+            if (result.status === "not_found" || result.status === "invalid_token") {
+                setFeedback(result.message);
+                return;
             }
-            return [...current, guessedPokemon];
-        });
-        setWrongAttempts(nextAttempts);
-        setGuessName("");
-        setFeedback(
-            nextVisible > previousVisible
-                ? "Ce n'est pas le bon Pokémon. Une nouvelle description a été dévoilée !"
-                : "Ce n'est pas le bon Pokémon. Réessaie !",
-        );
-        window.setTimeout(() => {
-            inputRef.current?.focus();
-        }, 0);
+
+            if (result.status === "correct") {
+                session.recordRound({
+                    question: visibleDescriptions[0] ?? "",
+                    userAnswer: result.nameFr,
+                    correctAnswer: result.nameFr,
+                    isCorrect: true,
+                    attemptCount: wrongAttempts + 1,
+                    chosenLabel: result.nameFr,
+                    correctImage: result.artworkUrl,
+                });
+                setVisibleDescriptions(result.visibleDescriptions);
+                setSolvedName(result.nameFr);
+                setSolvedArtworkUrl(result.artworkUrl);
+                setIsSolved(true);
+                setGuessName("");
+                setFeedback(`Bravo ! C'était ${result.nameFr}.`);
+                return;
+            }
+
+            if (result.status === "wrong") {
+                setWrongGuesses((current) => {
+                    if (current.some((pokemon) => pokemon.id === result.wrongGuess.id)) {
+                        return current;
+                    }
+                    return [...current, result.wrongGuess];
+                });
+                setWrongAttempts((current) => current + 1);
+                setVisibleDescriptions(result.visibleDescriptions);
+                setGuessName("");
+                setFeedback(
+                    result.unlockedNewDescription
+                        ? "Ce n'est pas le bon Pokémon. Une nouvelle description a été dévoilée !"
+                        : "Ce n'est pas le bon Pokémon. Réessaie !",
+                );
+                window.setTimeout(() => {
+                    inputRef.current?.focus();
+                }, 0);
+            }
+        } catch {
+            setFeedback("Erreur de validation. Réessaie.");
+        }
     };
 
-    const handleSkip = useCallback(() => {
-        if (!target || isSolved) return;
+    const handleSkip = useCallback(async () => {
+        if (!token || isSolved) return;
 
-        const primaryDescription = target.descriptionsFr[0] ?? "";
-        const lastGuess = wrongGuesses[wrongGuesses.length - 1];
+        try {
+            const response = await fetch("/api/games/description/skip", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token, wrongAttempts }),
+            });
+            const result = await response.json();
 
-        session.recordRound({
-            question: truncateDescription(primaryDescription),
-            userAnswer: "Abandon",
-            correctAnswer: target.nameFr,
-            isCorrect: false,
-            skipped: true,
-            attemptCount: wrongAttempts,
-            chosenImage: lastGuess?.artwork,
-            chosenLabel: lastGuess?.nameFr,
-            correctImage: target.artwork,
-        });
+            if (result.status !== "ok") {
+                setFeedback(result.message);
+                return;
+            }
 
-        setGuessName("");
-        setWasAbandoned(true);
-        setIsSolved(true);
-        setFeedback(`Abandonné. C'était ${target.nameFr}.`);
-    }, [isSolved, session, target, wrongAttempts, wrongGuesses]);
+            const lastGuess = wrongGuesses[wrongGuesses.length - 1];
 
-    useRegisterSkip(handleSkip, Boolean(target) && !isSolved);
+            session.recordRound({
+                question: visibleDescriptions[0] ?? "",
+                userAnswer: "Abandon",
+                correctAnswer: result.nameFr,
+                isCorrect: false,
+                skipped: true,
+                attemptCount: wrongAttempts,
+                chosenLabel: lastGuess?.nameFr,
+                correctImage: result.artworkUrl,
+            });
 
-    if (!target || target.descriptionsFr.length === 0) {
+            setVisibleDescriptions(result.visibleDescriptions);
+            setSolvedName(result.nameFr);
+            setSolvedArtworkUrl(result.artworkUrl);
+            setGuessName("");
+            setWasAbandoned(true);
+            setIsSolved(true);
+            setFeedback(`Abandonné. C'était ${result.nameFr}.`);
+        } catch {
+            setFeedback("Impossible d'abandonner la manche.");
+        }
+    }, [isSolved, session, token, visibleDescriptions, wrongAttempts, wrongGuesses]);
+
+    useRegisterSkip(handleSkip, Boolean(token) && !isSolved);
+
+    if (isLoading || !token || visibleDescriptions.length === 0) {
         return <div className="flex h-64 items-center justify-center text-muted-foreground">Préparation de la manche…</div>;
     }
 
-    const visibleCount = visibleDescriptionCount(wrongAttempts, target.descriptionsFr.length);
-    const visibleDescriptions = target.descriptionsFr.slice(0, visibleCount);
-    const canUnlockMore = visibleCount < target.descriptionsFr.length;
+    const visibleCount = visibleDescriptions.length;
+    const canUnlockMore = visibleCount < totalDescriptions;
     const attemptsUntilNextHint = EXTRA_DESCRIPTION_EVERY - (wrongAttempts % EXTRA_DESCRIPTION_EVERY);
 
     return (
         <div className="space-y-8">
             <div className="space-y-3">
-                {visibleDescriptions.map((description, index) => {
-                    const displayText = isSolved ? description : censorPokemonNameInText(description, target.nameFr);
-
-                    return (
-                        <div key={`${target.id}-${index}`} className="display-frame max-h-56 overflow-y-auto px-6 py-5">
-                            {visibleDescriptions.length > 1 ? (
-                                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Description {index + 1}</p>
-                            ) : null}
-                            <p className="text-sm leading-relaxed text-muted-foreground italic">« {displayText} »</p>
-                        </div>
-                    );
-                })}
+                {visibleDescriptions.map((description, index) => (
+                    <div key={`${token}-${index}`} className="display-frame max-h-56 overflow-y-auto px-6 py-5">
+                        {visibleDescriptions.length > 1 ? (
+                            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Description {index + 1}</p>
+                        ) : null}
+                        <p className="text-sm leading-relaxed text-muted-foreground italic">« {description} »</p>
+                    </div>
+                ))}
                 {!isSolved && canUnlockMore ? (
                     <p className="text-center text-sm text-muted-foreground">
                         Nouvelle description dans {attemptsUntilNextHint} essai
@@ -247,10 +279,10 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
             </form>
 
             <div className="space-y-4">
-                {isSolved ? (
+                {isSolved && solvedArtworkUrl ? (
                     <div className="flex flex-col items-center gap-2">
                         <div className="relative h-40 w-40">
-                            <Image src={target.artwork} alt={target.nameFr} fill sizes="160px" className="object-contain" />
+                            <Image src={solvedArtworkUrl} alt={solvedName ?? "Pokémon"} fill sizes="160px" unoptimized className="object-contain" />
                         </div>
                     </div>
                 ) : null}
@@ -275,7 +307,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                         {wrongGuesses.map((pokemon) => (
                             <li key={pokemon.id} className="surface flex items-center gap-2 rounded-full px-3 py-1.5 text-sm">
                                 <div className="relative h-6 w-6 shrink-0">
-                                    <Image src={pokemon.sprite} alt={pokemon.nameFr} fill sizes="24px" className="object-contain" />
+                                    <Image src={pokemon.spriteUrl} alt={pokemon.nameFr} fill sizes="24px" unoptimized className="object-contain" />
                                 </div>
                                 <span>{pokemon.nameFr}</span>
                             </li>

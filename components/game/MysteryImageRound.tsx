@@ -19,7 +19,7 @@ import type {
 } from "@/lib/games/mystery-types";
 import type { GameSession } from "@/lib/games/useGameSession";
 import { getZoomScale, isFullyDezoomed } from "@/lib/games/zoom-levels";
-import { getBacPokemon, getCatalogPokemon } from "@/lib/pokemon/data";
+import { getBacSearchCatalog, getSearchCatalog } from "@/lib/pokemon/client-data";
 import { cn } from "@/lib/utils";
 
 interface MysteryImageRoundProps {
@@ -43,14 +43,9 @@ export function MysteryImageRound({
   enableGrayscaleToggle = false,
 }: MysteryImageRoundProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const bacPokemon = useMemo(() => getBacPokemon(), []);
-  const catalog = useMemo(() => getCatalogPokemon(), []);
   const searchCatalog = useMemo(
-    () =>
-      useBacPool
-        ? catalog.filter((entry) => bacPokemon.some((bac) => bac.id === entry.id))
-        : catalog,
-    [bacPokemon, catalog, useBacPool],
+    () => (useBacPool ? getBacSearchCatalog() : getSearchCatalog()),
+    [useBacPool],
   );
 
   const [token, setToken] = useState<string | null>(null);
@@ -268,9 +263,7 @@ export function MysteryImageRound({
     wrongGuesses,
   ]);
 
-  useRegisterSkip(() => {
-    void handleSkip();
-  }, Boolean(token) && !isSolved && !isSubmitting);
+  useRegisterSkip(handleSkip, Boolean(token) && !isSolved && !isSubmitting);
 
   if (isLoadingRound || !artworkUrl) {
     return (
@@ -312,14 +305,13 @@ export function MysteryImageRound({
                 : { transform: `scale(${zoomScale})` }),
             }}
           >
-            {/* unoptimized: opaque proxy URL must not be rewritten by the image optimizer */}
             <Image
               src={displaySrc}
               alt="Pokémon mystère"
               width={192}
               height={192}
               draggable={false}
-              unoptimized={!isSolved}
+              unoptimized
               className="pointer-events-none object-contain select-none"
               priority
             />
@@ -413,6 +405,7 @@ export function MysteryImageRound({
                     alt={pokemon.nameFr}
                     fill
                     sizes="24px"
+                    unoptimized
                     className="object-contain"
                   />
                 </div>
