@@ -172,10 +172,7 @@ export function LetterInputRound({ session, onRoundComplete, validationMode = "t
     const effectiveValidationMode: ValidationMode = useTrainingPool ? (strictMode ? "training" : "catalog") : validationMode;
 
     useEffect(() => {
-        if (!useTrainingPool) {
-            setPoolReady(true);
-            return;
-        }
+        if (!useTrainingPool) return;
 
         let active = true;
         const load = async () => {
