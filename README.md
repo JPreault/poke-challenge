@@ -119,6 +119,17 @@ npx prisma migrate deploy
    ```
    → applique seulement les migrations manquantes. **Ne jamais** `migrate reset` en prod.
 
+### URLs Supabase (important pour Vercel)
+
+Sur Vercel, `db.<ref>.supabase.co:5432` échoue souvent (`P1001`). Utilise le **pooler** (Dashboard Supabase → Project Settings → Database → Connection string) :
+
+| Variable | Mode | Port | Exemple d’hôte |
+|----------|------|------|----------------|
+| `DATABASE_URL` | Transaction | **6543** | `…pooler.supabase.com:6543/postgres?pgbouncer=true` |
+| `DIRECT_URL` | Session | **5432** | `…pooler.supabase.com:5432/postgres` |
+
+User = `postgres.<project-ref>` (pas seulement `postgres`). Mets les deux en Production sur Vercel, puis redéploie.
+
 ## Données Pokémon
 
 Le catalogue est stocké localement :
