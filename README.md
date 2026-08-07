@@ -126,6 +126,8 @@ Sur Vercel, `db.<ref>.supabase.co:5432` échoue souvent (`P1001`). Utilise le **
 | Variable | Mode | Port | Exemple d’hôte |
 |----------|------|------|----------------|
 | `DATABASE_URL` | Transaction | **6543** | `…pooler.supabase.com:6543/postgres?pgbouncer=true` |
+
+**Obligatoire** : `?pgbouncer=true` sur le port 6543, sinon Prisma plante avec `prepared statement "sX" does not exist`.
 | `DIRECT_URL` | Session | **5432** | `…pooler.supabase.com:5432/postgres` |
 
 User = `postgres.<project-ref>` (pas seulement `postgres`). Mets les deux en Production sur Vercel, puis redéploie.
@@ -164,7 +166,7 @@ Cela appelle `scripts/generate-pokemon-data.ts` avec `FORCE_GENERATE_POKEMON=1`.
 | Description → Pokémon | `/game/description-guess` | Arène uniquement |
 | Shuffle | `/game/shuffle` | Enchaînement de modes choisis |
 
-Pour le mode **bac training**, ajoute `?interface=bac-training` à l’URL, par exemple :
+Le mode **Entraînement** est disponible à `/entrainement` (compte connecté + liste de Pokémon remplie). Les parties d’entraînement utilisent encore `?interface=bac-training` sur les URLs de jeu, par exemple :
 
 ```
 http://localhost:4000/game/image-to-name?interface=bac-training

@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 
 import { GameClient } from "@/components/game/GameClient";
 import { authOptions } from "@/lib/auth/config";
-import { prisma } from "@/lib/db/prisma";
 import { parseShuffleGamesParam } from "@/lib/games/shuffle";
 import type { GameInterfaceMode, GameMode } from "@/lib/games/types";
 
@@ -64,14 +63,6 @@ export default async function GamePage({
       redirect(`/game/${mode}`);
     }
     interfaceMode = "arena";
-  } else if (!queryInterface) {
-    const profile = await prisma.userProfile.findUnique({
-      where: { userId: session!.user.id },
-      select: { preferredInterface: true },
-    });
-    if (profile?.preferredInterface === "BAC_TRAINING") {
-      interfaceMode = "bac-training";
-    }
   }
 
   if (!isAllowedGameMode(mode, interfaceMode)) {

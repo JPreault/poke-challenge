@@ -173,6 +173,10 @@
     @apply flex size-28 items-center justify-center rounded-full bg-poke-indigo font-heading text-5xl font-bold text-white;
   }
 
+  .pixelated {
+    image-rendering: pixelated;
+  }
+
   .feedback-success {
     @apply font-medium text-emerald-700 dark:text-emerald-400;
   }

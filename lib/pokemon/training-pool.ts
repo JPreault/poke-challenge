@@ -17,7 +17,8 @@ export async function getTrainingQuizPokemon(userId: string): Promise<QuizPokemo
   const ids = await getTrainingPokemonIds(userId);
   return ids
     .map((id) => findCatalogPokemonById(id))
-    .filter((pokemon): pokemon is QuizPokemon => Boolean(pokemon));
+    .filter((pokemon): pokemon is QuizPokemon => Boolean(pokemon))
+    .sort((a, b) => a.nameFr.localeCompare(b.nameFr, "fr"));
 }
 
 export async function getTrainingSearchCatalog(

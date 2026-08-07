@@ -71,7 +71,7 @@ export function ShuffleQuiz({
     replayParams.set("interface", "bac-training");
   }
   const homeHref =
-    interfaceMode === "bac-training" ? "/?interface=bac-training" : "/";
+    interfaceMode === "bac-training" ? "/entrainement" : "/";
   const replayHref = `/game/shuffle?${replayParams.toString()}`;
 
   return (

@@ -37,10 +37,16 @@ export interface PokemonData {
 
 export type ValidationMode = "strict" | "free" | "catalog" | "training";
 
+export type ValidationFailureReason =
+    | "not_pokemon"
+    | "wrong_letter"
+    | "not_in_training_list";
+
 export interface ValidationResult {
     correct: boolean;
     preferred: boolean;
     expected?: string;
     matched?: string;
     hasTypo?: boolean;
+    failureReason?: ValidationFailureReason;
 }

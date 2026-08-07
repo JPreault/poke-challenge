@@ -1,8 +1,8 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
-import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 
@@ -20,13 +20,29 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 function SignInContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const { status } = useSession();
   const error = searchParams.get("error");
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const message =
     error != null
       ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.Default)
       : null;
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace(callbackUrl);
+    }
+  }, [status, callbackUrl, router]);
+
+  if (status === "loading" || status === "authenticated") {
+    return (
+      <main className="mx-auto flex min-h-[70vh] items-center justify-center px-6">
+        Redirection…
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-6 px-6 text-center">

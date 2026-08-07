@@ -53,7 +53,7 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-16">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 pb-16 pt-4">
       <header className="space-y-2">
         <h1 className="font-heading text-3xl font-bold">Leaderboard</h1>
         <p className="text-muted-foreground">

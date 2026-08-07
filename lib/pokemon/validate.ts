@@ -52,6 +52,7 @@ function validateFree(letter: string, answer: string): ValidationResult {
       correct: false,
       preferred: false,
       expected: expectedPokemon?.nameFr,
+      failureReason: "not_pokemon",
     };
   }
 
@@ -64,6 +65,7 @@ function validateFree(letter: string, answer: string): ValidationResult {
       preferred: false,
       expected: expectedPokemon?.nameFr,
       matched: matchedName,
+      failureReason: "wrong_letter",
     };
   }
 
@@ -87,6 +89,7 @@ function validateCatalog(letter: string, answer: string): ValidationResult {
     return {
       correct: false,
       preferred: false,
+      failureReason: "not_pokemon",
     };
   }
 
@@ -98,6 +101,7 @@ function validateCatalog(letter: string, answer: string): ValidationResult {
       correct: false,
       preferred: false,
       matched: matchedName,
+      failureReason: "wrong_letter",
     };
   }
 
@@ -125,6 +129,7 @@ function validateTraining(
       correct: false,
       preferred: false,
       expected: preferredName,
+      failureReason: "not_pokemon",
     };
   }
 
@@ -136,6 +141,7 @@ function validateTraining(
       preferred: false,
       expected: preferredName,
       matched: matchedName,
+      failureReason: "wrong_letter",
     };
   }
 
@@ -148,6 +154,7 @@ function validateTraining(
       preferred: false,
       expected: preferredName,
       matched: matchedName,
+      failureReason: "not_in_training_list",
     };
   }
 

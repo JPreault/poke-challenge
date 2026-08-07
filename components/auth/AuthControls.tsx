@@ -1,49 +1,79 @@
 "use client";
 
-import Link from "next/link";
+import { Menu } from "@base-ui/react/menu";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { formatPlayerLabel } from "@/lib/profile/display-name";
+import { cn } from "@/lib/utils";
+
+function getPseudoInitial(input: { pseudo?: string | null; name?: string | null }): string {
+    const label = input.pseudo?.trim() || input.name?.trim() || "?";
+    return label.charAt(0).toUpperCase();
+}
 
 export function AuthControls() {
-  const { data: session, status } = useSession();
+    const router = useRouter();
+    const { data: session, status } = useSession();
 
-  if (status === "loading") {
-    return <div className="text-xs text-muted-foreground">Connexion…</div>;
-  }
+    if (status === "loading") {
+        return (
+            <div className="flex size-9 items-center justify-center rounded-full border border-border/60 bg-muted/50 text-xs text-muted-foreground">
+                …
+            </div>
+        );
+    }
 
-  if (!session?.user) {
+    if (!session?.user) {
+        return (
+            <Button size="sm" onClick={() => signIn("google", { callbackUrl: "/" })}>
+                Connexion Google
+            </Button>
+        );
+    }
+
+    const initial = getPseudoInitial({
+        pseudo: session.user.pseudo,
+        name: session.user.name,
+    });
+
     return (
-      <Button size="sm" onClick={() => signIn("google", { callbackUrl: "/" })}>
-        Connexion Google
-      </Button>
+        <Menu.Root modal={false}>
+            <Menu.Trigger
+                aria-label="Menu compte"
+                className={cn(
+                    "flex size-9 items-center justify-center rounded-full border border-border/70 bg-primary text-sm font-semibold text-primary-foreground shadow-sm",
+                    "transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                    "data-popup-open:bg-primary/90",
+                )}
+            >
+                {initial}
+            </Menu.Trigger>
+            <Menu.Portal>
+                <Menu.Positioner side="bottom" align="end" sideOffset={8} positionMethod="fixed" className="z-1000">
+                    <Menu.Popup
+                        className={cn(
+                            "pointer-events-auto min-w-40 origin-top-right rounded-xl border border-border/70 bg-popover p-1 text-popover-foreground shadow-lg",
+                            "outline-none",
+                            "data-starting-style:scale-95 data-starting-style:opacity-0",
+                            "data-ending-style:scale-95 data-ending-style:opacity-0",
+                            "transition-[transform,opacity] duration-150",
+                        )}
+                    >
+                        <Menu.Item closeOnClick={false} className={menuItemClassName} onClick={() => router.push("/profile")}>
+                            Profil
+                        </Menu.Item>
+                        <Menu.Item closeOnClick={false} className={menuItemClassName} onClick={() => void signOut({ callbackUrl: "/" })}>
+                            Déconnexion
+                        </Menu.Item>
+                    </Menu.Popup>
+                </Menu.Positioner>
+            </Menu.Portal>
+        </Menu.Root>
     );
-  }
-
-  const label = formatPlayerLabel({
-    pseudo: session.user.pseudo,
-    publicId: session.user.publicId,
-    fallbackName: session.user.name,
-  });
-
-  return (
-    <div className="flex items-center gap-2">
-      <Link
-        href="/profile"
-        className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-      >
-        {label}
-      </Link>
-      <Link
-        href="/leaderboard"
-        className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-      >
-        Leaderboard
-      </Link>
-      <Button size="sm" variant="outline" onClick={() => signOut()}>
-        Deconnexion
-      </Button>
-    </div>
-  );
 }
+
+const menuItemClassName = cn(
+    "flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-sm outline-none",
+    "hover:bg-muted focus-visible:bg-muted data-highlighted:bg-muted",
+);

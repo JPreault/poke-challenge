@@ -56,7 +56,7 @@ function GameShellInner({
   const searchParams = useSearchParams();
   const isBacTraining = searchParams.get("interface") === "bac-training";
   const resolvedHomeHref =
-    homeHref ?? (isBacTraining ? "/?interface=bac-training" : "/");
+    homeHref ?? (isBacTraining ? "/entrainement" : "/");
   const resolvedReplayHref =
     replayHref ??
     (isBacTraining ? `/game/${mode}?interface=bac-training` : `/game/${mode}`);
@@ -72,6 +72,7 @@ function GameShellInner({
         session={session}
         homeHref={resolvedHomeHref}
         onReplay={handleReplay}
+        allowRanked={!isBacTraining}
       />
     );
   }
@@ -79,7 +80,7 @@ function GameShellInner({
   return (
     <div
       className={cn(
-        "mx-auto flex w-full flex-col gap-8 px-6 py-16 sm:px-8 sm:py-20",
+        "mx-auto flex w-full flex-col gap-8 px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6",
         maxWidthClassName,
       )}
     >
@@ -152,10 +153,12 @@ function GameRecap({
   session,
   homeHref,
   onReplay,
+  allowRanked,
 }: {
   session: GameSession;
   homeHref: string;
   onReplay: () => void;
+  allowRanked: boolean;
 }) {
   const { stats, mode, rounds } = session;
   const { status } = useSession();
@@ -170,7 +173,7 @@ function GameRecap({
     mode === "blur-guess" || mode === "zoom-guess"
       ? computeBlurGuessStats(rounds)
       : null;
-  const isRankedMode = mode !== "shuffle";
+  const isRankedMode = allowRanked && mode !== "shuffle";
 
   const sendRankedResult = useCallback(async () => {
     if (!isRankedMode || rankedState.loading || rankedState.done) return;
@@ -251,7 +254,7 @@ function GameRecap({
   ]);
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
+    <div className="mx-auto w-full max-w-2xl px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
       <div className="surface p-8 sm:p-10">
         <div className="mb-10 space-y-2">
           <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">

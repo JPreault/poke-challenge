@@ -56,13 +56,14 @@ async function serializeProfile(userId: string) {
     .map((pokemon) => ({
       id: pokemon.id,
       nameFr: pokemon.nameFr,
-    }));
+    }))
+    .sort((a, b) => a.nameFr.localeCompare(b.nameFr, "fr"));
 
   return {
     pseudo: profile.pseudo,
     publicId: profile.publicId,
     preferredInterfaceMode: toInterfaceMode(profile.preferredInterface),
-    trainingPokemonIds: training.map((row) => row.pokemonId),
+    trainingPokemonIds: trainingPokemon.map((pokemon) => pokemon.id),
     trainingPokemon,
     updatedAt: profile.updatedAt,
   };

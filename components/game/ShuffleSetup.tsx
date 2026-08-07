@@ -31,7 +31,7 @@ export function ShuffleSetup({ interfaceMode }: ShuffleSetupProps) {
   const [selected, setSelected] = useState<ShuffleRoundType[]>([]);
 
   const homeHref =
-    interfaceMode === "bac-training" ? "/?interface=bac-training" : "/";
+    interfaceMode === "bac-training" ? "/entrainement" : "/";
 
   const toggleType = (type: ShuffleRoundType) => {
     setSelected((current) =>
@@ -65,7 +65,7 @@ export function ShuffleSetup({ interfaceMode }: ShuffleSetupProps) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-16 sm:px-8 sm:py-20">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
       <header className="space-y-6">
         <Link
           href={homeHref}
