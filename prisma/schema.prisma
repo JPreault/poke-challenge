@@ -123,7 +123,6 @@ model LeaderboardEntry {
   seasonId      String
   mode          RankedMode
   bestWinStreak Int        @default(0)
-  gamesCount    Int        @default(0)
   updatedAt     DateTime   @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

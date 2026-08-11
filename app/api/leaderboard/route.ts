@@ -7,7 +7,7 @@ import { ARENA_RANKED_MODES } from "@/lib/games/ranked-limits";
 import { getRankedModeLabel } from "@/lib/games/ranked-limits";
 import {
   getLeaderboardPage,
-  getLeaderboardRankForUser,
+  getSelfLeaderboardStats,
 } from "@/lib/ranked/match-service";
 import { getActiveSeason } from "@/lib/ranked/season";
 import { formatPlayerLabel } from "@/lib/profile/display-name";
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ entries: [], page, pageSize, total: 0 });
   }
 
-  const [{ total, entries, deduped }, session] = await Promise.all([
+  const [{ total, entries }, session] = await Promise.all([
     getLeaderboardPage({
       seasonId: season.id,
       mode,
@@ -48,16 +48,30 @@ export async function GET(request: Request) {
   ]);
 
   let selfEntry: {
-    rank: number;
+    bestRank: number;
+    winStreak: number;
     bestWinStreak: number;
+    matchId: string;
+    entriesInTop: number;
+    inTop: boolean;
+    userName: string;
   } | null = null;
 
   if (session && mode) {
-    const userEntry = deduped.find((entry) => entry.userId === session.user.id);
-    if (userEntry) {
+    const stats = await getSelfLeaderboardStats(session.user.id, {
+      seasonId: season.id,
+      mode,
+      topLimit: pageSize,
+    });
+
+    if (stats) {
       selfEntry = {
-        rank: getLeaderboardRankForUser(deduped, session.user.id),
-        bestWinStreak: userEntry.bestWinStreak,
+        ...stats,
+        userName: formatPlayerLabel({
+          pseudo: session.user.pseudo,
+          publicId: session.user.publicId,
+          fallbackName: session.user.name ?? "Dresseur inconnu",
+        }),
       };
     }
   }
@@ -78,6 +92,7 @@ export async function GET(request: Request) {
     total,
     entries: entries.map((entry, idx) => ({
       rank: (page - 1) * pageSize + idx + 1,
+      matchId: entry.matchId,
       userId: entry.userId,
       userName: formatPlayerLabel({
         pseudo: entry.user.profile?.pseudo,
@@ -85,8 +100,8 @@ export async function GET(request: Request) {
         fallbackName: entry.user.name ?? "Dresseur inconnu",
       }),
       userImage: entry.user.image,
-      bestWinStreak: entry.bestWinStreak,
-      updatedAt: entry.updatedAt,
+      winStreak: entry.winStreak,
+      finishedAt: entry.finishedAt,
     })),
     self: selfEntry,
   });

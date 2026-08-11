@@ -6,13 +6,25 @@ import {
   ARENA_RANKED_MODES,
   getRankedModeLabel,
 } from "@/lib/games/ranked-limits";
+import { cn } from "@/lib/utils";
 import type { RankedMode } from "@prisma/client";
 
 interface LeaderboardRow {
   rank: number;
+  matchId: string;
   userId: string;
   userName: string;
+  winStreak: number;
+}
+
+interface LeaderboardSelf {
+  bestRank: number;
+  winStreak: number;
   bestWinStreak: number;
+  matchId: string;
+  entriesInTop: number;
+  inTop: boolean;
+  userName: string;
 }
 
 interface LeaderboardResponse {
@@ -21,10 +33,7 @@ interface LeaderboardResponse {
   };
   modeLabel?: string | null;
   entries: LeaderboardRow[];
-  self?: {
-    rank: number;
-    bestWinStreak: number;
-  } | null;
+  self?: LeaderboardSelf | null;
 }
 
 export default function LeaderboardPage() {
@@ -57,12 +66,20 @@ export default function LeaderboardPage() {
     };
   }, [mode]);
 
+  const selfOutsideTop =
+    data?.self && !data.self.inTop ? data.self : null;
+  const selfAlreadyVisible =
+    selfOutsideTop != null &&
+    data?.entries.some((entry) => entry.matchId === selfOutsideTop.matchId);
+
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 pb-16 pt-4">
       <header className="space-y-2">
         <h1 className="font-heading text-3xl font-bold">Leaderboard</h1>
         <p className="text-muted-foreground">
-          Top 20 des meilleures win streaks par épreuve du mode classé.
+          Top 20 des meilleures parties classées par épreuve. Un joueur peut
+          apparaître plusieurs fois s&apos;il a plusieurs scores dans le
+          classement.
         </p>
       </header>
 
@@ -90,12 +107,28 @@ export default function LeaderboardPage() {
 
       {loading ? <p className="text-muted-foreground">Chargement…</p> : null}
 
-      {!loading && data?.self && data.self.rank > 0 ? (
+      {!loading && data?.self ? (
         <p className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm">
-          Ta position sur <span className="font-medium">{modeLabel}</span> :{" "}
-          <span className="font-semibold">#{data.self.rank}</span> avec{" "}
-          <span className="font-semibold">{data.self.bestWinStreak}</span> victoires
-          consécutives.
+          {data.self.inTop ? (
+            <>
+              Ta meilleure position sur{" "}
+              <span className="font-medium">{modeLabel}</span> :{" "}
+              <span className="font-semibold">#{data.self.bestRank}</span> avec{" "}
+              <span className="font-semibold">{data.self.winStreak}</span> victoires
+              consécutives
+              {data.self.entriesInTop > 1
+                ? ` (${data.self.entriesInTop} parties dans le top 20)`
+                : ""}
+              .
+            </>
+          ) : (
+            <>
+              Tu es <span className="font-semibold">#{data.self.bestRank}</span> sur{" "}
+              <span className="font-medium">{modeLabel}</span> avec{" "}
+              <span className="font-semibold">{data.self.winStreak}</span> victoires
+              consécutives (hors top 20).
+            </>
+          )}
         </p>
       ) : null}
 
@@ -111,24 +144,73 @@ export default function LeaderboardPage() {
             </thead>
             <tbody>
               {data.entries.map((entry) => (
-                <tr
-                  key={`${entry.rank}-${entry.userId}`}
-                  className="border-t border-border/50"
-                >
+                <tr key={entry.matchId} className="border-t border-border/50">
                   <td className="px-4 py-3">{entry.rank}</td>
                   <td className="px-4 py-3">{entry.userName}</td>
-                  <td className="px-4 py-3 font-semibold">{entry.bestWinStreak}</td>
+                  <td className="px-4 py-3 font-semibold">{entry.winStreak}</td>
                 </tr>
               ))}
+              {selfOutsideTop && !selfAlreadyVisible ? (
+                <>
+                  <tr className="border-t border-border/50 bg-muted/20">
+                    <td
+                      colSpan={3}
+                      className="px-4 py-2 text-center text-xs text-muted-foreground"
+                    >
+                      …
+                    </td>
+                  </tr>
+                  <tr
+                    className={cn(
+                      "border-t border-border/50 bg-primary/5 font-medium",
+                    )}
+                  >
+                    <td className="px-4 py-3">{selfOutsideTop.bestRank}</td>
+                    <td className="px-4 py-3">
+                      {selfOutsideTop.userName}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        (toi)
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-semibold">
+                      {selfOutsideTop.winStreak}
+                    </td>
+                  </tr>
+                </>
+              ) : null}
             </tbody>
           </table>
         </div>
       ) : null}
 
-      {!loading && !data?.entries?.length ? (
+      {!loading && !data?.entries?.length && !data?.self ? (
         <p className="text-sm text-muted-foreground">
           Aucun score enregistré pour {modeLabel} pour l&apos;instant.
         </p>
+      ) : null}
+
+      {!loading && !data?.entries?.length && data?.self ? (
+        <div className="overflow-hidden rounded-xl border border-border/60">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-left">
+              <tr>
+                <th className="px-4 py-3">#</th>
+                <th className="px-4 py-3">Joueur</th>
+                <th className="px-4 py-3">Win streak</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t border-border/50 bg-primary/5 font-medium">
+                <td className="px-4 py-3">{data.self.bestRank}</td>
+                <td className="px-4 py-3">
+                  {data.self.userName}
+                  <span className="ml-2 text-xs text-muted-foreground">(toi)</span>
+                </td>
+                <td className="px-4 py-3 font-semibold">{data.self.winStreak}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </main>
   );

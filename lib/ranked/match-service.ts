@@ -47,7 +47,6 @@ export async function finishRankedMatch(input: FinishRankedMatchInput) {
       seasonId: match.seasonId,
       mode: match.mode,
       bestWinStreak: 0,
-      gamesCount: 0,
     },
   });
 
@@ -78,13 +77,9 @@ export async function finishRankedMatch(input: FinishRankedMatchInput) {
     }),
     prisma.leaderboardEntry.update({
       where: { id: entry.id },
-      data: {
-        gamesCount: { increment: 1 },
-        ...(isNewRecord ? { bestWinStreak: winStreak } : {}),
-      },
+      data: isNewRecord ? { bestWinStreak: winStreak } : {},
       select: {
         bestWinStreak: true,
-        gamesCount: true,
       },
     }),
   ]);
@@ -94,6 +89,45 @@ export async function finishRankedMatch(input: FinishRankedMatchInput) {
     leaderboard: updatedEntry,
     isNewRecord,
     previousBest: entry.bestWinStreak,
+  };
+}
+
+const leaderboardUserSelect = {
+  id: true,
+  name: true,
+  image: true,
+  profile: {
+    select: {
+      pseudo: true,
+      publicId: true,
+    },
+  },
+} as const;
+
+export type LeaderboardUser = {
+  id: string;
+  name: string | null;
+  image: string | null;
+  profile: {
+    pseudo: string | null;
+    publicId: string | null;
+  } | null;
+};
+
+export type LeaderboardRunRow = {
+  matchId: string;
+  userId: string;
+  winStreak: number;
+  finishedAt: Date;
+  user: LeaderboardUser;
+};
+
+function rankedRunWhere(input: { seasonId: string; mode?: RankedMode }) {
+  return {
+    seasonId: input.seasonId,
+    ...(input.mode ? { mode: input.mode } : {}),
+    status: { in: ["FINISHED", "ABANDONED"] as const },
+    winStreak: { gt: 0 },
   };
 }
 
@@ -110,9 +144,9 @@ export async function getLeaderboardTopForMode(
     return { topStreak: 0, topPlayerName: null as string | null };
   }
 
-  const top = await prisma.leaderboardEntry.findFirst({
-    where: { seasonId: season.id, mode },
-    orderBy: [{ bestWinStreak: "desc" }, { updatedAt: "asc" }],
+  const top = await prisma.rankedMatch.findFirst({
+    where: rankedRunWhere({ seasonId: season.id, mode }),
+    orderBy: [{ winStreak: "desc" }, { finishedAt: "asc" }],
     include: {
       user: {
         select: {
@@ -123,12 +157,12 @@ export async function getLeaderboardTopForMode(
     },
   });
 
-  if (!top || top.bestWinStreak <= 0) {
+  if (!top || (top.winStreak ?? 0) <= 0) {
     return { topStreak: 0, topPlayerName: null };
   }
 
   return {
-    topStreak: top.bestWinStreak,
+    topStreak: top.winStreak ?? 0,
     topPlayerName: formatPlayerLabel({
       pseudo: top.user.profile?.pseudo,
       publicId: top.user.profile?.publicId,
@@ -142,91 +176,102 @@ export async function getPlayerBestStreak(
   mode: RankedMode,
   seasonId: string,
 ) {
-  const entry = await prisma.leaderboardEntry.findUnique({
+  const aggregate = await prisma.rankedMatch.aggregate({
     where: {
-      userId_seasonId_mode: { userId, seasonId, mode },
+      userId,
+      seasonId,
+      mode,
+      status: { in: ["FINISHED", "ABANDONED"] },
+      winStreak: { gt: 0 },
     },
-    select: { bestWinStreak: true },
+    _max: { winStreak: true },
   });
-  return entry?.bestWinStreak ?? 0;
+
+  return aggregate._max.winStreak ?? 0;
 }
 
-type LeaderboardEntryRow = {
-  userId: string;
-  bestWinStreak: number;
-  updatedAt: Date;
-};
-
-function dedupeLeaderboardEntries<T extends LeaderboardEntryRow>(
-  entries: T[],
-): T[] {
-  const bestByUser = new Map<string, T>();
-
-  for (const entry of entries) {
-    const existing = bestByUser.get(entry.userId);
-    if (
-      !existing ||
-      entry.bestWinStreak > existing.bestWinStreak ||
-      (entry.bestWinStreak === existing.bestWinStreak &&
-        entry.updatedAt < existing.updatedAt)
-    ) {
-      bestByUser.set(entry.userId, entry);
-    }
-  }
-
-  return [...bestByUser.values()].sort(
-    (a, b) =>
-      b.bestWinStreak - a.bestWinStreak ||
-      a.updatedAt.getTime() - b.updatedAt.getTime(),
-  );
-}
-
+/** Top N parties classées (un joueur peut apparaître plusieurs fois). */
 export async function getLeaderboardPage(input: {
   seasonId: string;
   mode?: RankedMode;
   page: number;
   pageSize: number;
 }) {
-  const where = {
-    seasonId: input.seasonId,
-    ...(input.mode ? { mode: input.mode } : {}),
-    bestWinStreak: { gt: 0 },
-  };
+  const where = rankedRunWhere(input);
 
-  const allEntries = await prisma.leaderboardEntry.findMany({
-    where,
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          profile: {
-            select: {
-              pseudo: true,
-              publicId: true,
-            },
-          },
+  const [total, matches] = await Promise.all([
+    prisma.rankedMatch.count({ where }),
+    prisma.rankedMatch.findMany({
+      where,
+      select: {
+        id: true,
+        userId: true,
+        winStreak: true,
+        finishedAt: true,
+        user: {
+          select: leaderboardUserSelect,
         },
       },
-    },
-    orderBy: [{ bestWinStreak: "desc" }, { updatedAt: "asc" }],
-  });
+      orderBy: [{ winStreak: "desc" }, { finishedAt: "asc" }],
+      skip: (input.page - 1) * input.pageSize,
+      take: input.pageSize,
+    }),
+  ]);
 
-  const deduped = dedupeLeaderboardEntries(allEntries);
-  const total = deduped.length;
-  const pageEntries = deduped.slice(
-    (input.page - 1) * input.pageSize,
-    input.page * input.pageSize,
-  );
+  const entries: LeaderboardRunRow[] = matches.map((match) => ({
+    matchId: match.id,
+    userId: match.userId,
+    winStreak: match.winStreak ?? 0,
+    finishedAt: match.finishedAt ?? new Date(0),
+    user: match.user,
+  }));
 
-  return { total, entries: pageEntries, deduped };
+  return { total, entries };
 }
 
-export function getLeaderboardRankForUser(
-  deduped: LeaderboardEntryRow[],
+export async function getSelfLeaderboardStats(
   userId: string,
-): number {
-  const index = deduped.findIndex((entry) => entry.userId === userId);
-  return index >= 0 ? index + 1 : 0;
+  input: {
+    seasonId: string;
+    mode: RankedMode;
+    topLimit?: number;
+  },
+) {
+  const runs = await prisma.rankedMatch.findMany({
+    where: rankedRunWhere({ seasonId: input.seasonId, mode: input.mode }),
+    select: {
+      id: true,
+      userId: true,
+      winStreak: true,
+    },
+    orderBy: [{ winStreak: "desc" }, { finishedAt: "asc" }],
+  });
+
+  const userRuns = runs
+    .map((run, index) => ({
+      matchId: run.id,
+      rank: index + 1,
+      winStreak: run.winStreak ?? 0,
+      userId: run.userId,
+    }))
+    .filter((run) => run.userId === userId);
+
+  if (userRuns.length === 0) {
+    return null;
+  }
+
+  const topLimit = input.topLimit ?? 20;
+  const entriesInTop = userRuns.filter((run) => run.rank <= topLimit).length;
+  const bestPlacedRun = userRuns.reduce((best, run) =>
+    run.rank < best.rank ? run : best,
+  );
+
+  return {
+    bestRank: bestPlacedRun.rank,
+    winStreak: bestPlacedRun.winStreak,
+    bestWinStreak: Math.max(...userRuns.map((run) => run.winStreak)),
+    matchId: bestPlacedRun.matchId,
+    entriesInTop,
+    inTop: entriesInTop > 0,
+  };
 }
