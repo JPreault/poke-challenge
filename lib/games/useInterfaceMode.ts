@@ -12,13 +12,23 @@ export function useInterfaceMode(): GameInterfaceMode {
     return "bac-training";
   }
 
+  if (pathname === "/partie-classee" || pathname.startsWith("/partie-classee/")) {
+    return "ranked";
+  }
+
   if (searchParams.get("interface") === "bac-training") {
     return "bac-training";
+  }
+
+  if (searchParams.get("interface") === "ranked") {
+    return "ranked";
   }
 
   return "arena";
 }
 
 export function getInterfaceHomeHref(mode: GameInterfaceMode): string {
-  return mode === "bac-training" ? "/entrainement" : "/";
+  if (mode === "bac-training") return "/entrainement";
+  if (mode === "ranked") return "/partie-classee";
+  return "/";
 }

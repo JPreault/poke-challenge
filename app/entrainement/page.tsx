@@ -1,20 +1,29 @@
 "use client";
 
+import { Play, Shuffle } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { TRAINING_GAMES } from "@/lib/games/home-games";
+import { getPokemonSpriteUrl } from "@/lib/pokemon/sprite";
 import { cn } from "@/lib/utils";
+
+interface TrainingPokemon {
+    id: number;
+    nameFr: string;
+}
 
 export default function EntrainementPage() {
     const router = useRouter();
     const { status } = useSession();
     const [poolReady, setPoolReady] = useState(false);
-    const [hasTrainingList, setHasTrainingList] = useState(false);
+    const [trainingList, setTrainingList] = useState<TrainingPokemon[]>([]);
     const gameLinksRef = useRef<Array<HTMLAnchorElement | null>>([]);
+    const hasTrainingList = trainingList.length > 0;
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -29,20 +38,20 @@ export default function EntrainementPage() {
                 const response = await fetch("/api/training/pool", { cache: "no-store" });
                 if (!response.ok) {
                     if (active) {
-                        setHasTrainingList(false);
+                        setTrainingList([]);
                         setPoolReady(true);
                     }
                     return;
                 }
                 const payload = (await response.json()) as {
-                    catalog: Array<{ id: number; nameFr: string }>;
+                    catalog: TrainingPokemon[];
                 };
                 if (!active) return;
-                setHasTrainingList(payload.catalog.length > 0);
+                setTrainingList(payload.catalog);
                 setPoolReady(true);
             } catch {
                 if (active) {
-                    setHasTrainingList(false);
+                    setTrainingList([]);
                     setPoolReady(true);
                 }
             }
@@ -106,35 +115,20 @@ export default function EntrainementPage() {
                 <p className="mt-6 text-lg leading-8 text-muted-foreground">Entraîne-toi sur ta liste personnelle de Pokémon.</p>
             </header>
 
-            <section className="mb-12">
-                <div className="surface flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="max-w-xl space-y-2">
-                        <h2 className="font-heading text-xl font-semibold text-foreground">Shuffle</h2>
-                        <p className="text-base leading-7 text-muted-foreground">
-                            Choisis les mini-jeux à mélanger, puis enchaîne des manches aléatoires parmi ta sélection.
-                        </p>
-                    </div>
-                    <Link
-                        href="/game/shuffle?interface=bac-training"
-                        className={cn(buttonVariants({ size: "lg" }), "w-full shrink-0 justify-center sm:w-auto")}
-                    >
-                        Configurer
+            <section className="mb-24">
+                <div className="mb-8 flex items-center justify-between gap-4">
+                    <h2 className="font-heading text-base font-semibold uppercase tracking-[0.15em] text-muted-foreground sm:text-lg">Mini-jeux</h2>
+                    <Link href="/game/shuffle?interface=bac-training" className={cn(buttonVariants({ size: "lg" }), "shrink-0 gap-2")}>
+                        <Shuffle data-icon="inline-start" className="size-4" />
+                        Mode shuffle
                     </Link>
                 </div>
-            </section>
-
-            <section className="mb-24">
-                <h2 className="mb-8 font-heading text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">Mini-jeux</h2>
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div className="grid gap-4">
                     {TRAINING_GAMES.map((game, index) => (
-                        <article key={game.mode} className="surface-hover flex flex-col p-8">
-                            <div className="mb-6 flex items-center justify-between">
-                                <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">{game.tag}</span>
-                            </div>
-
-                            <div className="flex-1 space-y-3">
+                        <article key={game.mode} className="surface-hover flex items-center gap-4 p-5 md:gap-6 md:p-6">
+                            <div className="min-w-0 flex-1 space-y-2">
                                 <h3 className="font-heading text-xl font-semibold leading-snug text-foreground">{game.title}</h3>
-                                <p className="text-base leading-7 text-muted-foreground">{game.description}</p>
+                                <p className="text-sm leading-6 text-muted-foreground md:text-base md:leading-7">{game.description}</p>
                             </div>
 
                             <Link
@@ -143,20 +137,41 @@ export default function EntrainementPage() {
                                     gameLinksRef.current[index] = node;
                                 }}
                                 onKeyDown={(event) => handleGameCardKeyDown(event, index)}
-                                className={cn(buttonVariants({ size: "lg" }), "mt-10 w-full justify-center")}
+                                aria-label={`Jouer à ${game.title}`}
+                                title={`Jouer à ${game.title}`}
+                                className={cn(buttonVariants({ size: "icon-lg" }), "shrink-0")}
                             >
-                                Jouer
+                                <Play className="size-5 fill-current" />
                             </Link>
                         </article>
                     ))}
                 </div>
             </section>
 
-            <section className="surface p-8">
-                <h2 className="font-heading text-xl font-semibold">Ta liste</h2>
-                <p className="mt-3 text-base leading-7 text-muted-foreground">Gère les Pokémon de ton entraînement depuis ton profil.</p>
-                <Link href="/profile" className={cn(buttonVariants({ size: "lg" }), "mt-6 inline-flex")}>
-                    Ouvrir le profil
+            <section className="surface space-y-4 p-8">
+                <div className="space-y-1">
+                    <h2 className="font-heading text-xl font-semibold">Ta liste</h2>
+                    <p className="text-sm text-muted-foreground">Lecture seule. Pour ajouter ou retirer des Pokémon, passe par ton profil.</p>
+                </div>
+
+                <ul className="flex flex-wrap gap-2">
+                    {trainingList.map((pokemon) => (
+                        <li key={pokemon.id} className="surface flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 text-sm">
+                            <Image
+                                src={getPokemonSpriteUrl(pokemon.id)}
+                                alt=""
+                                width={28}
+                                height={28}
+                                className="rounded-full object-contain"
+                                unoptimized
+                            />
+                            <span>{pokemon.nameFr}</span>
+                        </li>
+                    ))}
+                </ul>
+
+                <Link href="/profile" className={cn(buttonVariants({ size: "lg" }), "inline-flex")}>
+                    Modifier ma liste
                 </Link>
             </section>
         </main>

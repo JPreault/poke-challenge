@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
+import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
 import type {
   AttemptHints,
@@ -128,22 +130,22 @@ export function PokedleRound({
     resetRound();
   }, [onRoundComplete, resetRound]);
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void startRound();
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [startRound]);
+  const { isRanked, allowSkip, onSuccess, onWrongAttempt } = useRankedRoundFlow(
+    session,
+    advanceRound,
+  );
+
+  useStartRoundWhenReady(startRound);
 
   useEffect(() => {
-    if (!isSolved || !onRoundComplete) return;
+    if (isRanked || !isSolved || !onRoundComplete) return;
 
     const timeoutId = window.setTimeout(onRoundComplete, 2200);
     return () => window.clearTimeout(timeoutId);
-  }, [isSolved, onRoundComplete]);
+  }, [isRanked, isSolved, onRoundComplete]);
 
   useEffect(() => {
-    if (!isSolved) return;
+    if (isRanked || !isSolved) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Enter" || event.repeat) return;
@@ -153,7 +155,7 @@ export function PokedleRound({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSolved, advanceRound]);
+  }, [isRanked, isSolved, advanceRound]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -175,10 +177,6 @@ export function PokedleRound({
       if (result.status === "correct") {
         setAttempts((current) => [result.attempt, ...current]);
         setGuessName("");
-        setIsSolved(true);
-        setSolvedName(result.targetNameFr);
-        setSolvedArtworkUrl(result.targetArtworkUrl);
-        setFeedback(`Bravo ! Le Pokémon à trouver était ${result.targetNameFr}.`);
         session.recordRound({
           question: "Trouve le Pokémon mystère",
           userAnswer: result.attempt.nameFr,
@@ -189,12 +187,23 @@ export function PokedleRound({
           correctImage: result.targetArtworkUrl,
           hintAccuracyPercent: 100,
         });
+        if (isRanked) {
+          onSuccess();
+          return;
+        }
+        setIsSolved(true);
+        setSolvedName(result.targetNameFr);
+        setSolvedArtworkUrl(result.targetArtworkUrl);
+        setFeedback(`Bravo ! Le Pokémon à trouver était ${result.targetNameFr}.`);
         return;
       }
 
       if (result.status === "wrong") {
         setAttempts((current) => [result.attempt, ...current]);
         setGuessName("");
+        if (isRanked && onWrongAttempt()) {
+          return;
+        }
         setFeedback("Continue, les indices sont mis à jour.");
         window.setTimeout(() => {
           inputRef.current?.focus();
@@ -248,7 +257,7 @@ export function PokedleRound({
     }
   }, [attempts, isSolved, session, token]);
 
-  useRegisterSkip(handleSkip, Boolean(token) && !isSolved);
+  useRegisterSkip(handleSkip, allowSkip && Boolean(token) && !isSolved);
 
   if (isLoading || !token) {
     return (

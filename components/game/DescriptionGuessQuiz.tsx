@@ -4,8 +4,11 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
+import { DescriptionSwiper } from "@/components/game/DescriptionSwiper";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
+import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
 import type { DescriptionStartResult } from "@/lib/games/description-types";
 import type { GameSession } from "@/lib/games/useGameSession";
@@ -89,23 +92,22 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         void startRound();
     }, [onRoundComplete, startRound]);
 
-    useEffect(() => {
-        const timeoutId = window.setTimeout(() => {
-            void startRound();
-        }, 0);
-        return () => window.clearTimeout(timeoutId);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const { isRanked, allowSkip, onSuccess, onWrongAttempt } = useRankedRoundFlow(
+        session,
+        advanceRound,
+    );
+
+    useStartRoundWhenReady(startRound);
 
     useEffect(() => {
-        if (!isSolved || !onRoundComplete) return;
+        if (isRanked || !isSolved || !onRoundComplete) return;
 
         const timeoutId = window.setTimeout(onRoundComplete, 2200);
         return () => window.clearTimeout(timeoutId);
-    }, [isSolved, onRoundComplete]);
+    }, [isRanked, isSolved, onRoundComplete]);
 
     useEffect(() => {
-        if (!isSolved) return;
+        if (isRanked || !isSolved) return;
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key !== "Enter" || event.repeat) return;
@@ -115,7 +117,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isSolved, advanceRound]);
+    }, [isRanked, isSolved, advanceRound]);
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -148,6 +150,10 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                     chosenLabel: result.nameFr,
                     correctImage: result.artworkUrl,
                 });
+                if (isRanked) {
+                    onSuccess();
+                    return;
+                }
                 setVisibleDescriptions(result.visibleDescriptions);
                 setSolvedName(result.nameFr);
                 setSolvedArtworkUrl(result.artworkUrl);
@@ -167,6 +173,9 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                 setWrongAttempts((current) => current + 1);
                 setVisibleDescriptions(result.visibleDescriptions);
                 setGuessName("");
+                if (isRanked && onWrongAttempt()) {
+                    return;
+                }
                 setFeedback(
                     result.unlockedNewDescription
                         ? "Ce n'est pas le bon Pokémon. Une nouvelle description a été dévoilée !"
@@ -222,7 +231,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         }
     }, [isSolved, session, token, visibleDescriptions, wrongAttempts, wrongGuesses]);
 
-    useRegisterSkip(handleSkip, Boolean(token) && !isSolved);
+    useRegisterSkip(handleSkip, allowSkip && Boolean(token) && !isSolved);
 
     if (isLoading || !token || visibleDescriptions.length === 0) {
         return <div className="flex h-64 items-center justify-center text-muted-foreground">Préparation de la manche…</div>;
@@ -235,15 +244,11 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
     return (
         <div className="space-y-8">
             <div className="space-y-3">
-                {visibleDescriptions.map((description, index) => (
-                    <div key={`${token}-${index}`} className="display-frame max-h-56 overflow-y-auto px-6 py-5">
-                        {visibleDescriptions.length > 1 ? (
-                            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Description {index + 1}</p>
-                        ) : null}
-                        <p className="text-sm leading-relaxed text-muted-foreground italic">« {description} »</p>
-                    </div>
-                ))}
-                {!isSolved && canUnlockMore ? (
+            <DescriptionSwiper
+                descriptions={visibleDescriptions}
+                slideKey={token}
+            />
+            {!isSolved && canUnlockMore ? (
                     <p className="text-center text-sm text-muted-foreground">
                         Nouvelle description dans {attemptsUntilNextHint} essai
                         {attemptsUntilNextHint > 1 ? "s" : ""}.

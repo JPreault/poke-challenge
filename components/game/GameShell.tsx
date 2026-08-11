@@ -2,14 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 
 import {
   RoundActionsProvider,
   useRoundActions,
 } from "@/components/game/RoundActionsContext";
+import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { getGameModeLabel, computeBlurGuessStats } from "@/lib/games/types";
 import type { RoundRecord } from "@/lib/games/types";
@@ -53,18 +53,44 @@ function GameShellInner({
 }: GameShellProps) {
   const { stats, isFinished, stopGame, mode } = session;
   const { skipAction } = useRoundActions();
+  const ranked = useRankedSession();
   const searchParams = useSearchParams();
   const isBacTraining = searchParams.get("interface") === "bac-training";
+  const isRankedPlay = searchParams.get("interface") === "ranked";
   const resolvedHomeHref =
-    homeHref ?? (isBacTraining ? "/entrainement" : "/");
+    homeHref ??
+    (isRankedPlay ? "/partie-classee" : isBacTraining ? "/entrainement" : "/");
   const resolvedReplayHref =
     replayHref ??
-    (isBacTraining ? `/game/${mode}?interface=bac-training` : `/game/${mode}`);
+    (isRankedPlay
+      ? `/game/${mode}?interface=ranked`
+      : isBacTraining
+        ? `/game/${mode}?interface=bac-training`
+        : `/game/${mode}`);
   const displayedModeLabel = modeLabel ?? getGameModeLabel(mode);
 
   const handleReplay = useCallback(() => {
     window.location.assign(resolvedReplayHref);
   }, [resolvedReplayHref]);
+
+  if (isRankedPlay && ranked?.loading) {
+    return (
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
+        <p className="text-muted-foreground">Préparation du mode classé…</p>
+      </div>
+    );
+  }
+
+  if (isRankedPlay && ranked?.error) {
+    return (
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
+        <p className="text-poke-red">{ranked.error}</p>
+        <Link href="/partie-classee" className={cn(buttonVariants({ variant: "outline" }), "w-fit")}>
+          Retour
+        </Link>
+      </div>
+    );
+  }
 
   if (isFinished) {
     return (
@@ -72,10 +98,14 @@ function GameShellInner({
         session={session}
         homeHref={resolvedHomeHref}
         onReplay={handleReplay}
-        allowRanked={!isBacTraining}
+        isRankedPlay={isRankedPlay}
       />
     );
   }
+
+  const attemptsRemaining = ranked
+    ? Math.max(0, ranked.attemptLimit - ranked.roundAttempts)
+    : null;
 
   return (
     <div
@@ -107,22 +137,50 @@ function GameShellInner({
 
           <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
             <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-              <div className="rounded-full bg-muted px-4 py-2 text-sm">
-                <span className="text-muted-foreground">Manche </span>
-                <span className="font-semibold">{stats.totalRounds + 1}</span>
-              </div>
-              <div className="rounded-full bg-muted px-4 py-2 text-sm">
-                <span className="font-semibold">{stats.correctCount}</span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  / {stats.totalRounds}
-                </span>
-              </div>
-              <Button variant="outline" size="sm" onClick={stopGame}>
-                Stop
-              </Button>
+              {isRankedPlay && ranked ? (
+                <>
+                  <div className="rounded-full bg-muted px-4 py-2 text-sm">
+                    <span className="text-muted-foreground">Série </span>
+                    <span className="font-semibold">{ranked.winStreak}</span>
+                  </div>
+                  <div className="rounded-full bg-muted px-4 py-2 text-sm">
+                    <span className="text-muted-foreground">Record #1 </span>
+                    <span className="font-semibold">{ranked.topStreak}</span>
+                  </div>
+                  {attemptsRemaining != null ? (
+                    <div className="rounded-full bg-muted px-4 py-2 text-sm">
+                      <span className="text-muted-foreground">Essais </span>
+                      <span className="font-semibold">{attemptsRemaining}</span>
+                    </div>
+                  ) : null}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void ranked.abandon()}
+                  >
+                    Abandonner
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="rounded-full bg-muted px-4 py-2 text-sm">
+                    <span className="text-muted-foreground">Manche </span>
+                    <span className="font-semibold">{stats.totalRounds + 1}</span>
+                  </div>
+                  <div className="rounded-full bg-muted px-4 py-2 text-sm">
+                    <span className="font-semibold">{stats.correctCount}</span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      / {stats.totalRounds}
+                    </span>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={stopGame}>
+                    Stop
+                  </Button>
+                </>
+              )}
             </div>
-            {skipAction ? (
+            {!isRankedPlay && skipAction ? (
               <Button
                 type="button"
                 variant="outline"
@@ -153,105 +211,74 @@ function GameRecap({
   session,
   homeHref,
   onReplay,
-  allowRanked,
+  isRankedPlay,
 }: {
   session: GameSession;
   homeHref: string;
   onReplay: () => void;
-  allowRanked: boolean;
+  isRankedPlay: boolean;
 }) {
   const { stats, mode, rounds } = session;
-  const { status } = useSession();
-  const [rankedState, setRankedState] = useState<{
-    loading: boolean;
-    done: boolean;
-    ratingAfter?: number;
-    delta?: number;
-    error?: string;
-  }>({ loading: false, done: false });
+  const ranked = useRankedSession();
   const blurStats =
     mode === "blur-guess" || mode === "zoom-guess"
       ? computeBlurGuessStats(rounds)
       : null;
-  const isRankedMode = allowRanked && mode !== "shuffle";
 
-  const sendRankedResult = useCallback(async () => {
-    if (!isRankedMode || rankedState.loading || rankedState.done) return;
-    if (stats.totalRounds <= 0) {
-      setRankedState({
-        loading: false,
-        done: false,
-        error: "Joue au moins une manche pour enregistrer un score classé.",
-      });
-      return;
-    }
+  if (isRankedPlay && ranked) {
+    const finalStreak = ranked.finalWinStreak ?? ranked.winStreak;
+    const endedLabel =
+      ranked.endedReason === "abandon" ? "Partie abandonnée" : "Partie terminée";
 
-    setRankedState({ loading: true, done: false });
+    return (
+      <div className="mx-auto w-full max-w-2xl px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
+        <div className="surface p-8 sm:p-10">
+          <div className="mb-10 space-y-2">
+            <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
+              Classée · {getGameModeLabel(mode)}
+            </p>
+            <h1 className="font-heading text-3xl font-bold">{endedLabel}</h1>
+          </div>
 
-    try {
-      const startResponse = await fetch("/api/ranked/match/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode }),
-      });
+          <div className="mb-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <StatBlock label="Win streak" value={finalStreak} />
+            <StatBlock label="Ton record" value={ranked.playerBestStreak} />
+            <StatBlock label="Record #1" value={ranked.topStreak} />
+          </div>
 
-      if (!startResponse.ok) {
-        setRankedState({
-          loading: false,
-          done: false,
-          error: "Impossible de démarrer la partie classée.",
-        });
-        return;
-      }
+          {ranked.isNewRecord ? (
+            <p className="mb-8 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+              Nouveau record personnel ! {finalStreak} victoires consécutives.
+            </p>
+          ) : (
+            <p className="mb-8 text-sm text-muted-foreground">
+              {ranked.topPlayerName
+                ? `Le record du classement est détenu par ${ranked.topPlayerName} (${ranked.topStreak}).`
+                : "Sois le premier à inscrire un score sur cette épreuve."}
+            </p>
+          )}
 
-      const startPayload = (await startResponse.json()) as {
-        match: { id: string };
-      };
-
-      const finishResponse = await fetch("/api/ranked/match/finish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          matchId: startPayload.match.id,
-          totalRounds: stats.totalRounds,
-          correctCount: stats.correctCount,
-        }),
-      });
-
-      if (!finishResponse.ok) {
-        setRankedState({
-          loading: false,
-          done: false,
-          error: "Impossible d'enregistrer le score classé.",
-        });
-        return;
-      }
-
-      const payload = (await finishResponse.json()) as {
-        match: { ratingAfter: number; deltaRating: number };
-      };
-
-      setRankedState({
-        loading: false,
-        done: true,
-        ratingAfter: payload.match.ratingAfter,
-        delta: payload.match.deltaRating,
-      });
-    } catch {
-      setRankedState({
-        loading: false,
-        done: false,
-        error: "Erreur réseau pendant l'enregistrement classé.",
-      });
-    }
-  }, [
-    isRankedMode,
-    mode,
-    rankedState.done,
-    rankedState.loading,
-    stats.correctCount,
-    stats.totalRounds,
-  ]);
+          <div className="flex flex-wrap gap-3">
+            <Button type="button" size="lg" onClick={onReplay}>
+              Rejouer
+            </Button>
+            <Link
+              href="/leaderboard"
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "inline-flex")}
+            >
+              Leaderboard
+            </Link>
+            <Link
+              href={homeHref}
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "inline-flex")}
+            >
+              Changer d&apos;épreuve
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
@@ -305,21 +332,6 @@ function GameRecap({
           <Button type="button" size="lg" onClick={onReplay}>
             Rejouer
           </Button>
-          {status === "authenticated" && isRankedMode ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={() => void sendRankedResult()}
-              disabled={rankedState.loading || rankedState.done}
-            >
-              {rankedState.loading
-                ? "Envoi du score classé…"
-                : rankedState.done
-                  ? "Score classé enregistré"
-                  : "Enregistrer en classé"}
-            </Button>
-          ) : null}
           <Link
             href={homeHref}
             className={cn(
@@ -330,16 +342,6 @@ function GameRecap({
             Changer de jeu
           </Link>
         </div>
-        {rankedState.done ? (
-          <p className="mt-4 text-sm text-emerald-600 dark:text-emerald-300">
-            Score classé enregistré. Nouveau rating: {rankedState.ratingAfter} (
-            {rankedState.delta && rankedState.delta > 0 ? "+" : ""}
-            {rankedState.delta})
-          </p>
-        ) : null}
-        {rankedState.error ? (
-          <p className="mt-4 text-sm text-poke-red">{rankedState.error}</p>
-        ) : null}
       </div>
     </div>
   );

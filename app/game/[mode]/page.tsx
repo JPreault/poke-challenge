@@ -24,12 +24,24 @@ const ARENA_MODES: GameMode[] = [
   "blur-guess",
   "zoom-guess",
 ];
+const RANKED_MODES: GameMode[] = [
+  "image-to-name",
+  "name-to-image",
+  "cry-guess",
+  "pokedle",
+  "description-guess",
+  "blur-guess",
+  "zoom-guess",
+];
 
 function parseInterfaceMode(
   value: string | string[] | undefined,
 ): GameInterfaceMode | null {
   if (value === "bac-training") {
     return "bac-training";
+  }
+  if (value === "ranked") {
+    return "ranked";
   }
   if (value === "arena") {
     return "arena";
@@ -42,7 +54,11 @@ function isAllowedGameMode(
   interfaceMode: GameInterfaceMode,
 ): mode is GameMode {
   const allowedModes =
-    interfaceMode === "bac-training" ? TRAINING_MODES : ARENA_MODES;
+    interfaceMode === "bac-training"
+      ? TRAINING_MODES
+      : interfaceMode === "ranked"
+        ? RANKED_MODES
+        : ARENA_MODES;
   return allowedModes.includes(mode as GameMode);
 }
 
@@ -61,6 +77,9 @@ export default async function GamePage({
   if (!isAuthenticated) {
     if (queryInterface === "bac-training") {
       redirect(`/game/${mode}`);
+    }
+    if (queryInterface === "ranked") {
+      redirect(`/auth/signin?callbackUrl=${encodeURIComponent(`/game/${mode}?interface=ranked`)}`);
     }
     interfaceMode = "arena";
   }

@@ -18,17 +18,6 @@ export function InterfaceModeSwitcher() {
 
   return (
     <div className="surface inline-flex gap-1 p-1 shadow-sm">
-      <button
-        type="button"
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "whitespace-nowrap",
-          selectedInterface === "arena" && "bg-muted",
-        )}
-        onClick={() => router.push(getInterfaceHomeHref("arena"))}
-      >
-        Mode Arène
-      </button>
       {isAuthenticated ? (
         <button
           type="button"
@@ -40,6 +29,30 @@ export function InterfaceModeSwitcher() {
           onClick={() => router.push(getInterfaceHomeHref("bac-training"))}
         >
           Entraînement
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "sm" }),
+          "whitespace-nowrap",
+          selectedInterface === "arena" && "bg-muted",
+        )}
+        onClick={() => router.push(getInterfaceHomeHref("arena"))}
+      >
+        Non classée
+      </button>
+      {isAuthenticated ? (
+        <button
+          type="button"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "whitespace-nowrap",
+            selectedInterface === "ranked" && "bg-muted",
+          )}
+          onClick={() => router.push(getInterfaceHomeHref("ranked"))}
+        >
+          Classée
         </button>
       ) : null}
     </div>

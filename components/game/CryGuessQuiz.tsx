@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
+import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
 import type {
   ChoiceQuizAnswerResult,
@@ -43,7 +45,6 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isPlayingIndex, setIsPlayingIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
   const startRound = useCallback(async () => {
     setIsLoading(true);
     setFeedback({ type: "idle" });
@@ -91,12 +92,12 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
     void startRound();
   }, [onRoundComplete, startRound]);
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void startRound();
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [startRound]);
+  const { isRanked, allowSkip, onSuccess, onFailure } = useRankedRoundFlow(
+    session,
+    advanceRound,
+  );
+
+  useStartRoundWhenReady(startRound);
 
   const playCry = useCallback((choice: ChoiceQuizChoice) => {
     if (!choice.cryUrl) return;
@@ -149,7 +150,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
     window.setTimeout(advanceRound, 1800);
   }, [advanceRound, feedback.type, round, session]);
 
-  useRegisterSkip(handleSkip, Boolean(round) && feedback.type === "idle");
+  useRegisterSkip(handleSkip, allowSkip && Boolean(round) && feedback.type === "idle");
 
   const validateChoice = async (choice: ChoiceQuizChoice) => {
     if (!round || feedback.type !== "idle") return;
@@ -183,7 +184,12 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
           userAnswerCry: choice.cryUrl,
           correctAnswerCry: result.reveal.cryUrl,
         });
-        window.setTimeout(advanceRound, 1200);
+        if (isRanked) {
+          onSuccess();
+        } else {
+          setFeedback({ type: "correct", message: "Bravo !" });
+          window.setTimeout(advanceRound, 1200);
+        }
         return;
       }
 
@@ -194,10 +200,6 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
             ? { ...current, correctIndex: result.correctIndex }
             : current,
         );
-        setFeedback({
-          type: "incorrect",
-          message: `Raté, c'était la proposition ${correctIndex}.`,
-        });
         session.recordRound({
           question: `Quel cri correspond à ${round.questionName} ?`,
           userAnswer: `Proposition ${choice.choiceIndex + 1}`,
@@ -206,7 +208,16 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
           questionImage: round.questionImageUrl,
           userAnswerCry: choice.cryUrl,
         });
-        window.setTimeout(advanceRound, 2200);
+        if (isRanked) {
+          onFailure();
+        } else {
+          setFeedback({
+            type: "incorrect",
+            message: `Raté, c'était la proposition ${correctIndex}.`,
+          });
+          window.setTimeout(advanceRound, 2200);
+        }
+        return;
       }
     } catch {
       setSelectedIndex(null);

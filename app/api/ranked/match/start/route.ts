@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { getRequiredSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import type { GameMode } from "@/lib/games/types";
+import {
+  getLeaderboardTopForMode,
+  getPlayerBestStreak,
+} from "@/lib/ranked/match-service";
 import { toRankedMode } from "@/lib/ranked/mode";
 import { getActiveSeason } from "@/lib/ranked/season";
 
@@ -34,20 +38,29 @@ export async function POST(request: Request) {
 
   const season = await getActiveSeason();
 
-  const match = await prisma.rankedMatch.create({
-    data: {
-      userId: session.user.id,
-      seasonId: season.id,
-      mode: rankedMode,
-      status: "IN_PROGRESS",
-    },
-    select: {
-      id: true,
-      mode: true,
-      seasonId: true,
-      createdAt: true,
-    },
-  });
+  const [match, top, playerBestStreak] = await Promise.all([
+    prisma.rankedMatch.create({
+      data: {
+        userId: session.user.id,
+        seasonId: season.id,
+        mode: rankedMode,
+        status: "IN_PROGRESS",
+      },
+      select: {
+        id: true,
+        mode: true,
+        seasonId: true,
+        createdAt: true,
+      },
+    }),
+    getLeaderboardTopForMode(rankedMode, season.id),
+    getPlayerBestStreak(session.user.id, rankedMode, season.id),
+  ]);
 
-  return NextResponse.json({ match });
+  return NextResponse.json({
+    match,
+    topStreak: top.topStreak,
+    topPlayerName: top.topPlayerName,
+    playerBestStreak,
+  });
 }

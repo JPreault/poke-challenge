@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
+import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
 import {
   getBlurPx,
@@ -143,21 +145,20 @@ export function MysteryImageRound({
     void startRound();
   }, [onRoundComplete, startRound]);
 
-  useEffect(() => {
-    void startRound();
-    // Mount-only init (also re-runs when Shuffle remounts the round via key).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { isRanked, allowSkip, onSuccess, onFailure, onWrongAttempt } =
+    useRankedRoundFlow(session, advanceRound);
+
+  useStartRoundWhenReady(startRound);
 
   useEffect(() => {
-    if (!isSolved || !onRoundComplete) return;
+    if (isRanked || !isSolved || !onRoundComplete) return;
 
     const timeoutId = window.setTimeout(onRoundComplete, 2200);
     return () => window.clearTimeout(timeoutId);
-  }, [isSolved, onRoundComplete]);
+  }, [isRanked, isSolved, onRoundComplete]);
 
   useEffect(() => {
-    if (!isSolved) return;
+    if (isRanked || !isSolved) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Enter" || event.repeat) return;
@@ -167,7 +168,7 @@ export function MysteryImageRound({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSolved, advanceRound]);
+  }, [isRanked, isSolved, advanceRound]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -197,6 +198,11 @@ export function MysteryImageRound({
           correctImage: result.reveal.artwork,
           questionImage: result.reveal.artwork,
         });
+        if (isRanked) {
+          setIsSubmitting(false);
+          onSuccess();
+          return;
+        }
         setReveal(result.reveal);
         setArtworkUrl(result.reveal.artwork);
         setIsSolved(true);
@@ -215,6 +221,10 @@ export function MysteryImageRound({
         });
         setWrongAttempts((current) => current + 1);
         setGuessName("");
+        if (isRanked && onWrongAttempt()) {
+          setIsSubmitting(false);
+          return;
+        }
         setFeedback("Ce n'est pas le bon Pokémon. Réessaie !");
         setIsSubmitting(false);
         window.setTimeout(() => {
@@ -290,7 +300,7 @@ export function MysteryImageRound({
     wrongGuesses,
   ]);
 
-  useRegisterSkip(handleSkip, Boolean(token) && !isSolved && !isSubmitting);
+  useRegisterSkip(handleSkip, allowSkip && Boolean(token) && !isSolved && !isSubmitting);
 
   if (isLoadingRound || !artworkUrl) {
     return (

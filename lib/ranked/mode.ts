@@ -43,6 +43,12 @@ export function toInterfaceMode(dbMode: "ARENA" | "BAC_TRAINING"): GameInterface
   return dbMode === "BAC_TRAINING" ? "bac-training" : "arena";
 }
 
-export function toDbInterfaceMode(mode: GameInterfaceMode): "ARENA" | "BAC_TRAINING" {
+export function toDbInterfaceMode(
+  mode: GameInterfaceMode,
+): "ARENA" | "BAC_TRAINING" {
   return mode === "bac-training" ? "BAC_TRAINING" : "ARENA";
+}
+
+export function isRankedInterface(mode: GameInterfaceMode): boolean {
+  return mode === "ranked";
 }

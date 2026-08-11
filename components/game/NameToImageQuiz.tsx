@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
+import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import type {
   ChoiceQuizAnswerResult,
   ChoiceQuizChoice,
@@ -44,7 +46,6 @@ export function NameToImageRound({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-
   const startRound = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
@@ -98,12 +99,12 @@ export function NameToImageRound({
     void startRound();
   }, [onRoundComplete, startRound]);
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void startRound();
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [startRound]);
+  const { isRanked, allowSkip, onSuccess, onFailure } = useRankedRoundFlow(
+    session,
+    advanceRound,
+  );
+
+  useStartRoundWhenReady(startRound);
 
   const handleSkip = useCallback(async () => {
     if (!round || feedback !== "idle") return;
@@ -134,7 +135,7 @@ export function NameToImageRound({
     window.setTimeout(advanceRound, 800);
   }, [advanceRound, feedback, round, session]);
 
-  useRegisterSkip(handleSkip, Boolean(round) && feedback === "idle");
+  useRegisterSkip(handleSkip, allowSkip && Boolean(round) && feedback === "idle");
 
   const handleAnswer = async (choice: ChoiceQuizChoice) => {
     if (!round || feedback !== "idle" || !choice.imageUrl) return;
@@ -166,12 +167,16 @@ export function NameToImageRound({
           chosenLabel: result.reveal.nameFr,
           correctImage: result.reveal.artworkUrl,
         });
-        window.setTimeout(advanceRound, 1000);
+        if (isRanked) {
+          onSuccess();
+        } else {
+          setFeedback("correct");
+          window.setTimeout(advanceRound, 1000);
+        }
         return;
       }
 
       if (result.status === "wrong") {
-        setFeedback("incorrect");
         setRound((current) =>
           current
             ? { ...current, correctIndex: result.correctIndex }
@@ -185,7 +190,13 @@ export function NameToImageRound({
           chosenImage: choice.imageUrl,
           chosenLabel: result.reveal.nameFr,
         });
-        window.setTimeout(advanceRound, 1000);
+        if (isRanked) {
+          onFailure();
+        } else {
+          setFeedback("incorrect");
+          window.setTimeout(advanceRound, 1000);
+        }
+        return;
       }
     } catch {
       setSelectedIndex(null);

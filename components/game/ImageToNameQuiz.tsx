@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
+import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
 import type {
   ChoiceQuizAnswerResult,
@@ -46,7 +48,6 @@ export function ImageToNameRound({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-
   const startRound = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
@@ -100,12 +101,12 @@ export function ImageToNameRound({
     void startRound();
   }, [onRoundComplete, startRound]);
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void startRound();
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [startRound]);
+  const { isRanked, allowSkip, onSuccess, onFailure } = useRankedRoundFlow(
+    session,
+    advanceRound,
+  );
+
+  useStartRoundWhenReady(startRound);
 
   const handleSkip = useCallback(async () => {
     if (!round || feedback !== "idle") return;
@@ -142,7 +143,7 @@ export function ImageToNameRound({
     window.setTimeout(advanceRound, 800);
   }, [advanceRound, feedback, round, session]);
 
-  useRegisterSkip(handleSkip, Boolean(round) && feedback === "idle");
+  useRegisterSkip(handleSkip, allowSkip && Boolean(round) && feedback === "idle");
 
   const handleAnswer = async (choice: ChoiceQuizChoice) => {
     if (!round || feedback !== "idle") return;
@@ -161,7 +162,6 @@ export function ImageToNameRound({
       const result = (await response.json()) as ChoiceQuizAnswerResult;
 
       if (result.status === "correct") {
-        setFeedback("correct");
         setRound((current) =>
           current
             ? {
@@ -178,7 +178,12 @@ export function ImageToNameRound({
           isCorrect: true,
           questionImage: round.questionImageUrl,
         });
-        window.setTimeout(advanceRound, 1000);
+        if (isRanked) {
+          onSuccess();
+        } else {
+          setFeedback("correct");
+          window.setTimeout(advanceRound, 1000);
+        }
         return;
       }
 
@@ -186,7 +191,6 @@ export function ImageToNameRound({
         const correctChoice = round.choices.find(
           (entry) => entry.choiceIndex === result.correctIndex,
         );
-        setFeedback("incorrect");
         setRound((current) =>
           current
             ? {
@@ -203,7 +207,13 @@ export function ImageToNameRound({
           isCorrect: false,
           questionImage: round.questionImageUrl,
         });
-        window.setTimeout(advanceRound, 1000);
+        if (isRanked) {
+          onFailure();
+        } else {
+          setFeedback("incorrect");
+          window.setTimeout(advanceRound, 1000);
+        }
+        return;
       }
     } catch {
       setSelectedIndex(null);

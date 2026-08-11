@@ -9,7 +9,7 @@ export type GameMode =
   | "blur-guess"
   | "zoom-guess";
 
-export type GameInterfaceMode = "bac-training" | "arena";
+export type GameInterfaceMode = "bac-training" | "arena" | "ranked";
 
 export type BacShuffleRoundType =
   | "image-to-name"

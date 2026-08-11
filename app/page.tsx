@@ -1,5 +1,6 @@
 "use client";
 
+import { Play, Shuffle } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 
@@ -31,38 +32,26 @@ export default function HomePage() {
         <main className="mx-auto w-full max-w-4xl px-6 pb-16 pt-4 sm:px-8 sm:pb-24 sm:pt-6">
             <header className="mb-20 max-w-2xl">
                 <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">Poke Challenge</p>
-                <h1 className="font-heading text-4xl font-bold leading-[1.1] text-foreground sm:text-5xl">Arène</h1>
+                <h1 className="font-heading text-4xl font-bold leading-[1.1] text-foreground sm:text-5xl">Non classée</h1>
                 <p className="mt-6 text-lg leading-8 text-muted-foreground">
-                    Joue en mode Arène sur tout le Pokédex. Connecte-toi pour débloquer l&apos;entraînement personnalisé.
+                    Joue en mode non classé sur tout le Pokédex. Connecte-toi pour débloquer l&apos;entraînement et le mode classé.
                 </p>
             </header>
 
-            <section className="mb-12">
-                <div className="surface flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="max-w-xl space-y-2">
-                        <h2 className="font-heading text-xl font-semibold text-foreground">Shuffle</h2>
-                        <p className="text-base leading-7 text-muted-foreground">
-                            Choisis les mini-jeux à mélanger, puis enchaîne des manches aléatoires parmi ta sélection.
-                        </p>
-                    </div>
-                    <Link href="/game/shuffle" className={cn(buttonVariants({ size: "lg" }), "w-full shrink-0 justify-center sm:w-auto")}>
-                        Configurer
+            <section className="mb-24">
+                <div className="mb-8 flex items-center justify-between gap-4">
+                    <h2 className="font-heading text-base font-semibold uppercase tracking-[0.15em] text-muted-foreground sm:text-lg">Mini-jeux</h2>
+                    <Link href="/game/shuffle" className={cn(buttonVariants({ size: "lg" }), "shrink-0 gap-2")}>
+                        <Shuffle data-icon="inline-start" className="size-4" />
+                        Mode shuffle
                     </Link>
                 </div>
-            </section>
-
-            <section className="mb-24">
-                <h2 className="mb-8 font-heading text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">Mini-jeux</h2>
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div className="grid gap-4">
                     {games.map((game, index) => (
-                        <article key={game.mode} className="surface-hover flex flex-col p-8">
-                            <div className="mb-6 flex items-center justify-between">
-                                <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">{game.tag}</span>
-                            </div>
-
-                            <div className="flex-1 space-y-3">
+                        <article key={game.mode} className="surface-hover flex items-center gap-4 p-5 md:gap-6 md:p-6">
+                            <div className="min-w-0 flex-1 space-y-2">
                                 <h3 className="font-heading text-xl font-semibold leading-snug text-foreground">{game.title}</h3>
-                                <p className="text-base leading-7 text-muted-foreground">{game.description}</p>
+                                <p className="text-sm leading-6 text-muted-foreground md:text-base md:leading-7">{game.description}</p>
                             </div>
 
                             <Link
@@ -71,9 +60,11 @@ export default function HomePage() {
                                     gameLinksRef.current[index] = node;
                                 }}
                                 onKeyDown={(event) => handleGameCardKeyDown(event, index)}
-                                className={cn(buttonVariants({ size: "lg" }), "mt-10 w-full justify-center")}
+                                aria-label={`Jouer à ${game.title}`}
+                                title={`Jouer à ${game.title}`}
+                                className={cn(buttonVariants({ size: "icon-lg" }), "shrink-0")}
                             >
-                                Jouer
+                                <Play className="size-5 fill-current" />
                             </Link>
                         </article>
                     ))}
