@@ -6,6 +6,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import {
+  RankedScoresCard,
+  type RankedScoreEntry,
+} from "@/components/profile/RankedScoresCard";
 import { PokemonSearchInput } from "@/components/pokemon/PokemonSearchInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +30,10 @@ interface ProfileResponse {
     };
 }
 
+interface PublicPlayerResponse {
+    rankedScores: RankedScoreEntry[];
+}
+
 export default function ProfilePage() {
     const router = useRouter();
     const { status } = useSession();
@@ -42,6 +50,7 @@ export default function ProfilePage() {
     const [publicId, setPublicId] = useState("");
     const [trainingPokemon, setTrainingPokemon] = useState<TrainingPokemon[]>([]);
     const [draftName, setDraftName] = useState("");
+    const [rankedScores, setRankedScores] = useState<RankedScoreEntry[]>([]);
 
     const pseudoDirty = pseudo.trim() !== savedPseudo.trim() && pseudo.trim().length > 0;
 
@@ -67,6 +76,16 @@ export default function ProfilePage() {
                 setSavedPseudo(payload.profile.pseudo);
                 setPublicId(payload.profile.publicId);
                 setTrainingPokemon(payload.profile.trainingPokemon);
+
+                const rankedResponse = await fetch(
+                    `/api/players/${payload.profile.publicId}`,
+                    { cache: "no-store" },
+                );
+                if (rankedResponse.ok) {
+                    const rankedPayload =
+                        (await rankedResponse.json()) as PublicPlayerResponse;
+                    setRankedScores(rankedPayload.rankedScores);
+                }
             } catch {
                 setError("Impossible de charger le profil.");
             } finally {
@@ -227,6 +246,13 @@ export default function ProfilePage() {
                     </span>
                 </p>
             </section>
+
+            <RankedScoresCard
+                pseudo={savedPseudo || pseudo}
+                publicId={publicId}
+                scores={rankedScores}
+                isOwnProfile
+            />
 
             <section className="space-y-4 rounded-xl border border-border/60 bg-background/80 p-6">
                 <div className="space-y-1">

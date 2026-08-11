@@ -1,8 +1,8 @@
-import type { RankedEndReason, RankedMode } from "@prisma/client";
+import type { RankedEndReason, RankedMode, RankedMatchStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { ARENA_RANKED_MODES } from "@/lib/games/ranked-limits";
 import { formatPlayerLabel } from "@/lib/profile/display-name";
-import { getActiveSeason } from "@/lib/ranked/season";
 
 export interface FinishRankedMatchInput {
   matchId: string;
@@ -35,16 +35,14 @@ export async function finishRankedMatch(input: FinishRankedMatchInput) {
 
   const entry = await prisma.leaderboardEntry.upsert({
     where: {
-      userId_seasonId_mode: {
+      userId_mode: {
         userId: input.userId,
-        seasonId: match.seasonId,
         mode: match.mode,
       },
     },
     update: {},
     create: {
       userId: input.userId,
-      seasonId: match.seasonId,
       mode: match.mode,
       bestWinStreak: 0,
     },
@@ -122,30 +120,19 @@ export type LeaderboardRunRow = {
   user: LeaderboardUser;
 };
 
-function rankedRunWhere(input: { seasonId: string; mode?: RankedMode }) {
+function rankedRunWhere(mode?: RankedMode) {
+  const finishedStatuses: RankedMatchStatus[] = ["FINISHED", "ABANDONED"];
+
   return {
-    seasonId: input.seasonId,
-    ...(input.mode ? { mode: input.mode } : {}),
-    status: { in: ["FINISHED", "ABANDONED"] as const },
+    ...(mode ? { mode } : {}),
+    status: { in: finishedStatuses },
     winStreak: { gt: 0 },
   };
 }
 
-export async function getLeaderboardTopForMode(
-  mode: RankedMode,
-  seasonId?: string,
-) {
-  const season =
-    seasonId != null
-      ? await prisma.season.findUnique({ where: { id: seasonId } })
-      : await getActiveSeason();
-
-  if (!season) {
-    return { topStreak: 0, topPlayerName: null as string | null };
-  }
-
+export async function getLeaderboardTopForMode(mode: RankedMode) {
   const top = await prisma.rankedMatch.findFirst({
-    where: rankedRunWhere({ seasonId: season.id, mode }),
+    where: rankedRunWhere(mode),
     orderBy: [{ winStreak: "desc" }, { finishedAt: "asc" }],
     include: {
       user: {
@@ -158,7 +145,7 @@ export async function getLeaderboardTopForMode(
   });
 
   if (!top || (top.winStreak ?? 0) <= 0) {
-    return { topStreak: 0, topPlayerName: null };
+    return { topStreak: 0, topPlayerName: null as string | null };
   }
 
   return {
@@ -171,15 +158,10 @@ export async function getLeaderboardTopForMode(
   };
 }
 
-export async function getPlayerBestStreak(
-  userId: string,
-  mode: RankedMode,
-  seasonId: string,
-) {
+export async function getPlayerBestStreak(userId: string, mode: RankedMode) {
   const aggregate = await prisma.rankedMatch.aggregate({
     where: {
       userId,
-      seasonId,
       mode,
       status: { in: ["FINISHED", "ABANDONED"] },
       winStreak: { gt: 0 },
@@ -190,14 +172,88 @@ export async function getPlayerBestStreak(
   return aggregate._max.winStreak ?? 0;
 }
 
+export type PlayerRankedScore = {
+  mode: RankedMode;
+  bestWinStreak: number;
+};
+
+export type PlayerRankedScoreDetail = PlayerRankedScore & {
+  bestTopRank: number | null;
+};
+
+async function getPlayerBestTopRankInMode(
+  userId: string,
+  mode: RankedMode,
+  topLimit: number,
+): Promise<number | null> {
+  const runs = await prisma.rankedMatch.findMany({
+    where: rankedRunWhere(mode),
+    select: { userId: true },
+    orderBy: [{ winStreak: "desc" }, { finishedAt: "asc" }],
+  });
+
+  const ranksInTop = runs
+    .map((run, index) => ({ userId: run.userId, rank: index + 1 }))
+    .filter((run) => run.userId === userId && run.rank <= topLimit)
+    .map((run) => run.rank);
+
+  return ranksInTop.length > 0 ? Math.min(...ranksInTop) : null;
+}
+
+export async function getPlayerRankedScores(
+  userId: string,
+): Promise<PlayerRankedScore[]> {
+  const grouped = await prisma.rankedMatch.groupBy({
+    by: ["mode"],
+    where: {
+      userId,
+      status: { in: ["FINISHED", "ABANDONED"] },
+      winStreak: { gt: 0 },
+    },
+    _max: { winStreak: true },
+  });
+
+  const streakByMode = new Map(
+    grouped.map((row) => [row.mode, row._max.winStreak ?? 0]),
+  );
+
+  return ARENA_RANKED_MODES.map((mode) => ({
+    mode,
+    bestWinStreak: streakByMode.get(mode) ?? 0,
+  }));
+}
+
+export async function getPlayerRankedScoreDetails(
+  userId: string,
+  topLimit = 20,
+): Promise<PlayerRankedScoreDetail[]> {
+  const [scores, topRanks] = await Promise.all([
+    getPlayerRankedScores(userId),
+    Promise.all(
+      ARENA_RANKED_MODES.map(async (mode) => ({
+        mode,
+        bestTopRank: await getPlayerBestTopRankInMode(userId, mode, topLimit),
+      })),
+    ),
+  ]);
+
+  const topRankByMode = new Map(
+    topRanks.map((entry) => [entry.mode, entry.bestTopRank]),
+  );
+
+  return scores.map((score) => ({
+    ...score,
+    bestTopRank: topRankByMode.get(score.mode) ?? null,
+  }));
+}
+
 /** Top N parties classées (un joueur peut apparaître plusieurs fois). */
 export async function getLeaderboardPage(input: {
-  seasonId: string;
   mode?: RankedMode;
   page: number;
   pageSize: number;
 }) {
-  const where = rankedRunWhere(input);
+  const where = rankedRunWhere(input.mode);
 
   const [total, matches] = await Promise.all([
     prisma.rankedMatch.count({ where }),
@@ -232,13 +288,12 @@ export async function getLeaderboardPage(input: {
 export async function getSelfLeaderboardStats(
   userId: string,
   input: {
-    seasonId: string;
     mode: RankedMode;
     topLimit?: number;
   },
 ) {
   const runs = await prisma.rankedMatch.findMany({
-    where: rankedRunWhere({ seasonId: input.seasonId, mode: input.mode }),
+    where: rankedRunWhere(input.mode),
     select: {
       id: true,
       userId: true,

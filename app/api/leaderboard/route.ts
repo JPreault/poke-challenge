@@ -2,14 +2,12 @@ import { RankedMode } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getRequiredSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/db/prisma";
 import { ARENA_RANKED_MODES } from "@/lib/games/ranked-limits";
 import { getRankedModeLabel } from "@/lib/games/ranked-limits";
 import {
   getLeaderboardPage,
   getSelfLeaderboardStats,
 } from "@/lib/ranked/match-service";
-import { getActiveSeason } from "@/lib/ranked/season";
 import { formatPlayerLabel } from "@/lib/profile/display-name";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -17,7 +15,6 @@ const DEFAULT_PAGE_SIZE = 20;
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const modeParam = searchParams.get("mode");
-  const seasonParam = searchParams.get("season");
   const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
   const pageSize = Math.min(
     100,
@@ -29,17 +26,12 @@ export async function GET(request: Request) {
       ? (modeParam as RankedMode)
       : undefined;
 
-  const season = seasonParam
-    ? await prisma.season.findUnique({ where: { slug: seasonParam } })
-    : await getActiveSeason();
-
-  if (!season) {
+  if (!mode) {
     return NextResponse.json({ entries: [], page, pageSize, total: 0 });
   }
 
   const [{ total, entries }, session] = await Promise.all([
     getLeaderboardPage({
-      seasonId: season.id,
       mode,
       page,
       pageSize,
@@ -57,9 +49,8 @@ export async function GET(request: Request) {
     userName: string;
   } | null = null;
 
-  if (session && mode) {
+  if (session) {
     const stats = await getSelfLeaderboardStats(session.user.id, {
-      seasonId: season.id,
       mode,
       topLimit: pageSize,
     });
@@ -77,16 +68,8 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    season: {
-      id: season.id,
-      slug: season.slug,
-      name: season.name,
-      startsAt: season.startsAt,
-      endsAt: season.endsAt,
-      isActive: season.isActive,
-    },
-    mode: mode ?? null,
-    modeLabel: mode ? getRankedModeLabel(mode) : null,
+    mode,
+    modeLabel: getRankedModeLabel(mode),
     page,
     pageSize,
     total,
@@ -94,6 +77,7 @@ export async function GET(request: Request) {
       rank: (page - 1) * pageSize + idx + 1,
       matchId: entry.matchId,
       userId: entry.userId,
+      publicId: entry.user.profile?.publicId ?? null,
       userName: formatPlayerLabel({
         pseudo: entry.user.profile?.pseudo,
         publicId: entry.user.profile?.publicId,
@@ -103,6 +87,11 @@ export async function GET(request: Request) {
       winStreak: entry.winStreak,
       finishedAt: entry.finishedAt,
     })),
-    self: selfEntry,
+    self: selfEntry
+      ? {
+          ...selfEntry,
+          publicId: session?.user.publicId ?? null,
+        }
+      : null,
   });
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -13,6 +14,7 @@ interface LeaderboardRow {
   rank: number;
   matchId: string;
   userId: string;
+  publicId: string | null;
   userName: string;
   winStreak: number;
 }
@@ -25,15 +27,34 @@ interface LeaderboardSelf {
   entriesInTop: number;
   inTop: boolean;
   userName: string;
+  publicId: string | null;
 }
 
 interface LeaderboardResponse {
-  season?: {
-    name: string;
-  };
   modeLabel?: string | null;
   entries: LeaderboardRow[];
   self?: LeaderboardSelf | null;
+}
+
+function PlayerNameLink({
+  publicId,
+  userName,
+}: {
+  publicId: string | null;
+  userName: string;
+}) {
+  if (!publicId) {
+    return <span>{userName}</span>;
+  }
+
+  return (
+    <Link
+      href={`/joueur/${publicId}`}
+      className="font-medium text-foreground underline-offset-4 hover:underline"
+    >
+      {userName}
+    </Link>
+  );
 }
 
 export default function LeaderboardPage() {
@@ -101,10 +122,6 @@ export default function LeaderboardPage() {
         </select>
       </div>
 
-      {data?.season ? (
-        <p className="text-sm text-muted-foreground">Saison : {data.season.name}</p>
-      ) : null}
-
       {loading ? <p className="text-muted-foreground">Chargement…</p> : null}
 
       {!loading && data?.self ? (
@@ -146,7 +163,12 @@ export default function LeaderboardPage() {
               {data.entries.map((entry) => (
                 <tr key={entry.matchId} className="border-t border-border/50">
                   <td className="px-4 py-3">{entry.rank}</td>
-                  <td className="px-4 py-3">{entry.userName}</td>
+                  <td className="px-4 py-3">
+                    <PlayerNameLink
+                      publicId={entry.publicId}
+                      userName={entry.userName}
+                    />
+                  </td>
                   <td className="px-4 py-3 font-semibold">{entry.winStreak}</td>
                 </tr>
               ))}
@@ -167,7 +189,16 @@ export default function LeaderboardPage() {
                   >
                     <td className="px-4 py-3">{selfOutsideTop.bestRank}</td>
                     <td className="px-4 py-3">
-                      {selfOutsideTop.userName}
+                      {selfOutsideTop.publicId ? (
+                        <Link
+                          href={`/joueur/${selfOutsideTop.publicId}`}
+                          className="font-medium underline-offset-4 hover:underline"
+                        >
+                          {selfOutsideTop.userName}
+                        </Link>
+                      ) : (
+                        selfOutsideTop.userName
+                      )}
                       <span className="ml-2 text-xs text-muted-foreground">
                         (toi)
                       </span>

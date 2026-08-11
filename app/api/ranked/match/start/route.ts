@@ -8,7 +8,6 @@ import {
   getPlayerBestStreak,
 } from "@/lib/ranked/match-service";
 import { toRankedMode } from "@/lib/ranked/mode";
-import { getActiveSeason } from "@/lib/ranked/season";
 
 interface StartRankedBody {
   mode?: GameMode;
@@ -36,25 +35,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Mode non classe." }, { status: 400 });
   }
 
-  const season = await getActiveSeason();
-
   const [match, top, playerBestStreak] = await Promise.all([
     prisma.rankedMatch.create({
       data: {
         userId: session.user.id,
-        seasonId: season.id,
         mode: rankedMode,
         status: "IN_PROGRESS",
       },
       select: {
         id: true,
         mode: true,
-        seasonId: true,
         createdAt: true,
       },
     }),
-    getLeaderboardTopForMode(rankedMode, season.id),
-    getPlayerBestStreak(session.user.id, rankedMode, season.id),
+    getLeaderboardTopForMode(rankedMode),
+    getPlayerBestStreak(session.user.id, rankedMode),
   ]);
 
   return NextResponse.json({

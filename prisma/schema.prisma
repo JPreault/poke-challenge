@@ -80,25 +80,9 @@ model TrainingPokemon {
   @@index([userId])
 }
 
-model Season {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  name      String
-  startsAt  DateTime
-  endsAt    DateTime?
-  isActive  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  matches            RankedMatch[]
-  leaderboardEntries LeaderboardEntry[]
-  ratingHistory      RatingHistory[]
-}
-
 model RankedMatch {
   id           String            @id @default(cuid())
   userId       String
-  seasonId     String
   mode         RankedMode
   status       RankedMatchStatus @default(IN_PROGRESS)
   winStreak    Int?
@@ -109,44 +93,39 @@ model RankedMatch {
   createdAt    DateTime          @default(now())
   finishedAt   DateTime?
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  season Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
-  @@index([seasonId, mode, createdAt])
+  @@index([mode, createdAt])
   @@index([status, createdAt])
 }
 
 model LeaderboardEntry {
   id            String     @id @default(cuid())
   userId        String
-  seasonId      String
   mode          RankedMode
   bestWinStreak Int        @default(0)
   updatedAt     DateTime   @updatedAt
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  season Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, seasonId, mode])
-  @@index([seasonId, mode, bestWinStreak])
+  @@unique([userId, mode])
+  @@index([mode, bestWinStreak])
 }
 
 model RatingHistory {
-  id          String     @id @default(cuid())
-  userId      String
-  seasonId    String
-  mode        RankedMode
-  matchId     String
+  id           String     @id @default(cuid())
+  userId       String
+  mode         RankedMode
+  matchId      String
   ratingBefore Int
-  ratingAfter Int
-  delta       Int
-  createdAt   DateTime   @default(now())
+  ratingAfter  Int
+  delta        Int
+  createdAt    DateTime   @default(now())
 
-  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  season Season     @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, seasonId, mode, createdAt])
+  @@index([userId, mode, createdAt])
 }
 
 model Account {
