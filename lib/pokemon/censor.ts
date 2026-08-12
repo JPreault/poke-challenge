@@ -26,5 +26,10 @@ export function censorPokemonNameInText(text: string, nameFr: string): string {
   }
 
   const censored = "*".repeat(Math.max(trimmedName.length, 4));
-  return text.replace(toNamePattern(trimmedName), censored);
+  // Descriptions use precomposed accents (é = U+00E9); the pattern expects
+  // decomposed form (e + combining mark). Normalize before matching.
+  return text
+    .normalize("NFD")
+    .replace(toNamePattern(trimmedName), censored)
+    .normalize("NFC");
 }
