@@ -16,10 +16,6 @@ export function useInterfaceMode(): GameInterfaceMode | null {
     return "ranked";
   }
 
-  if (pathname === "/leaderboard" || pathname.startsWith("/leaderboard/")) {
-    return "ranked";
-  }
-
   if (searchParams.get("interface") === "bac-training") {
     return "bac-training";
   }
