@@ -1,15 +1,13 @@
-import type { RankedMode } from "@prisma/client";
 import { Trophy } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    buildRankedScoreEntries,
+    type RankedScoreEntry,
+} from "@/lib/games/ranked-score-entries";
 import { cn } from "@/lib/utils";
 
-export interface RankedScoreEntry {
-    mode: RankedMode;
-    modeLabel: string;
-    bestWinStreak: number;
-    bestTopRank?: number | null;
-}
+export type { RankedScoreEntry };
 
 interface RankedScoresCardProps {
     scores: RankedScoreEntry[];
@@ -18,6 +16,8 @@ interface RankedScoresCardProps {
 }
 
 export function RankedScoresCard({ scores, isOwnProfile = false, showAvatar = false }: RankedScoresCardProps) {
+    const displayScores = buildRankedScoreEntries(scores);
+
     return (
         <Card className="border-border/60 bg-background/80 ring-0">
             <CardHeader>
@@ -29,7 +29,7 @@ export function RankedScoresCard({ scores, isOwnProfile = false, showAvatar = fa
             </CardHeader>
             <CardContent>
                 <ul className="grid gap-2 sm:grid-cols-2">
-                    {scores.map((score) => (
+                    {displayScores.map((score) => (
                         <li
                             key={score.mode}
                             className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5"

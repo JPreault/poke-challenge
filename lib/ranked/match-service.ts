@@ -194,6 +194,20 @@ async function getPlayerBestTopRankInMode(
   mode: RankedMode,
   topLimit: number,
 ): Promise<number | null> {
+  const hasQualifyingRun = await prisma.rankedMatch.findFirst({
+    where: {
+      userId,
+      mode,
+      status: { in: ["FINISHED", "ABANDONED"] },
+      winStreak: { gt: 0 },
+    },
+    select: { id: true },
+  });
+
+  if (!hasQualifyingRun) {
+    return null;
+  }
+
   const runs = await prisma.rankedMatch.findMany({
     where: rankedRunWhere(mode),
     select: { userId: true },
@@ -211,19 +225,31 @@ async function getPlayerBestTopRankInMode(
 export async function getPlayerRankedScores(
   userId: string,
 ): Promise<PlayerRankedScore[]> {
-  const grouped = await prisma.rankedMatch.groupBy({
-    by: ["mode"],
-    where: {
-      userId,
-      status: { in: ["FINISHED", "ABANDONED"] },
-      winStreak: { gt: 0 },
-    },
-    _max: { winStreak: true },
-  });
+  const [entries, matches] = await Promise.all([
+    prisma.leaderboardEntry.findMany({
+      where: { userId },
+      select: { mode: true, bestWinStreak: true },
+    }),
+    prisma.rankedMatch.findMany({
+      where: {
+        userId,
+        status: { in: ["FINISHED", "ABANDONED"] },
+        winStreak: { gt: 0 },
+      },
+      select: { mode: true, winStreak: true },
+    }),
+  ]);
 
-  const streakByMode = new Map(
-    grouped.map((row) => [row.mode, row._max.winStreak ?? 0]),
-  );
+  const streakByMode = new Map<RankedMode, number>();
+
+  for (const entry of entries) {
+    streakByMode.set(entry.mode, entry.bestWinStreak);
+  }
+
+  for (const match of matches) {
+    const current = streakByMode.get(match.mode) ?? 0;
+    streakByMode.set(match.mode, Math.max(current, match.winStreak ?? 0));
+  }
 
   return ARENA_RANKED_MODES.map((mode) => ({
     mode,
@@ -235,15 +261,27 @@ export async function getPlayerRankedScoreDetails(
   userId: string,
   topLimit = 20,
 ): Promise<PlayerRankedScoreDetail[]> {
-  const [scores, topRanks] = await Promise.all([
-    getPlayerRankedScores(userId),
-    Promise.all(
-      ARENA_RANKED_MODES.map(async (mode) => ({
-        mode,
-        bestTopRank: await getPlayerBestTopRankInMode(userId, mode, topLimit),
+  const scores = await getPlayerRankedScores(userId);
+
+  if (!scores.some((score) => score.bestWinStreak > 0)) {
+    return scores.map((score) => ({
+      ...score,
+      bestTopRank: null,
+    }));
+  }
+
+  const topRanks = await Promise.all(
+    scores
+      .filter((score) => score.bestWinStreak > 0)
+      .map(async (score) => ({
+        mode: score.mode,
+        bestTopRank: await getPlayerBestTopRankInMode(
+          userId,
+          score.mode,
+          topLimit,
+        ),
       })),
-    ),
-  ]);
+  );
 
   const topRankByMode = new Map(
     topRanks.map((entry) => [entry.mode, entry.bestTopRank]),
