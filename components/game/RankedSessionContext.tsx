@@ -38,6 +38,7 @@ interface RankedSessionContextValue extends RankedSessionState {
   onRoundFail: () => void;
   onWrongAttempt: () => boolean;
   resetRoundAttempts: () => void;
+  setRoundAttemptLimit: (limit: number) => void;
   abandon: () => Promise<void>;
 }
 
@@ -234,6 +235,14 @@ export function RankedSessionProvider({
     setState((current) => ({ ...current, roundAttempts: 0 }));
   }, []);
 
+  const setRoundAttemptLimit = useCallback((limit: number) => {
+    setState((current) => ({
+      ...current,
+      attemptLimit: limit,
+      roundAttempts: 0,
+    }));
+  }, []);
+
   const abandon = useCallback(async () => {
     await endRun("abandon");
   }, [endRun]);
@@ -246,6 +255,7 @@ export function RankedSessionProvider({
       onRoundFail,
       onWrongAttempt,
       resetRoundAttempts,
+      setRoundAttemptLimit,
       abandon,
     }),
     [
@@ -254,6 +264,7 @@ export function RankedSessionProvider({
       onRoundFail,
       onWrongAttempt,
       resetRoundAttempts,
+      setRoundAttemptLimit,
       abandon,
     ],
   );

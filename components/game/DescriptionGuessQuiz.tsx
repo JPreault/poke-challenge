@@ -363,7 +363,7 @@ export function DescriptionGuessQuiz({ session }: DescriptionGuessQuizProps) {
     return (
         <GameShell
             session={session}
-            title="Description → Pokémon"
+            title="Description"
             description="Lis la description Pokédex et retrouve le Pokémon correspondant. Une description supplémentaire est dévoilée tous les 3 essais."
         >
             <DescriptionGuessRound session={session} />

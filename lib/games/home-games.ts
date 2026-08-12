@@ -76,7 +76,7 @@ export const ARENA_GAMES: GameCard[] = [
   },
   {
     mode: "description-guess",
-    title: "Description → Pokémon",
+    title: "Description",
     description:
       "Lis une description Pokédex aléatoire et retrouve le Pokémon correspondant.",
     tag: "Déduction",
@@ -94,5 +94,16 @@ export const ARENA_GAMES: GameCard[] = [
     description:
       "Devine le Pokémon à partir d'une image ultra zoomée. À chaque tentative, l'image se dézoome légèrement.",
     tag: "Visuel",
+  },
+];
+
+export const RANKED_GAMES: GameCard[] = [
+  ...ARENA_GAMES,
+  {
+    mode: "shuffle",
+    title: "Shuffle",
+    description:
+      "Un mini-jeu aléatoire à chaque manche, parmi toutes les épreuves classées.",
+    tag: "Mix",
   },
 ];

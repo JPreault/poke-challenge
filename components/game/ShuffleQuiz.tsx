@@ -11,12 +11,15 @@ import { ImageToNameRound } from "@/components/game/ImageToNameQuiz";
 import { LetterInputRound } from "@/components/game/LetterInputQuiz";
 import { NameToImageRound } from "@/components/game/NameToImageQuiz";
 import { PokedleRound } from "@/components/game/PokedleQuiz";
+import { useRankedSession } from "@/components/game/RankedSessionContext";
+import { getRankedAttemptLimit } from "@/lib/games/ranked-limits";
 import {
   buildShuffleGamesQuery,
   createShuffleDeck,
   drawNextShuffleRoundType,
 } from "@/lib/games/shuffle";
 import {
+  ARENA_SHUFFLE_ROUND_TYPES,
   getShuffleRoundDescription,
   getShuffleRoundLabel,
   type GameInterfaceMode,
@@ -37,13 +40,22 @@ export function ShuffleQuiz({
   useBacPool = true,
   interfaceMode = "arena",
 }: ShuffleQuizProps) {
+  const isRanked = interfaceMode === "ranked";
+  const ranked = useRankedSession();
+  const effectiveRoundTypes = isRanked
+    ? ARENA_SHUFFLE_ROUND_TYPES
+    : selectedRoundTypes;
+  const resolvedUseBacPool = isRanked ? false : useBacPool;
+
   const [roundType, setRoundType] = useState<ShuffleRoundType | null>(null);
   const [roundKey, setRoundKey] = useState(0);
   const deckRef = useRef<ShuffleRoundType[]>([]);
-  const selectedRef = useRef(selectedRoundTypes);
-  selectedRef.current = selectedRoundTypes;
+  const selectedRef = useRef(effectiveRoundTypes);
+  selectedRef.current = effectiveRoundTypes;
+  const rankedRef = useRef(ranked);
+  rankedRef.current = ranked;
 
-  const selectionKey = selectedRoundTypes.join(",");
+  const selectionKey = effectiveRoundTypes.join(",");
 
   const drawRound = useCallback(() => {
     const { nextType, remainingDeck } = drawNextShuffleRoundType(
@@ -51,9 +63,14 @@ export function ShuffleQuiz({
       selectedRef.current,
     );
     deckRef.current = remainingDeck;
+    if (isRanked) {
+      rankedRef.current?.setRoundAttemptLimit(
+        getRankedAttemptLimit(nextType) ?? 1,
+      );
+    }
     setRoundType(nextType);
     setRoundKey((current) => current + 1);
-  }, []);
+  }, [isRanked]);
 
   useEffect(() => {
     deckRef.current = createShuffleDeck(selectedRef.current);
@@ -65,14 +82,21 @@ export function ShuffleQuiz({
     ? getShuffleRoundDescription(roundType)
     : "Un mini-jeu aléatoire à chaque manche.";
 
-  const gamesQuery = buildShuffleGamesQuery(selectedRoundTypes);
+  const gamesQuery = buildShuffleGamesQuery(effectiveRoundTypes);
   const replayParams = new URLSearchParams({ games: gamesQuery });
   if (interfaceMode === "bac-training") {
     replayParams.set("interface", "bac-training");
+  } else if (interfaceMode === "ranked") {
+    replayParams.set("interface", "ranked");
   }
-  const homeHref =
-    interfaceMode === "bac-training" ? "/entrainement" : "/";
-  const replayHref = `/game/shuffle?${replayParams.toString()}`;
+  const homeHref = isRanked
+    ? "/partie-classee"
+    : interfaceMode === "bac-training"
+      ? "/entrainement"
+      : "/";
+  const replayHref = isRanked
+    ? "/game/shuffle?interface=ranked"
+    : `/game/shuffle?${replayParams.toString()}`;
 
   return (
     <GameShell
@@ -94,21 +118,21 @@ export function ShuffleQuiz({
             <ImageToNameRound
               session={session}
               onRoundComplete={drawRound}
-              useBacPool={useBacPool}
+              useBacPool={resolvedUseBacPool}
             />
           ) : null}
           {roundType === "name-to-image" ? (
             <NameToImageRound
               session={session}
               onRoundComplete={drawRound}
-              useBacPool={useBacPool}
+              useBacPool={resolvedUseBacPool}
             />
           ) : null}
           {roundType === "letter-input" ? (
             <LetterInputRound
               session={session}
               onRoundComplete={drawRound}
-              validationMode={useBacPool ? "training" : "catalog"}
+              validationMode={resolvedUseBacPool ? "training" : "catalog"}
             />
           ) : null}
           {roundType === "cry-guess" ? (
@@ -127,14 +151,14 @@ export function ShuffleQuiz({
             <BlurGuessRound
               session={session}
               onRoundComplete={drawRound}
-              useBacPool={useBacPool}
+              useBacPool={resolvedUseBacPool}
             />
           ) : null}
           {roundType === "zoom-guess" ? (
             <ZoomGuessRound
               session={session}
               onRoundComplete={drawRound}
-              useBacPool={useBacPool}
+              useBacPool={resolvedUseBacPool}
             />
           ) : null}
         </div>

@@ -97,7 +97,7 @@ export function getGameModeLabel(mode: GameMode): string {
     case "pokedle":
       return "Pokédle";
     case "description-guess":
-      return "Description → Pokémon";
+      return "Description";
     case "blur-guess":
       return "Image flou";
     case "zoom-guess":
@@ -118,7 +118,7 @@ export function getShuffleRoundLabel(type: ShuffleRoundType): string {
     case "pokedle":
       return "Pokédle";
     case "description-guess":
-      return "Description → Pokémon";
+      return "Description";
     case "blur-guess":
       return "Image flou";
     case "zoom-guess":

@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
-import { ARENA_GAMES } from "@/lib/games/home-games";
+import { RANKED_GAMES } from "@/lib/games/home-games";
 import { cn } from "@/lib/utils";
 
 export default function PartieClasseePage() {
@@ -34,7 +34,7 @@ export default function PartieClasseePage() {
     if (event.key === "ArrowUp") nextIndex = index - columns;
 
     if (nextIndex === index) return;
-    if (nextIndex < 0 || nextIndex >= ARENA_GAMES.length) return;
+    if (nextIndex < 0 || nextIndex >= RANKED_GAMES.length) return;
 
     event.preventDefault();
     gameLinksRef.current[nextIndex]?.focus();
@@ -76,7 +76,7 @@ export default function PartieClasseePage() {
           </Link>
         </div>
         <div className="grid gap-4">
-          {ARENA_GAMES.map((game, index) => (
+          {RANKED_GAMES.map((game, index) => (
             <article
               key={game.mode}
               className="surface-hover flex items-center gap-4 p-5 md:gap-6 md:p-6"

@@ -163,7 +163,7 @@ Cela appelle `scripts/generate-pokemon-data.ts` avec `FORCE_GENERATE_POKEMON=1`.
 | Image zoom | `/game/zoom-guess` | Image zoomée qui se dézoome |
 | Pokémon → Cri | `/game/cry-guess` | Arène uniquement |
 | Pokédle | `/game/pokedle` | Arène uniquement |
-| Description → Pokémon | `/game/description-guess` | Arène uniquement |
+| Description | `/game/description-guess` | Arène uniquement |
 | Shuffle | `/game/shuffle` | Enchaînement de modes choisis |
 
 Le mode **Entraînement** est disponible à `/entrainement` (compte connecté + liste de Pokémon remplie). Les parties d’entraînement utilisent encore `?interface=bac-training` sur les URLs de jeu, par exemple :

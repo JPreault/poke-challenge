@@ -22,6 +22,7 @@ export const ARENA_RANKED_MODES: RankedMode[] = [
   "DESCRIPTION_GUESS",
   "BLUR_GUESS",
   "ZOOM_GUESS",
+  "SHUFFLE",
 ];
 
 export function getRankedAttemptLimit(mode: GameMode): number | null {

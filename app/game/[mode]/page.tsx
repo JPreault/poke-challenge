@@ -32,6 +32,7 @@ const RANKED_MODES: GameMode[] = [
   "description-guess",
   "blur-guess",
   "zoom-guess",
+  "shuffle",
 ];
 
 function parseInterfaceMode(

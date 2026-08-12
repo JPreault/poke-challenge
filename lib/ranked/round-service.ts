@@ -3,9 +3,18 @@ import type { RankedMode, RankedRound, RankedRoundStatus } from "@prisma/client"
 import { prisma } from "@/lib/db/prisma";
 import { createTokenJti } from "@/lib/games/token-crypto";
 import { getRankedAttemptLimit } from "@/lib/games/ranked-limits";
-import { toGameMode } from "@/lib/ranked/mode";
+import { ARENA_SHUFFLE_ROUND_TYPES } from "@/lib/games/types";
+import { toGameMode, toRankedMode } from "@/lib/ranked/mode";
 
 const MAX_GUESSES_PER_MATCH_PER_MINUTE = 30;
+
+const SHUFFLE_ROUND_MODES = new Set<RankedMode>(
+  ARENA_SHUFFLE_ROUND_TYPES.map((type) => toRankedMode(type)!),
+);
+
+function isShuffleSubMode(mode: RankedMode): boolean {
+  return SHUFFLE_ROUND_MODES.has(mode);
+}
 
 export type RankedRoundContext = {
   matchId: string;
@@ -31,7 +40,11 @@ export async function assertActiveRankedMatch(input: {
     return { error: "Partie déjà finalisée.", status: 409 as const };
   }
   if (match.mode !== input.mode) {
-    return { error: "Mode incompatible avec la partie.", status: 400 as const };
+    const shuffleSubMode =
+      match.mode === "SHUFFLE" && isShuffleSubMode(input.mode);
+    if (!shuffleSubMode) {
+      return { error: "Mode incompatible avec la partie.", status: 400 as const };
+    }
   }
 
   return { match };

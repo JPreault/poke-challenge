@@ -5,7 +5,7 @@ import { Check, ChevronDown } from "lucide-react";
 import type { RankedMode } from "@prisma/client";
 
 import { Badge } from "@/components/ui/badge";
-import { ARENA_GAMES } from "@/lib/games/home-games";
+import { RANKED_GAMES } from "@/lib/games/home-games";
 import {
   ARENA_RANKED_MODES,
   getRankedModeLabel,
@@ -14,7 +14,7 @@ import { toGameMode } from "@/lib/ranked/mode";
 import { cn } from "@/lib/utils";
 
 const modeTags = Object.fromEntries(
-  ARENA_GAMES.map((game) => [game.mode, game.tag]),
+  RANKED_GAMES.map((game) => [game.mode, game.tag]),
 ) as Partial<Record<ReturnType<typeof toGameMode>, string>>;
 
 interface RankedModeSelectProps {

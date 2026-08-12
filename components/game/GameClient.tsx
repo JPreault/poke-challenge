@@ -15,10 +15,11 @@ import { ShuffleSetup } from "@/components/game/ShuffleSetup";
 import { PokedleQuiz } from "@/components/game/PokedleQuiz";
 import { RankedSessionProvider } from "@/components/game/RankedSessionContext";
 import { parseShuffleGamesParam } from "@/lib/games/shuffle";
-import type {
-  GameInterfaceMode,
-  GameMode,
-  ShuffleRoundType,
+import {
+  ARENA_SHUFFLE_ROUND_TYPES,
+  type GameInterfaceMode,
+  type GameMode,
+  type ShuffleRoundType,
 } from "@/lib/games/types";
 import { useGameSession } from "@/lib/games/useGameSession";
 
@@ -65,6 +66,17 @@ export function GameClient({
       case "cry-guess":
         return <CryGuessQuiz session={session} />;
       case "shuffle":
+        if (isRanked) {
+          return (
+            <ShuffleQuiz
+              session={session}
+              selectedRoundTypes={ARENA_SHUFFLE_ROUND_TYPES}
+              useBacPool={false}
+              interfaceMode="ranked"
+            />
+          );
+        }
+
         if (selectedShuffleTypes.length === 0) {
           return <ShuffleSetup interfaceMode={interfaceMode} />;
         }

@@ -2,7 +2,7 @@ import type { RankedMode } from "@prisma/client";
 
 import type { GameMode, GameInterfaceMode } from "@/lib/games/types";
 
-const modeMap: Record<Exclude<GameMode, "shuffle">, RankedMode> = {
+const modeMap: Record<GameMode, RankedMode> = {
   "image-to-name": "IMAGE_TO_NAME",
   "name-to-image": "NAME_TO_IMAGE",
   "letter-input": "LETTER_INPUT",
@@ -11,11 +11,11 @@ const modeMap: Record<Exclude<GameMode, "shuffle">, RankedMode> = {
   "description-guess": "DESCRIPTION_GUESS",
   "blur-guess": "BLUR_GUESS",
   "zoom-guess": "ZOOM_GUESS",
+  shuffle: "SHUFFLE",
 };
 
 export function toRankedMode(mode: GameMode): RankedMode | null {
-  if (mode === "shuffle") return null;
-  return modeMap[mode];
+  return modeMap[mode] ?? null;
 }
 
 export function toGameMode(mode: RankedMode): GameMode {
@@ -36,6 +36,8 @@ export function toGameMode(mode: RankedMode): GameMode {
       return "blur-guess";
     case "ZOOM_GUESS":
       return "zoom-guess";
+    case "SHUFFLE":
+      return "shuffle";
   }
 }
 
