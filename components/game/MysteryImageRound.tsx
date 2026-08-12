@@ -337,7 +337,11 @@ export function MysteryImageRound({
     );
   }
 
-  const showGrayscale = enableGrayscaleToggle && !isSolved && grayscaleEnabled;
+  const forceGrayscale = kind === "blur" && isRanked && !isSolved;
+  const showGrayscaleToggle = enableGrayscaleToggle && !isRanked && !isSolved;
+  const showGrayscale =
+    !isSolved &&
+    (forceGrayscale || (enableGrayscaleToggle && grayscaleEnabled));
   const displaySrc = isSolved && reveal ? reveal.artwork : artworkUrl;
 
   return (
@@ -365,7 +369,7 @@ export function MysteryImageRound({
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          {enableGrayscaleToggle && !isSolved ? (
+          {showGrayscaleToggle ? (
             <Button
               type="button"
               variant="ghost"
