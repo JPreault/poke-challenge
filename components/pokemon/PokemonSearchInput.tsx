@@ -186,7 +186,7 @@ export function PokemonSearchInput({
         autoComplete="off"
         disabled={disabled}
         readOnly={readOnly}
-        className="h-12"
+        className="h-12 text-base"
       />
       {canShowSuggestions ? (
         <ul className="absolute z-20 mt-2 max-h-80 w-full overflow-auto rounded-xl border border-border/70 bg-background p-1 shadow-lg">
@@ -207,7 +207,7 @@ export function PokemonSearchInput({
                   onFocus={() => setHighlightedSuggestionIndex(index)}
                   onKeyDown={(event) => handleSuggestionKeyDown(event, index)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted/60",
+                    "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-base hover:bg-muted/60",
                     highlighted && "bg-muted/70",
                   )}
                 >

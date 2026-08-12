@@ -88,7 +88,7 @@ function SignInContent() {
         Google OAuth ne s’ouvre pas en popup : tu es redirigé vers Google. En
         local, crée un client OAuth « Application Web » dans Google Cloud et
         ajoute l’URI de redirection{" "}
-        <code className="text-foreground">
+        <code className="break-all text-foreground">
           http://localhost:4000/api/auth/callback/google
         </code>
         .

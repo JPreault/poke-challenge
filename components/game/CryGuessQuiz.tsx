@@ -359,7 +359,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
               type="button"
               variant={isSelected ? "default" : "outline"}
               className={cn(
-                "h-auto w-full justify-between rounded-xl border border-border/60 px-4 py-4 text-base",
+                "min-h-11 h-auto w-full justify-between rounded-xl border border-border/60 px-4 py-4 text-base",
                 feedback.type === "idle" && "hover:border-foreground/20",
               )}
               onClick={() => {
@@ -389,7 +389,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       <Button
         type="button"
         size="lg"
-        className="w-full max-w-sm"
+        className="w-full sm:max-w-sm"
         onClick={handleValidateSelected}
         disabled={feedback.type !== "idle" || selectedIndex === null}
       >

@@ -125,11 +125,11 @@
   }
 
   html {
-    @apply font-sans;
+    @apply font-sans overflow-x-clip;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-x-clip;
   }
 
   h1,
@@ -166,11 +166,27 @@
   }
 
   .display-frame {
-    @apply rounded-2xl border border-border/70 bg-muted/30 p-6;
+    @apply rounded-2xl border border-border/70 bg-muted/30 p-4 sm:p-6;
   }
 
   .letter-disc {
-    @apply flex size-28 items-center justify-center rounded-full bg-poke-indigo font-heading text-5xl font-bold text-white;
+    @apply flex size-24 items-center justify-center rounded-full bg-poke-indigo font-heading text-4xl font-bold text-white sm:size-28 sm:text-5xl;
+  }
+
+  .touch-target {
+    @apply inline-flex min-h-11 min-w-11 items-center justify-center;
+  }
+
+  .header-icon-btn {
+    @apply flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-card text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   .pixelated {

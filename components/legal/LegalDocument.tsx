@@ -41,7 +41,7 @@ export function LegalDocument({
           </Link>
         </nav>
       </header>
-      <div className={cn("space-y-6 text-sm leading-7 text-foreground/90")}>
+      <div className={cn("space-y-6 break-words text-sm leading-7 text-foreground/90")}>
         {children}
       </div>
     </article>

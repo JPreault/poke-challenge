@@ -50,27 +50,27 @@ export default function PartieClasseePage() {
 
   return (
         <main className="w-full pb-16 pt-4 sm:pb-24 sm:pt-6">
-      <header className="mb-20 max-w-2xl">
+      <header className="mb-12 max-w-2xl sm:mb-20">
         <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Poke Challenge
         </p>
-        <h1 className="font-heading text-4xl font-bold leading-[1.1] text-foreground sm:text-5xl">
+        <h1 className="font-heading text-3xl font-bold leading-[1.1] text-foreground sm:text-4xl lg:text-5xl">
           Classée
         </h1>
-        <p className="mt-6 text-lg leading-8 text-muted-foreground">
+        <p className="mt-4 text-base leading-7 text-muted-foreground sm:mt-6 sm:text-lg sm:leading-8">
           Enchaîne les manches sans erreur pour battre ton record de win streak. La partie
           s&apos;arrête dès que tu échoues ou abandonnes.
         </p>
       </header>
 
       <section className="mb-24">
-        <div className="mb-8 flex items-center justify-between gap-4">
+        <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <h2 className="font-heading text-base font-semibold uppercase tracking-[0.15em] text-muted-foreground sm:text-lg">
             Épreuves
           </h2>
           <Link
             href="/leaderboard"
-            className={cn(buttonVariants({ size: "lg", variant: "outline" }), "shrink-0")}
+            className={cn(buttonVariants({ size: "lg", variant: "outline" }), "w-full shrink-0 sm:w-auto")}
           >
             Leaderboard
           </Link>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Geist_Mono, Sora } from "next/font/google";
 import { Suspense } from "react";
 
@@ -47,6 +47,12 @@ export const metadata: Metadata = {
     },
 };
 
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
     return (
         <html lang="fr" className={`${dmSans.variable} ${sora.variable} ${geistMono.variable} h-full antialiased`}>
@@ -55,7 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     <div className="relative flex min-h-full flex-1 flex-col">
                         <div aria-hidden className="pointer-events-none fixed inset-0 app-bg" />
                         <AppHeader />
-                        <div className="relative z-10 flex min-h-full flex-1 flex-col pt-20 sm:pt-24">
+                        <div className="relative z-10 flex min-h-full flex-1 flex-col pt-24 sm:pt-28">
                             <div className="min-h-0 flex-1">
                                 <div className={SITE_SHELL_CLASS}>
                                     <Suspense fallback={null}>{children}</Suspense>

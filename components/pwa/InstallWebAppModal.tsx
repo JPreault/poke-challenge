@@ -56,7 +56,7 @@ export function InstallWebAppModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="install-webapp-title"
-        className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border/70 bg-background shadow-2xl"
+        className="relative z-10 flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-border/70 bg-background shadow-2xl safe-bottom sm:max-h-none sm:rounded-2xl"
       >
         <div className="border-b border-border/60 bg-[linear-gradient(135deg,color-mix(in_oklch,var(--poke-red)_10%,transparent),color-mix(in_oklch,var(--poke-gold)_12%,transparent))] px-5 py-5 sm:px-6">
           <div className="flex items-start justify-between gap-4">
@@ -87,7 +87,7 @@ export function InstallWebAppModal({
           </div>
         </div>
 
-        <div className="space-y-5 px-5 py-5 sm:px-6">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
           {canNativeInstall && onTryNativeInstall ? (
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
               <p className="text-sm text-foreground">

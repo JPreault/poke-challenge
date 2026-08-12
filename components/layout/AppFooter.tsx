@@ -12,11 +12,11 @@ export function AppFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="shrink-0 overflow-hidden border-t border-border/50">
+    <footer className="shrink-0 overflow-hidden border-t border-border/50 safe-bottom">
       <div
         className={cn(
           SITE_SHELL_CLASS,
-          "flex h-12 flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-4",
+          "flex flex-col gap-3 py-4 text-xs text-muted-foreground sm:h-12 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0",
         )}
       >
         <p>© {year} {config.siteName}</p>

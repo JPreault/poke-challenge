@@ -73,10 +73,10 @@ export function PlayerPublicPage({ publicId }: PlayerPublicPageProps) {
         <main className="flex w-full flex-col gap-8 pb-16 pt-8">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-2">
-                    <h1 className="font-heading text-3xl font-bold">{data.userName}</h1>
+                <h1 className="font-heading text-2xl font-bold sm:text-3xl">{data.userName}</h1>
                 </div>
                 {isOwnProfile ? (
-                    <Link href="/profile" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0")}>
+                    <Link href="/profile" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full shrink-0 sm:w-auto")}>
                         Modifier mon profil
                     </Link>
                 ) : null}

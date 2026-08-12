@@ -34,7 +34,7 @@ export function RankedScoresCard({ scores, isOwnProfile = false, showAvatar = fa
                             key={score.mode}
                             className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5"
                         >
-                            <span className="text-sm text-muted-foreground">{score.modeLabel}</span>
+                            <span className="min-w-0 truncate text-sm text-muted-foreground">{score.modeLabel}</span>
                             <div className="flex items-center gap-2">
                                 {score.bestTopRank != null ? (
                                     <span

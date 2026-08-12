@@ -78,7 +78,7 @@ export function ShuffleSetup({ interfaceMode }: ShuffleSetupProps) {
           <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
             Shuffle
           </p>
-          <h1 className="font-heading text-3xl font-bold">
+          <h1 className="font-heading text-2xl font-bold sm:text-3xl">
             Choisis tes mini-jeux
           </h1>
           <p className="max-w-md text-base leading-7 text-muted-foreground">
@@ -122,7 +122,7 @@ export function ShuffleSetup({ interfaceMode }: ShuffleSetupProps) {
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => toggleType(type)}
-                  className="mt-1 size-4 shrink-0 accent-primary"
+                  className="mt-1 size-5 shrink-0 accent-primary sm:size-4"
                 />
                 <span className="space-y-1">
                   <span className="block font-heading text-base font-semibold text-foreground">

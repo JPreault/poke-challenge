@@ -235,15 +235,15 @@ export default function ProfilePage() {
     return (
         <main className="flex w-full flex-col gap-8 pb-16 pt-4">
             <header className="space-y-2">
-                <h1 className="font-heading text-3xl font-bold">Profil</h1>
+                <h1 className="font-heading text-2xl font-bold sm:text-3xl">Profil</h1>
                 <p className="text-muted-foreground">Définis ton pseudo et la liste de Pokémon pour le mode Entraînement.</p>
             </header>
 
-            <section className="space-y-3 rounded-xl border border-border/60 bg-background/80 p-6">
+            <section className="space-y-3 rounded-xl border border-border/60 bg-background/80 p-4 sm:p-6">
                 <h2 className="font-semibold">Identité</h2>
                 <label className="block space-y-2 text-sm">
-                    <div className="flex max-w-sm items-center gap-2">
-                        <span>Pseudo</span>
+                    <span>Pseudo</span>
+                    <div className="flex max-w-sm flex-col gap-2 sm:flex-row sm:items-center">
                         <Input
                             value={pseudo}
                             onChange={(event) => setPseudo(event.target.value)}
@@ -254,7 +254,7 @@ export default function ProfilePage() {
                                 }
                             }}
                             maxLength={24}
-                            className="flex-1"
+                            className="flex-1 text-base"
                         />
                         {pseudoDirty ? (
                             <Button
@@ -264,6 +264,7 @@ export default function ProfilePage() {
                                 aria-label="Sauvegarder le pseudo"
                                 title="Sauvegarder le pseudo"
                                 disabled={savingPseudo}
+                                className="size-11 shrink-0 self-start sm:self-auto"
                                 onClick={() => void savePseudo()}
                             >
                                 {savingPseudo ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
@@ -271,7 +272,7 @@ export default function ProfilePage() {
                         ) : null}
                     </div>
                 </label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground break-words">
                     Affichage public :{" "}
                     <span className="font-medium text-foreground">
                         {savedPseudo || "—"} #{publicId}
@@ -281,7 +282,7 @@ export default function ProfilePage() {
 
             <RankedScoresCard scores={rankedScores} isOwnProfile />
 
-            <section className="space-y-4 rounded-xl border border-border/60 bg-background/80 p-6">
+            <section className="space-y-4 rounded-xl border border-border/60 bg-background/80 p-4 sm:p-6">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <h2 className="font-semibold">Liste d&apos;entraînement</h2>
@@ -333,7 +334,7 @@ export default function ProfilePage() {
                                 <span>{pokemon.nameFr}</span>
                                 <button
                                     type="button"
-                                    className="flex size-6 items-center justify-center rounded-full text-lg leading-none text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50 cursor-pointer"
+                                    className="touch-target shrink-0 rounded-full text-lg leading-none text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50 cursor-pointer"
                                     onClick={() => void removePokemon(pokemon.id)}
                                     aria-label={`Retirer ${pokemon.nameFr}`}
                                     disabled={savingList}
@@ -346,7 +347,7 @@ export default function ProfilePage() {
                 )}
             </section>
 
-            <section className="space-y-4 rounded-xl border border-destructive/30 bg-destructive/5 p-6">
+            <section className="space-y-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4 sm:p-6">
                 <div className="space-y-1">
                     <h2 className="font-semibold text-destructive">Zone sensible</h2>
                     <p className="text-sm text-muted-foreground">

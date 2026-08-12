@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 
 interface SearchPlayer {
   publicId: string;
@@ -112,44 +111,42 @@ export function PlayerSearchOverlay() {
         aria-label="Rechercher un joueur"
         title="Rechercher un joueur"
         onClick={() => setOpen(true)}
-        className={cn(
-          "surface flex size-9 shrink-0 items-center justify-center rounded-xl shadow-sm",
-          "text-muted-foreground transition hover:bg-muted hover:text-foreground",
-          "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-        )}
+        className="header-icon-btn"
       >
         <Search className="size-4" aria-hidden />
       </button>
 
       {open ? (
-        <div className="pointer-events-auto fixed inset-0 z-1000 flex items-start justify-center p-4 pt-20 sm:pt-28">
+        <div className="pointer-events-auto fixed inset-0 z-1000 flex items-end justify-center sm:items-start sm:p-4 sm:pt-28">
           <button
             type="button"
             aria-label="Fermer la recherche"
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={close}
           />
-          <div className="relative z-10 w-full max-w-xl rounded-2xl border border-border/70 bg-background p-4 shadow-2xl sm:p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Input
-                ref={inputRef}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Pseudo ou #publicId…"
-                className="h-11"
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                aria-label="Fermer"
-                onClick={close}
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                <X className="size-4" />
-              </button>
+          <div className="relative z-10 flex max-h-[85dvh] w-full max-w-xl flex-col rounded-t-2xl border border-border/70 bg-background shadow-2xl safe-bottom sm:max-h-none sm:rounded-2xl sm:p-0">
+            <div className="border-b border-border/60 p-4 sm:border-0 sm:p-5">
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={inputRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Pseudo ou #publicId…"
+                  className="h-11 text-base"
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  aria-label="Fermer"
+                  onClick={close}
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="max-h-[min(24rem,60vh)] overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-5 sm:pb-5">
               {loading ? (
                 <p className="px-1 py-3 text-sm text-muted-foreground">
                   Recherche…
@@ -179,9 +176,9 @@ export function PlayerSearchOverlay() {
                       <button
                         type="button"
                         onClick={() => selectPlayer(player.publicId)}
-                        className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition hover:bg-muted"
+                        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left text-sm transition hover:bg-muted"
                       >
-                        <span className="font-medium">{player.userName}</span>
+                        <span className="min-w-0 truncate font-medium">{player.userName}</span>
                         <span className="text-xs text-muted-foreground">
                           #{player.publicId}
                         </span>

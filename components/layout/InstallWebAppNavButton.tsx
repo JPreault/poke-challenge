@@ -50,9 +50,7 @@ export function InstallWebAppNavButton() {
         disabled={prompting}
         onClick={() => void handleInstallClick()}
         className={cn(
-          "surface flex size-9 shrink-0 items-center justify-center rounded-xl shadow-sm",
-          "text-muted-foreground transition hover:bg-muted hover:text-foreground",
-          "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+          "header-icon-btn",
           "disabled:cursor-not-allowed disabled:opacity-50",
         )}
       >

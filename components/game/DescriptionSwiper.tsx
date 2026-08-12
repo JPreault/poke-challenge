@@ -99,18 +99,18 @@ export function DescriptionSwiper({
               aria-label="Description précédente"
               disabled={safeIndex === 0}
               onClick={goPrevious}
-              className="absolute top-1/2 left-2 z-10 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-xl border border-border bg-background/95 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+              className="absolute top-1/2 left-1 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-xl border border-border bg-background/95 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50 sm:left-2"
             >
-              <ChevronLeft className="size-4" />
+              <ChevronLeft className="size-5" />
             </button>
             <button
               type="button"
               aria-label="Description suivante"
               disabled={safeIndex >= maxIndex}
               onClick={goNext}
-              className="absolute top-1/2 right-2 z-10 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-xl border border-border bg-background/95 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+              className="absolute top-1/2 right-1 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-xl border border-border bg-background/95 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50 sm:right-2"
             >
-              <ChevronRight className="size-4" />
+              <ChevronRight className="size-5" />
             </button>
           </>
         ) : null}
@@ -135,7 +135,7 @@ export function DescriptionSwiper({
                 aria-hidden={index !== safeIndex}
                 aria-label={`Description ${index + 1}`}
               >
-                <div className="display-frame mx-1 flex max-h-56 min-h-40 flex-col overflow-y-auto px-6 py-5 sm:mx-0">
+                <div className="display-frame mx-0 flex max-h-48 min-h-36 flex-col overflow-y-auto px-4 py-4 sm:max-h-56 sm:min-h-40 sm:px-6 sm:py-5">
                   {showNav ? (
                     <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Description {index + 1}
@@ -160,7 +160,7 @@ export function DescriptionSwiper({
           >
             Description {safeIndex + 1} / {count}
           </p>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {descriptions.map((_, index) => (
               <button
                 key={`${slideKey}-dot-${index}`}
@@ -169,12 +169,17 @@ export function DescriptionSwiper({
                 aria-current={index === safeIndex ? "true" : undefined}
                 onClick={() => goTo(index)}
                 className={cn(
-                  "size-2 rounded-full transition-colors",
-                  index === safeIndex
-                    ? "bg-primary"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50",
+                  "touch-target rounded-full",
+                  index === safeIndex ? "text-primary" : "text-muted-foreground/30 hover:text-muted-foreground/50",
                 )}
-              />
+              >
+                <span
+                  className={cn(
+                    "block rounded-full",
+                    index === safeIndex ? "size-2.5 bg-current" : "size-2 bg-current",
+                  )}
+                />
+              </button>
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground sm:hidden">

@@ -340,7 +340,7 @@ export function ImageToNameRound({
               id={`image-to-name-choice-${index}`}
               variant="outline"
               className={cn(
-                "h-auto justify-start px-5 py-4 text-base font-medium",
+                "min-h-11 h-auto justify-start px-5 py-4 text-base font-medium",
                 feedback === "idle" &&
                   "hover:border-foreground/20 hover:bg-muted/50",
                 isCorrectChoice &&

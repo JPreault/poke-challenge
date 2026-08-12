@@ -127,7 +127,7 @@ function GameShellInner({
             <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
               {displayedModeLabel}
             </p>
-            <h1 className="font-heading text-3xl font-bold">{title}</h1>
+            <h1 className="font-heading text-2xl font-bold sm:text-3xl">{title}</h1>
             {description ? (
               <p className="max-w-md text-base leading-7 text-muted-foreground">
                 {description}
@@ -136,7 +136,7 @@ function GameShellInner({
           </div>
 
           <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
-            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:justify-end sm:overflow-visible sm:pb-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {isRankedPlay && ranked ? (
                 <>
                   <div className="rounded-full bg-muted px-4 py-2 text-sm">
@@ -156,6 +156,7 @@ function GameShellInner({
                   <Button
                     variant="outline"
                     size="sm"
+                    className="shrink-0"
                     onClick={() => void ranked.abandon()}
                   >
                     Abandonner
@@ -196,7 +197,7 @@ function GameShellInner({
         </div>
       </header>
 
-      <div className="surface p-8 sm:p-10">{children}</div>
+      <div className="surface p-4 sm:p-8 lg:p-10">{children}</div>
     </div>
   );
 }
@@ -232,7 +233,7 @@ function GameRecap({
 
     return (
       <div className="w-full pb-16 pt-4 sm:pb-20 sm:pt-6">
-        <div className="surface p-8 sm:p-10">
+        <div className="surface p-4 sm:p-8 lg:p-10">
           <div className="mb-10 space-y-2">
             <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
               Classée · {getGameModeLabel(mode)}
@@ -282,7 +283,7 @@ function GameRecap({
 
   return (
     <div className="w-full pb-16 pt-4 sm:pb-20 sm:pt-6">
-      <div className="surface p-8 sm:p-10">
+      <div className="surface p-4 sm:p-8 lg:p-10">
         <div className="mb-10 space-y-2">
           <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
             {getGameModeLabel(mode)}

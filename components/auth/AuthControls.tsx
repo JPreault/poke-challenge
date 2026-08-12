@@ -1,5 +1,6 @@
 "use client";
 
+import { LogIn } from "lucide-react";
 import { Menu } from "@base-ui/react/menu";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -18,7 +19,7 @@ export function AuthControls() {
 
     if (status === "loading") {
         return (
-            <div className="flex size-9 items-center justify-center rounded-full border border-border/60 bg-muted/50 text-xs text-muted-foreground">
+            <div className="flex size-11 items-center justify-center rounded-full border border-border/60 bg-muted/50 text-xs text-muted-foreground">
                 …
             </div>
         );
@@ -26,9 +27,23 @@ export function AuthControls() {
 
     if (!session?.user) {
         return (
-            <Button size="sm" onClick={() => signIn("google", { callbackUrl: "/" })}>
-                Connexion Google
-            </Button>
+            <>
+                <Button
+                    size="icon"
+                    className="size-11 sm:hidden"
+                    aria-label="Connexion Google"
+                    onClick={() => signIn("google", { callbackUrl: "/" })}
+                >
+                    <LogIn className="size-4" aria-hidden />
+                </Button>
+                <Button
+                    size="sm"
+                    className="hidden sm:inline-flex"
+                    onClick={() => signIn("google", { callbackUrl: "/" })}
+                >
+                    Connexion Google
+                </Button>
+            </>
         );
     }
 
@@ -42,7 +57,7 @@ export function AuthControls() {
             <Menu.Trigger
                 aria-label="Menu compte"
                 className={cn(
-                    "flex size-9 items-center justify-center rounded-full border border-border/70 bg-primary text-sm font-semibold text-primary-foreground shadow-sm",
+                    "flex size-11 items-center justify-center rounded-full border border-border/70 bg-primary text-sm font-semibold text-primary-foreground shadow-sm",
                     "transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                     "data-popup-open:bg-primary/90",
                 )}
@@ -74,6 +89,6 @@ export function AuthControls() {
 }
 
 const menuItemClassName = cn(
-    "flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-sm outline-none",
+    "flex min-h-11 w-full cursor-pointer items-center rounded-lg px-3 py-2 text-sm outline-none",
     "hover:bg-muted focus-visible:bg-muted data-highlighted:bg-muted",
 );

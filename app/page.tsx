@@ -30,18 +30,18 @@ export default function HomePage() {
 
     return (
         <main className="w-full pb-16 pt-4 sm:pb-24 sm:pt-6">
-            <header className="mb-20 max-w-2xl">
+            <header className="mb-12 max-w-2xl sm:mb-20">
                 <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">Poke Challenge</p>
-                <h1 className="font-heading text-4xl font-bold leading-[1.1] text-foreground sm:text-5xl">Non classée</h1>
-                <p className="mt-6 text-lg leading-8 text-muted-foreground">
+                <h1 className="font-heading text-3xl font-bold leading-[1.1] text-foreground sm:text-4xl lg:text-5xl">Non classée</h1>
+                <p className="mt-4 text-base leading-7 text-muted-foreground sm:mt-6 sm:text-lg sm:leading-8">
                     Joue en mode non classé. Connecte-toi pour débloquer l&apos;entraînement et le mode classé.
                 </p>
             </header>
 
             <section className="mb-24">
-                <div className="mb-8 flex items-center justify-between gap-4">
+                <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <h2 className="font-heading text-base font-semibold uppercase tracking-[0.15em] text-muted-foreground sm:text-lg">Mini-jeux</h2>
-                    <Link href="/game/shuffle" className={cn(buttonVariants({ size: "lg" }), "shrink-0 gap-2")}>
+                    <Link href="/game/shuffle" className={cn(buttonVariants({ size: "lg" }), "w-full shrink-0 gap-2 sm:w-auto")}>
                         <Shuffle data-icon="inline-start" className="size-4" />
                         Mode shuffle
                     </Link>

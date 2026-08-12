@@ -400,17 +400,18 @@ export function MysteryImageRound({
             readOnly={isSolved}
             disabled={isSubmitting}
             inputRef={inputRef}
-            className="sm:max-w-xl"
+            className="min-w-0 flex-1 sm:max-w-xl"
           />
           <Button
             type="submit"
             size="lg"
+            className="w-full sm:w-auto"
             disabled={!guessName.trim() || isSolved || isSubmitting}
           >
             Valider
           </Button>
           {isSolved && !onRoundComplete ? (
-            <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
+            <Button type="button" size="lg" variant="outline" className="w-full sm:w-auto" onClick={advanceRound}>
               Suivant
             </Button>
           ) : null}

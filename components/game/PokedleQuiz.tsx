@@ -51,7 +51,7 @@ function getDirectionSymbol(direction: Direction) {
 
 function hintCellClass(status: AttemptHints[keyof AttemptHints]) {
   return cn(
-    "aspect-square w-28 min-w-28 rounded-lg border px-2 py-2 text-center text-[11px] leading-tight font-medium",
+    "aspect-square w-20 min-w-20 rounded-lg border px-1.5 py-1.5 text-center text-[10px] leading-tight font-medium sm:w-28 sm:min-w-28 sm:px-2 sm:py-2 sm:text-[11px]",
     status === "correct" &&
       "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
     status === "partial" &&
@@ -303,7 +303,7 @@ export function PokedleRound({
         <label htmlFor="pokedle-guess" className="block text-sm font-medium">
           Nom du Pokémon
         </label>
-        <div className="flex flex-col gap-3 lg:flex-row">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <PokemonSearchInput
             id="pokedle-guess"
             value={guessName}
@@ -313,13 +313,13 @@ export function PokedleRound({
             excludedIds={excludedIds}
             readOnly={isSolved}
             inputRef={inputRef}
-            className="lg:max-w-xl"
+            className="min-w-0 flex-1"
           />
-          <Button type="submit" size="lg" disabled={!guessName.trim() || isSolved}>
+          <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!guessName.trim() || isSolved}>
             Valider
           </Button>
           {isSolved && !onRoundComplete ? (
-            <Button type="button" size="lg" variant="outline" onClick={advanceRound}>
+            <Button type="button" size="lg" variant="outline" className="w-full sm:w-auto" onClick={advanceRound}>
               Suivant
             </Button>
           ) : null}
@@ -356,12 +356,14 @@ export function PokedleRound({
       </div>
 
       {attempts.length > 0 ? (
-        <div className="overflow-x-auto">
-          <div className="grid min-w-275 grid-cols-9 gap-3">
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground sm:hidden">Fais glisser horizontalement pour voir toute la grille.</p>
+          <div className="-mx-1 overflow-x-auto px-1 pb-1 sm:mx-0 sm:px-0 [scroll-snap-type:x_mandatory]">
+            <div className="grid min-w-[36rem] grid-cols-9 gap-2 sm:min-w-275 sm:gap-3">
             {POKEDEX_COLUMNS.map((column) => (
               <div
                 key={column}
-                className="aspect-square w-28 min-w-28 rounded-lg border border-border/60 bg-muted/30 px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                className="aspect-square w-20 min-w-20 rounded-lg border border-border/60 bg-muted/30 px-1.5 py-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:w-28 sm:min-w-28 sm:px-2 sm:py-2 sm:text-[11px]"
               >
                 <div className="flex h-full items-center justify-center">{column}</div>
               </div>
@@ -370,6 +372,7 @@ export function PokedleRound({
             {attempts.map((attempt, index) => (
               <AttemptCells key={`${attempt.nameFr}-${index}`} attempt={attempt} />
             ))}
+            </div>
           </div>
         </div>
       ) : null}

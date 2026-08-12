@@ -16,40 +16,42 @@ export function InterfaceModeSwitcher() {
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
 
+  const tabClass = (active: boolean) =>
+    cn(
+      buttonVariants({ variant: "ghost", size: "sm" }),
+      "shrink-0 px-2 text-xs sm:px-3 sm:text-sm",
+      active && "bg-muted",
+    );
+
   return (
-    <div className="surface inline-flex gap-1 p-1 shadow-sm">
+    <div
+      className={cn(
+        "surface inline-flex max-w-full gap-0.5 overflow-x-auto p-0.5 shadow-sm sm:gap-1 sm:p-1",
+        "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+      )}
+    >
       {isAuthenticated ? (
         <button
           type="button"
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "whitespace-nowrap",
-            selectedInterface === "bac-training" && "bg-muted",
-          )}
+          className={tabClass(selectedInterface === "bac-training")}
           onClick={() => router.push(getInterfaceHomeHref("bac-training"))}
         >
-          Entraînement
+          <span className="sm:hidden">Train.</span>
+          <span className="hidden sm:inline">Entraînement</span>
         </button>
       ) : null}
       <button
         type="button"
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "whitespace-nowrap",
-          selectedInterface === "arena" && "bg-muted",
-        )}
+        className={tabClass(selectedInterface === "arena")}
         onClick={() => router.push(getInterfaceHomeHref("arena"))}
       >
-        Non classée
+        <span className="sm:hidden">Libre</span>
+        <span className="hidden sm:inline">Non classée</span>
       </button>
       {isAuthenticated ? (
         <button
           type="button"
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "whitespace-nowrap",
-            selectedInterface === "ranked" && "bg-muted",
-          )}
+          className={tabClass(selectedInterface === "ranked")}
           onClick={() => router.push(getInterfaceHomeHref("ranked"))}
         >
           Classée

@@ -282,11 +282,11 @@ export function NameToImageRound({
 
   return (
     <div className="flex flex-col items-center gap-10">
-      <div className="display-frame w-full py-10 text-center">
+      <div className="display-frame w-full py-6 text-center sm:py-10">
         <p className="mb-2 text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
           Trouve l&apos;image de
         </p>
-        <p className="font-heading text-4xl font-bold">{round.questionName}</p>
+        <p className="font-heading text-3xl font-bold sm:text-4xl">{round.questionName}</p>
       </div>
 
       {feedback !== "idle" ? (
@@ -304,7 +304,7 @@ export function NameToImageRound({
         <div className="h-6" />
       )}
 
-      <div className="grid w-full grid-cols-2 gap-4">
+      <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         {round.choices.map((choice, index) => {
           const isSelected = selectedIndex === choice.choiceIndex;
           const isCorrectChoice =
@@ -316,7 +316,7 @@ export function NameToImageRound({
               id={`name-to-image-choice-${index}`}
               type="button"
               className={cn(
-                "display-frame flex items-center justify-center p-6 transition disabled:cursor-not-allowed",
+                "display-frame flex min-h-36 items-center justify-center p-4 transition disabled:cursor-not-allowed sm:min-h-0 sm:p-6",
                 feedback === "idle" &&
                   "hover:border-foreground/20 hover:bg-muted/50",
                 isCorrectChoice &&
@@ -330,13 +330,13 @@ export function NameToImageRound({
               onKeyDown={(event) => handleChoiceKeyDown(event, index)}
               disabled={feedback !== "idle" || !choice.imageUrl}
             >
-              <div className="relative h-28 w-28">
+              <div className="relative h-24 w-24 sm:h-28 sm:w-28">
                 {choice.imageUrl ? (
                   <Image
                     src={choice.imageUrl}
                     alt="Proposition"
                     fill
-                    sizes="112px"
+                    sizes="(max-width: 640px) 96px, 112px"
                     unoptimized
                     loading="eager"
                     className="object-contain"
