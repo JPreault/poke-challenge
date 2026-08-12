@@ -117,7 +117,7 @@ export function PlayerSearchOverlay() {
       </button>
 
       {open ? (
-        <div className="pointer-events-auto fixed inset-0 z-1000 flex items-end justify-center sm:items-start sm:p-4 sm:pt-28">
+        <div className="pointer-events-auto fixed inset-0 z-1000 flex items-end justify-center sm:items-start sm:p-4 sm:pt-[calc(env(safe-area-inset-top,0px)+5.5rem)]">
           <button
             type="button"
             aria-label="Fermer la recherche"

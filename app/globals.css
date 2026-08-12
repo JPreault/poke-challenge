@@ -189,6 +189,16 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
 
+  .header-top-gap {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 1.5rem);
+  }
+
+  @media (min-width: 640px) {
+    .header-top-gap {
+      padding-top: calc(env(safe-area-inset-top, 0px) + 2rem);
+    }
+  }
+
   .pixelated {
     image-rendering: pixelated;
   }
