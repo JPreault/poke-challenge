@@ -1,13 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { DescriptionSwiper } from "@/components/game/DescriptionSwiper";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ interface WrongGuess {
 
 export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) {
     const inputRef = useRef<HTMLInputElement>(null);
+    const endActionRef = useRef<"advance" | "fail">("advance");
     const ranked = useRankedSession();
     const catalog = useMemo(() => getSearchCatalog(), []);
 
@@ -65,6 +67,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         setWasAbandoned(false);
         setSolvedName(null);
         setSolvedArtworkUrl(null);
+        endActionRef.current = "advance";
 
         try {
             const response = await fetch("/api/games/description/start", {
@@ -104,27 +107,17 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
     const { isRanked, allowSkip, onSuccess, onFailure, onWrongAttempt } =
         useRankedRoundFlow(session, advanceRound);
 
+    const handleResolvedAdvance = useCallback(() => {
+        if (endActionRef.current === "fail") {
+            onFailure();
+            return;
+        }
+        advanceRound();
+    }, [advanceRound, onFailure]);
+
+    const { showNextButton, goNext } = useAwaitingAdvance(isSolved, handleResolvedAdvance);
+
     useStartRoundWhenReady(startRound);
-
-    useEffect(() => {
-        if (isRanked || !isSolved || !onRoundComplete) return;
-
-        const timeoutId = window.setTimeout(onRoundComplete, 2200);
-        return () => window.clearTimeout(timeoutId);
-    }, [isRanked, isSolved, onRoundComplete]);
-
-    useEffect(() => {
-        if (isRanked || !isSolved) return;
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== "Enter" || event.repeat) return;
-            event.preventDefault();
-            advanceRound();
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isRanked, isSolved, advanceRound]);
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -157,15 +150,9 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                     correctImage: result.artworkUrl,
                 });
                 if (isRanked) {
-                    setVisibleDescriptions(result.visibleDescriptions);
-                    setSolvedName(result.nameFr);
-                    setSolvedArtworkUrl(result.artworkUrl);
-                    setIsSolved(true);
-                    setGuessName("");
-                    setFeedback(`Bravo ! C'était ${result.nameFr}.`);
                     onSuccess();
-                    return;
                 }
+                endActionRef.current = "advance";
                 setVisibleDescriptions(result.visibleDescriptions);
                 setSolvedName(result.nameFr);
                 setSolvedArtworkUrl(result.artworkUrl);
@@ -196,14 +183,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                         chosenLabel: result.wrongGuess.nameFr,
                         correctImage: result.artworkUrl,
                     });
-                    if (isRanked) {
-                        setSolvedName(result.nameFr);
-                        setSolvedArtworkUrl(result.artworkUrl);
-                        setIsSolved(true);
-                        setFeedback(`Raté. C'était ${result.nameFr}.`);
-                        onFailure();
-                        return;
-                    }
+                    endActionRef.current = isRanked ? "fail" : "advance";
                     setSolvedName(result.nameFr);
                     setSolvedArtworkUrl(result.artworkUrl);
                     setIsSolved(true);
@@ -265,6 +245,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
             setSolvedArtworkUrl(result.artworkUrl);
             setGuessName("");
             setWasAbandoned(true);
+            endActionRef.current = "advance";
             setIsSolved(true);
             setFeedback(`Abandonné. C'était ${result.nameFr}.`);
         } catch {
@@ -316,8 +297,8 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                     <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!guessName.trim() || isSolved}>
                         Valider
                     </Button>
-                    {isSolved && !onRoundComplete ? (
-                        <Button type="button" size="lg" variant="outline" className="w-full sm:w-auto" onClick={advanceRound}>
+                    {showNextButton ? (
+                        <Button type="button" size="lg" variant="outline" className="w-full sm:w-auto" onClick={goNext}>
                             Suivant
                         </Button>
                     ) : null}

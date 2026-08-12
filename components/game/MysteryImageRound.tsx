@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export function MysteryImageRound({
   enableGrayscaleToggle = false,
 }: MysteryImageRoundProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const endActionRef = useRef<"advance" | "fail">("advance");
   const ranked = useRankedSession();
   const [searchCatalog, setSearchCatalog] = useState(() =>
     useBacPool ? [] : getSearchCatalog(),
@@ -103,6 +105,7 @@ export function MysteryImageRound({
     setIsSolved(false);
     setWasAbandoned(false);
     setGrayscaleEnabled(true);
+    endActionRef.current = "advance";
 
     try {
       const response = await fetch("/api/games/mystery/start", {
@@ -148,27 +151,20 @@ export function MysteryImageRound({
   const { isRanked, allowSkip, onSuccess, onFailure, onWrongAttempt } =
     useRankedRoundFlow(session, advanceRound);
 
+  const handleResolvedAdvance = useCallback(() => {
+    if (endActionRef.current === "fail") {
+      onFailure();
+      return;
+    }
+    advanceRound();
+  }, [advanceRound, onFailure]);
+
+  const { showNextButton, goNext } = useAwaitingAdvance(
+    isSolved,
+    handleResolvedAdvance,
+  );
+
   useStartRoundWhenReady(startRound);
-
-  useEffect(() => {
-    if (isRanked || !isSolved || !onRoundComplete) return;
-
-    const timeoutId = window.setTimeout(onRoundComplete, 2200);
-    return () => window.clearTimeout(timeoutId);
-  }, [isRanked, isSolved, onRoundComplete]);
-
-  useEffect(() => {
-    if (isRanked || !isSolved) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Enter" || event.repeat) return;
-      event.preventDefault();
-      advanceRound();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isRanked, isSolved, advanceRound]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -199,15 +195,9 @@ export function MysteryImageRound({
           questionImage: result.reveal.artwork,
         });
         if (isRanked) {
-          setReveal(result.reveal);
-          setArtworkUrl(result.reveal.artwork);
-          setIsSolved(true);
-          setGuessName("");
-          setFeedback(`Bravo ! C'était ${result.reveal.nameFr}.`);
-          setIsSubmitting(false);
           onSuccess();
-          return;
         }
+        endActionRef.current = "advance";
         setReveal(result.reveal);
         setArtworkUrl(result.reveal.artwork);
         setIsSolved(true);
@@ -242,12 +232,7 @@ export function MysteryImageRound({
             questionImage: result.targetReveal.artwork,
           });
           setIsSubmitting(false);
-          if (isRanked) {
-            setIsSolved(true);
-            setFeedback(`Raté. C'était ${result.targetReveal.nameFr}.`);
-            onFailure();
-            return;
-          }
+          endActionRef.current = isRanked ? "fail" : "advance";
           setIsSolved(true);
           setFeedback(`Raté. C'était ${result.targetReveal.nameFr}.`);
           return;
@@ -313,6 +298,7 @@ export function MysteryImageRound({
         questionImage: result.reveal.artwork,
       });
 
+      endActionRef.current = "advance";
       setReveal(result.reveal);
       setArtworkUrl(result.reveal.artwork);
       setGuessName("");
@@ -421,8 +407,8 @@ export function MysteryImageRound({
           >
             Valider
           </Button>
-          {isSolved && !onRoundComplete ? (
-            <Button type="button" size="lg" variant="outline" className="w-full sm:w-auto" onClick={advanceRound}>
+          {showNextButton ? (
+            <Button type="button" size="lg" variant="outline" className="w-full sm:w-auto" onClick={goNext}>
               Suivant
             </Button>
           ) : null}

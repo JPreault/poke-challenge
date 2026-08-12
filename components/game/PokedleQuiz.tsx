@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ function hintCellClass(status: AttemptHints[keyof AttemptHints]) {
 
 export function PokedleRound({ session, onRoundComplete }: { session: GameSession; onRoundComplete?: () => void }) {
     const inputRef = useRef<HTMLInputElement>(null);
+    const endActionRef = useRef<"advance" | "fail">("advance");
     const ranked = useRankedSession();
     const catalog = useMemo(() => getSearchCatalog(), []);
     const [token, setToken] = useState<string | null>(null);
@@ -79,6 +81,7 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
         setWasAbandoned(false);
         setSolvedName(null);
         setSolvedArtworkUrl(null);
+        endActionRef.current = "advance";
 
         try {
             const response = await fetch("/api/games/pokedle/start", {
@@ -119,27 +122,17 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
 
     const { isRanked, allowSkip, onSuccess, onFailure, onWrongAttempt } = useRankedRoundFlow(session, advanceRound);
 
+    const handleResolvedAdvance = useCallback(() => {
+        if (endActionRef.current === "fail") {
+            onFailure();
+            return;
+        }
+        advanceRound();
+    }, [advanceRound, onFailure]);
+
+    const { showNextButton, goNext } = useAwaitingAdvance(isSolved, handleResolvedAdvance);
+
     useStartRoundWhenReady(startRound);
-
-    useEffect(() => {
-        if (isRanked || !isSolved || !onRoundComplete) return;
-
-        const timeoutId = window.setTimeout(onRoundComplete, 2200);
-        return () => window.clearTimeout(timeoutId);
-    }, [isRanked, isSolved, onRoundComplete]);
-
-    useEffect(() => {
-        if (isRanked || !isSolved) return;
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== "Enter" || event.repeat) return;
-            event.preventDefault();
-            advanceRound();
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isRanked, isSolved, advanceRound]);
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -172,13 +165,9 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
                     hintAccuracyPercent: 100,
                 });
                 if (isRanked) {
-                    setIsSolved(true);
-                    setSolvedName(result.targetNameFr);
-                    setSolvedArtworkUrl(result.targetArtworkUrl);
-                    setFeedback(`Bravo ! Le Pokémon à trouver était ${result.targetNameFr}.`);
                     onSuccess();
-                    return;
                 }
+                endActionRef.current = "advance";
                 setIsSolved(true);
                 setSolvedName(result.targetNameFr);
                 setSolvedArtworkUrl(result.targetArtworkUrl);
@@ -201,14 +190,7 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
                         correctImage: result.targetArtworkUrl,
                         hintAccuracyPercent: getHintAccuracyPercent(result.attempt.hints),
                     });
-                    if (isRanked) {
-                        setIsSolved(true);
-                        setSolvedName(result.targetNameFr);
-                        setSolvedArtworkUrl(result.targetArtworkUrl);
-                        setFeedback(`Raté. C'était ${result.targetNameFr}.`);
-                        onFailure();
-                        return;
-                    }
+                    endActionRef.current = isRanked ? "fail" : "advance";
                     setIsSolved(true);
                     setSolvedName(result.targetNameFr);
                     setSolvedArtworkUrl(result.targetArtworkUrl);
@@ -265,6 +247,7 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
             setSolvedArtworkUrl(result.targetArtworkUrl);
             setGuessName("");
             setWasAbandoned(true);
+            endActionRef.current = "advance";
             setIsSolved(true);
             setFeedback(`Abandonné. C'était ${result.targetNameFr}.`);
         } catch {
@@ -299,8 +282,8 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
                     <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!guessName.trim() || isSolved}>
                         Valider
                     </Button>
-                    {isSolved && !onRoundComplete ? (
-                        <Button type="button" size="lg" variant="outline" className="w-full sm:w-auto" onClick={advanceRound}>
+                    {showNextButton ? (
+                        <Button type="button" size="lg" variant="outline" className="w-full sm:w-auto" onClick={goNext}>
                             Suivant
                         </Button>
                     ) : null}

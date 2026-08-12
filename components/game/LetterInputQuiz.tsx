@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { pickRandom } from "@/lib/games/random";
@@ -254,6 +255,9 @@ export function LetterInputRound({ session, onRoundComplete, validationMode = "t
         startRound();
     }, [onRoundComplete, startRound]);
 
+    const isAwaitingAdvance = feedback.type !== "idle";
+    const { goNext } = useAwaitingAdvance(isAwaitingAdvance, advanceRound);
+
     useEffect(() => {
         if (!poolReady || availableLetters.length === 0) return;
         const timeoutId = window.setTimeout(startRound, 0);
@@ -269,7 +273,7 @@ export function LetterInputRound({ session, onRoundComplete, validationMode = "t
         event.preventDefault();
 
         if (feedback.type !== "idle") {
-            advanceRound();
+            goNext();
             return;
         }
 
@@ -346,8 +350,6 @@ export function LetterInputRound({ session, onRoundComplete, validationMode = "t
     if (!currentLetter) {
         return <div className="flex h-64 items-center justify-center text-muted-foreground">Préparation de la manche…</div>;
     }
-
-    const isAwaitingAdvance = feedback.type !== "idle";
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col items-center gap-10">

@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
+import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
@@ -47,11 +48,14 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
   const [isPlayingIndex, setIsPlayingIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const ranked = useRankedSession();
+  const endActionRef = useRef<"advance" | "fail">("advance");
+
   const startRound = useCallback(async () => {
     setIsLoading(true);
     setFeedback({ type: "idle" });
     setSelectedIndex(null);
     setIsPlayingIndex(null);
+    endActionRef.current = "advance";
 
     try {
       const response = await fetch("/api/games/choice-quiz/start", {
@@ -103,6 +107,19 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
     advanceRound,
   );
 
+  const handleResolvedAdvance = useCallback(() => {
+    if (endActionRef.current === "fail") {
+      onFailure();
+      return;
+    }
+    advanceRound();
+  }, [advanceRound, onFailure]);
+
+  const { showNextButton, goNext } = useAwaitingAdvance(
+    feedback.type !== "idle",
+    handleResolvedAdvance,
+  );
+
   useStartRoundWhenReady(startRound);
 
   const playCry = useCallback((choice: ChoiceQuizChoice) => {
@@ -115,6 +132,21 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       setIsPlayingIndex((current) =>
         current === choice.choiceIndex ? null : current,
       );
+  }, []);
+
+  const playCryUrl = useCallback((url: string | undefined, choiceIndex?: number) => {
+    if (!url) return;
+    if (choiceIndex != null) setIsPlayingIndex(choiceIndex);
+    const audio = new Audio(url);
+    audio.volume = 0.35;
+    audio.play().catch(() => undefined);
+    audio.onended = () => {
+      if (choiceIndex != null) {
+        setIsPlayingIndex((current) =>
+          current === choiceIndex ? null : current,
+        );
+      }
+    };
   }, []);
 
   const handleSkip = useCallback(async () => {
@@ -139,22 +171,18 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
           correctImage: result.reveal.artworkUrl,
           correctAnswerCry: result.reveal.cryUrl,
         });
-        if (result.reveal.cryUrl) {
-          const audio = new Audio(result.reveal.cryUrl);
-          audio.volume = 0.35;
-          audio.play().catch(() => undefined);
-        }
+        playCryUrl(result.reveal.cryUrl);
       }
     } catch {
       // ignore
     }
 
+    endActionRef.current = "advance";
     setFeedback({
       type: "incorrect",
       message: `Abandonné. C'était ${round.questionName}.`,
     });
-    window.setTimeout(advanceRound, 1800);
-  }, [advanceRound, feedback.type, round, session]);
+  }, [feedback.type, playCryUrl, round, session]);
 
   useRegisterSkip(handleSkip, allowSkip && Boolean(round) && feedback.type === "idle");
 
@@ -175,7 +203,6 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       const result = (await response.json()) as ChoiceQuizAnswerResult;
 
       if (result.status === "correct") {
-        setFeedback({ type: "correct", message: "Bravo !" });
         setRound((current) =>
           current
             ? { ...current, correctIndex: choice.choiceIndex }
@@ -192,15 +219,14 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
         });
         if (isRanked) {
           onSuccess();
-        } else {
-          setFeedback({ type: "correct", message: "Bravo !" });
-          window.setTimeout(advanceRound, 1200);
         }
+        endActionRef.current = "advance";
+        setFeedback({ type: "correct", message: "Bravo !" });
         return;
       }
 
       if (result.status === "wrong") {
-        const correctIndex = result.correctIndex + 1;
+        const correctProposition = result.correctIndex + 1;
         setRound((current) =>
           current
             ? { ...current, correctIndex: result.correctIndex }
@@ -213,16 +239,17 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
           isCorrect: false,
           questionImage: round.questionImageUrl,
           userAnswerCry: choice.cryUrl,
+          correctAnswerCry: result.targetReveal.cryUrl,
         });
-        if (isRanked) {
-          setFeedback({
-            type: "incorrect",
-            message: `Raté, c'était la proposition ${correctIndex}.`,
-          });
-          onFailure();
-        } else {
-          window.setTimeout(advanceRound, 2200);
-        }
+        const correctChoice = round.choices.find(
+          (entry) => entry.choiceIndex === result.correctIndex,
+        );
+        playCry(correctChoice ?? choice);
+        endActionRef.current = isRanked ? "fail" : "advance";
+        setFeedback({
+          type: "incorrect",
+          message: `Raté, c'était la proposition ${correctProposition}.`,
+        });
         return;
       }
     } catch {
@@ -244,13 +271,15 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
     index: number,
     choice: ChoiceQuizChoice,
   ) => {
-    if (!round || feedback.type !== "idle") return;
+    if (!round) return;
 
     if (event.key === " ") {
       event.preventDefault();
       playCry(choice);
       return;
     }
+
+    if (feedback.type !== "idle") return;
 
     if (event.key === "Enter") {
       event.preventDefault();
@@ -320,6 +349,8 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
     );
   }
 
+  const isResolved = feedback.type !== "idle";
+
   return (
     <div className="flex flex-col items-center gap-8">
       <div className="display-frame w-full text-center">
@@ -336,7 +367,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
         <p className="font-heading text-3xl font-bold">{round.questionName}</p>
       </div>
 
-      {feedback.type !== "idle" ? (
+      {isResolved ? (
         <p
           className={cn(
             "text-base",
@@ -352,24 +383,36 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
         {round.choices.map((choice, index) => {
           const isSelected = selectedIndex === choice.choiceIndex;
+          const isCorrectChoice =
+            isResolved && choice.choiceIndex === round.correctIndex;
+
           return (
             <Button
               key={choice.choiceIndex}
               id={`cry-choice-${index}`}
               type="button"
-              variant={isSelected ? "default" : "outline"}
+              variant={isSelected && !isResolved ? "default" : "outline"}
               className={cn(
                 "min-h-11 h-auto w-full justify-between rounded-xl border border-border/60 px-4 py-4 text-base",
-                feedback.type === "idle" && "hover:border-foreground/20",
+                !isResolved && "hover:border-foreground/20",
+                isCorrectChoice &&
+                  "border-emerald-500/50 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300",
+                isResolved &&
+                  isSelected &&
+                  !isCorrectChoice &&
+                  "border-poke-red/40 bg-poke-red/5 text-poke-red",
               )}
               onClick={() => {
-                setSelectedIndex(choice.choiceIndex);
+                if (!isResolved) {
+                  setSelectedIndex(choice.choiceIndex);
+                }
                 playCry(choice);
               }}
-              onFocus={() => setSelectedIndex(choice.choiceIndex)}
+              onFocus={() => {
+                if (!isResolved) setSelectedIndex(choice.choiceIndex);
+              }}
               onKeyDown={(event) => handleChoiceKeyDown(event, index, choice)}
-              disabled={feedback.type !== "idle"}
-              aria-label={`Proposition ${index + 1} - appuie sur espace pour écouter le cri, entrée pour valider`}
+              aria-label={`Proposition ${index + 1} - appuie sur espace pour écouter le cri${isResolved ? "" : ", entrée pour valider"}`}
             >
               <span className="font-medium">Proposition {index + 1}</span>
               <span
@@ -386,15 +429,21 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
         })}
       </div>
 
-      <Button
-        type="button"
-        size="lg"
-        className="w-full sm:max-w-sm"
-        onClick={handleValidateSelected}
-        disabled={feedback.type !== "idle" || selectedIndex === null}
-      >
-        Valider le cri
-      </Button>
+      {showNextButton ? (
+        <Button type="button" size="lg" variant="outline" className="w-full sm:max-w-sm" onClick={goNext}>
+          Suivant
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          size="lg"
+          className="w-full sm:max-w-sm"
+          onClick={handleValidateSelected}
+          disabled={selectedIndex === null}
+        >
+          Valider le cri
+        </Button>
+      )}
     </div>
   );
 }

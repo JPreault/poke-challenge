@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
+import {
+    RoundAdvanceProvider,
+    useRoundAdvancePreference,
+} from "@/components/game/RoundAdvanceContext";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { RoundActionsProvider, useRoundActions } from "@/components/game/RoundActionsContext";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -30,7 +34,9 @@ interface GameShellProps {
 export function GameShell(props: GameShellProps) {
     return (
         <RoundActionsProvider>
-            <GameShellInner {...props} />
+            <RoundAdvanceProvider>
+                <GameShellInner {...props} />
+            </RoundAdvanceProvider>
         </RoundActionsProvider>
     );
 }
@@ -38,6 +44,7 @@ export function GameShell(props: GameShellProps) {
 function GameShellInner({ session, title, description, modeLabel, homeHref, replayHref, children }: GameShellProps) {
     const { stats, isFinished, stopGame, mode } = session;
     const { skipAction } = useRoundActions();
+    const { autoAdvanceEnabled, setAutoAdvanceEnabled } = useRoundAdvancePreference();
     const ranked = useRankedSession();
     const searchParams = useSearchParams();
     const isBacTraining = searchParams.get("interface") === "bac-training";
@@ -128,18 +135,32 @@ function GameShellInner({ session, title, description, modeLabel, homeHref, repl
                                 </>
                             )}
                         </div>
-                        {!isRankedPlay && skipAction ? (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="sm:w-fit"
-                                disabled={skipAction.disabled}
-                                onClick={skipAction.onSkip}
-                            >
-                                Passer
-                            </Button>
-                        ) : null}
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-sm">
+                                <input
+                                    type="checkbox"
+                                    className="size-3.5 accent-foreground"
+                                    checked={autoAdvanceEnabled}
+                                    onChange={(event) =>
+                                        setAutoAdvanceEnabled(event.target.checked)
+                                    }
+                                    aria-label="Enchaînement automatique"
+                                />
+                                <span className="font-medium">Auto</span>
+                            </label>
+                            {!isRankedPlay && skipAction ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="sm:w-fit"
+                                    disabled={skipAction.disabled}
+                                    onClick={skipAction.onSkip}
+                                >
+                                    Passer
+                                </Button>
+                            ) : null}
+                        </div>
                     </div>
                 </div>
             </header>
