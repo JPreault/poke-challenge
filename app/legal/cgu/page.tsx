@@ -24,6 +24,19 @@ export default function CguPage() {
           nécessitent une connexion via un compte Google.
         </p>
         <p>
+          Vous pouvez également installer {config.siteName} sur l&apos;écran
+          d&apos;accueil de votre appareil (application web / PWA). Cette
+          option est facultative ; les présentes CGU et la{" "}
+          <Link
+            href="/legal/confidentialite"
+            className="text-foreground underline-offset-4 hover:underline"
+          >
+            politique de confidentialité
+          </Link>{" "}
+          s&apos;appliquent de la même manière que pour une utilisation dans le
+          navigateur.
+        </p>
+        <p>
           L&apos;éditeur se réserve le droit de suspendre ou modifier le service
           pour maintenance, amélioration ou force majeure, sans préavis.
         </p>

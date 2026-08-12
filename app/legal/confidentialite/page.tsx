@@ -184,6 +184,36 @@ export default function ConfidentialitePage() {
         </p>
       </LegalSection>
 
+      <LegalSection title="Installation sur l'écran d'accueil (PWA)">
+        <p>
+          Vous pouvez, de manière facultative, ajouter {config.siteName} à
+          l&apos;écran d&apos;accueil de votre téléphone ou l&apos;installer
+          comme application web (PWA) depuis votre profil ou le menu de votre
+          navigateur.
+        </p>
+        <p>
+          Cette installation crée un raccourci vers le site et peut permettre à
+          votre navigateur de conserver des fichiers techniques (manifeste,
+          service worker) nécessaires à l&apos;affichage en plein écran. Elle
+          n&apos;entraîne pas de collecte de données personnelles
+          supplémentaires : les mêmes traitements, finalités et durées de
+          conservation s&apos;appliquent que lors d&apos;une visite classique du
+          site.
+        </p>
+        <p>
+          Le cookie de session décrit dans la section Cookies reste utilisé
+          lorsque vous êtes connecté, y compris depuis l&apos;application
+          installée. {config.siteName} n&apos;envoie pas de notifications push
+          et ne sollicite pas d&apos;accès à la géolocalisation ou au
+          répertoire de contacts de votre appareil.
+        </p>
+        <p>
+          Vous pouvez retirer l&apos;application à tout moment en supprimant
+          l&apos;icône ou le raccourci depuis les paramètres de votre
+          appareil, comme pour toute autre application.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Politique cookies" id="cookies">
         <p>
           Un cookie est un petit fichier déposé sur votre terminal lors de la
