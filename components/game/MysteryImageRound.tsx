@@ -199,6 +199,11 @@ export function MysteryImageRound({
           questionImage: result.reveal.artwork,
         });
         if (isRanked) {
+          setReveal(result.reveal);
+          setArtworkUrl(result.reveal.artwork);
+          setIsSolved(true);
+          setGuessName("");
+          setFeedback(`Bravo ! C'était ${result.reveal.nameFr}.`);
           setIsSubmitting(false);
           onSuccess();
           return;
@@ -238,6 +243,8 @@ export function MysteryImageRound({
           });
           setIsSubmitting(false);
           if (isRanked) {
+            setIsSolved(true);
+            setFeedback(`Raté. C'était ${result.targetReveal.nameFr}.`);
             onFailure();
             return;
           }

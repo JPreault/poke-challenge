@@ -215,12 +215,12 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
           userAnswerCry: choice.cryUrl,
         });
         if (isRanked) {
-          onFailure();
-        } else {
           setFeedback({
             type: "incorrect",
             message: `Raté, c'était la proposition ${correctIndex}.`,
           });
+          onFailure();
+        } else {
           window.setTimeout(advanceRound, 2200);
         }
         return;

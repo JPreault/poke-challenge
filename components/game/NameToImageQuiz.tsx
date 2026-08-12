@@ -194,9 +194,9 @@ export function NameToImageRound({
           chosenLabel: result.reveal.nameFr,
         });
         if (isRanked) {
+          setFeedback("incorrect");
           onFailure();
         } else {
-          setFeedback("incorrect");
           window.setTimeout(advanceRound, 1000);
         }
         return;

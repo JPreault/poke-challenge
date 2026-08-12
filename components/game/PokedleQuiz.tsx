@@ -172,6 +172,10 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
                     hintAccuracyPercent: 100,
                 });
                 if (isRanked) {
+                    setIsSolved(true);
+                    setSolvedName(result.targetNameFr);
+                    setSolvedArtworkUrl(result.targetArtworkUrl);
+                    setFeedback(`Bravo ! Le Pokémon à trouver était ${result.targetNameFr}.`);
                     onSuccess();
                     return;
                 }
@@ -198,6 +202,10 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
                         hintAccuracyPercent: getHintAccuracyPercent(result.attempt.hints),
                     });
                     if (isRanked) {
+                        setIsSolved(true);
+                        setSolvedName(result.targetNameFr);
+                        setSolvedArtworkUrl(result.targetArtworkUrl);
+                        setFeedback(`Raté. C'était ${result.targetNameFr}.`);
                         onFailure();
                         return;
                     }

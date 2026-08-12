@@ -183,6 +183,7 @@ export function ImageToNameRound({
           questionImage: round.questionImageUrl,
         });
         if (isRanked) {
+          setFeedback("correct");
           onSuccess();
         } else {
           setFeedback("correct");
@@ -209,6 +210,7 @@ export function ImageToNameRound({
           questionImage: round.questionImageUrl,
         });
         if (isRanked) {
+          setFeedback("incorrect");
           onFailure();
         } else {
           setFeedback("incorrect");

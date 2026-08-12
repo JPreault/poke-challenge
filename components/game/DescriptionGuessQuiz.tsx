@@ -157,6 +157,12 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                     correctImage: result.artworkUrl,
                 });
                 if (isRanked) {
+                    setVisibleDescriptions(result.visibleDescriptions);
+                    setSolvedName(result.nameFr);
+                    setSolvedArtworkUrl(result.artworkUrl);
+                    setIsSolved(true);
+                    setGuessName("");
+                    setFeedback(`Bravo ! C'était ${result.nameFr}.`);
                     onSuccess();
                     return;
                 }
@@ -191,6 +197,10 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                         correctImage: result.artworkUrl,
                     });
                     if (isRanked) {
+                        setSolvedName(result.nameFr);
+                        setSolvedArtworkUrl(result.artworkUrl);
+                        setIsSolved(true);
+                        setFeedback(`Raté. C'était ${result.nameFr}.`);
                         onFailure();
                         return;
                     }
