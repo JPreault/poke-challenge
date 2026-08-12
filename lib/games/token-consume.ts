@@ -1,36 +1,33 @@
+import { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/db/prisma";
 
-export async function assertJtiAvailable(
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  );
+}
+
+/** Atomically consume a JTI (anti-replay). One DB write; race-safe via PK. */
+export async function consumeJtiOnce(
   jti: string,
-): Promise<{ error: string; status: number } | { ok: true }> {
-  const existing = await prisma.consumedGameJti.findUnique({
-    where: { jti },
-  });
-  if (existing && existing.expiresAt > new Date()) {
-    return { error: "Manche déjà utilisée.", status: 409 };
+  expMs: number,
+): Promise<{ ok: true } | { error: string; status: 409 }> {
+  try {
+    await prisma.consumedGameJti.create({
+      data: {
+        jti,
+        expiresAt: new Date(Math.max(expMs, Date.now() + 60_000)),
+      },
+    });
+    return { ok: true };
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return { error: "Manche déjà utilisée.", status: 409 };
+    }
+    throw error;
   }
-  return { ok: true };
 }
 
-export async function consumeJti(jti: string, expMs: number): Promise<void> {
-  const expiresAt = new Date(Math.max(expMs, Date.now() + 60_000));
-  await prisma.consumedGameJti.upsert({
-    where: { jti },
-    create: { jti, expiresAt },
-    update: { expiresAt },
-  });
-}
-
-export async function rotateRankedRoundJti(input: {
-  roundId: string;
-  nextJti: string;
-  wrongAttempts: number;
-}): Promise<void> {
-  await prisma.rankedRound.update({
-    where: { id: input.roundId },
-    data: {
-      tokenJti: input.nextJti,
-      wrongAttempts: input.wrongAttempts,
-    },
-  });
-}
+export { isUniqueViolation };

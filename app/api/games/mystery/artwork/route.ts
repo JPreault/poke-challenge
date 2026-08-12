@@ -12,6 +12,47 @@ import {
 
 export const runtime = "nodejs";
 
+const PROCESSED_SIZE = 256;
+const MAX_CACHE_ENTRIES = 200;
+
+type CacheEntry = { png: Buffer; createdAt: number };
+const processedImageCache = new Map<string, CacheEntry>();
+
+function cacheKey(
+  pokemonId: number,
+  kind: string,
+  wrongAttempts: number,
+  solved: boolean,
+): string {
+  return solved
+    ? `${pokemonId}:solved`
+    : `${pokemonId}:${kind}:${wrongAttempts}`;
+}
+
+function getCachedPng(key: string): Buffer | null {
+  const entry = processedImageCache.get(key);
+  return entry?.png ?? null;
+}
+
+function setCachedPng(key: string, png: Buffer) {
+  if (processedImageCache.size >= MAX_CACHE_ENTRIES) {
+    const oldest = processedImageCache.keys().next().value;
+    if (oldest) processedImageCache.delete(oldest);
+  }
+  processedImageCache.set(key, { png, createdAt: Date.now() });
+}
+
+function pngResponse(png: Buffer, maxAge: number) {
+  return new NextResponse(new Uint8Array(png), {
+    status: 200,
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": `private, max-age=${maxAge}`,
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("t");
@@ -29,6 +70,17 @@ export async function GET(request: Request) {
     );
   }
 
+  const key = cacheKey(
+    payload.pokemonId,
+    payload.kind,
+    payload.wrongAttempts,
+    Boolean(payload.solved),
+  );
+  const cached = getCachedPng(key);
+  if (cached) {
+    return pngResponse(cached, payload.solved ? 60 : 120);
+  }
+
   try {
     const upstream = await fetch(artworkUrl, {
       next: { revalidate: 60 * 60 * 24 },
@@ -42,19 +94,14 @@ export async function GET(request: Request) {
     }
 
     const input = Buffer.from(await upstream.arrayBuffer());
-    const size = 512;
-    let pipeline = sharp(input).resize(size, size, { fit: "contain" });
+    let pipeline = sharp(input).resize(PROCESSED_SIZE, PROCESSED_SIZE, {
+      fit: "contain",
+    });
 
     if (payload.solved) {
       const png = await pipeline.png().toBuffer();
-      return new NextResponse(new Uint8Array(png), {
-        status: 200,
-        headers: {
-          "Content-Type": "image/png",
-          "Cache-Control": "private, max-age=60",
-          "X-Content-Type-Options": "nosniff",
-        },
-      });
+      setCachedPng(key, png);
+      return pngResponse(png, 60);
     }
 
     if (payload.kind === "blur") {
@@ -65,25 +112,18 @@ export async function GET(request: Request) {
     } else {
       const ratio = getMysteryZoomCropRatio(payload.wrongAttempts);
       if (ratio < 1) {
-        const cropSize = Math.max(8, Math.round(size * ratio));
-        const left = Math.floor((size - cropSize) / 2);
-        const top = Math.floor((size - cropSize) / 2);
+        const cropSize = Math.max(8, Math.round(PROCESSED_SIZE * ratio));
+        const left = Math.floor((PROCESSED_SIZE - cropSize) / 2);
+        const top = Math.floor((PROCESSED_SIZE - cropSize) / 2);
         pipeline = pipeline
           .extract({ left, top, width: cropSize, height: cropSize })
-          .resize(size, size);
+          .resize(PROCESSED_SIZE, PROCESSED_SIZE);
       }
     }
 
     const png = await pipeline.png().toBuffer();
-
-    return new NextResponse(new Uint8Array(png), {
-      status: 200,
-      headers: {
-        "Content-Type": "image/png",
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
+    setCachedPng(key, png);
+    return pngResponse(png, 120);
   } catch {
     return NextResponse.json(
       { error: "Impossible de récupérer l'image." },

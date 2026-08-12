@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getRequiredSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { findCatalogPokemonById } from "@/lib/pokemon/data";
+import { invalidateTrainingPoolCache } from "@/lib/pokemon/training-pool";
 import {
   allocatePublicId,
   defaultPseudoFromName,
@@ -165,6 +166,10 @@ export async function PUT(request: Request) {
       }
     }
   });
+
+  if (nextTrainingIds) {
+    invalidateTrainingPoolCache(session.user.id);
+  }
 
   const profile = await serializeProfile(session.user.id);
   return NextResponse.json({ profile });

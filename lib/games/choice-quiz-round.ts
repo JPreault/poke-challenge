@@ -20,7 +20,7 @@ import {
   proxySpriteUrl,
 } from "@/lib/games/media-token";
 import { pickRandom } from "@/lib/games/random";
-import { assertJtiAvailable, consumeJti } from "@/lib/games/token-consume";
+import { consumeJtiOnce } from "@/lib/games/token-consume";
 import {
   findCatalogPokemonById,
   getCatalogPokemon,
@@ -29,10 +29,8 @@ import { getTrainingQuizPokemon } from "@/lib/pokemon/training-pool";
 import type { QuizPokemon } from "@/lib/pokemon/types";
 import { toRankedMode } from "@/lib/ranked/mode";
 import {
+  commitRankedGuess,
   createRankedRound,
-  getActiveRankedRound,
-  recordRankedGuess,
-  updateRankedRoundProgress,
 } from "@/lib/ranked/round-service";
 
 function choiceModeToRanked(mode: ChoiceQuizMode): RankedMode {
@@ -175,29 +173,6 @@ export async function answerChoiceQuizRound(
     };
   }
 
-  const jtiCheck = await assertJtiAvailable(payload.jti);
-  if ("error" in jtiCheck) {
-    return { status: "invalid_token", message: jtiCheck.error };
-  }
-
-  if (payload.ranked && payload.roundId && payload.matchId) {
-    const round = await getActiveRankedRound({
-      roundId: payload.roundId,
-      matchId: payload.matchId,
-      jti: payload.jti,
-    });
-    if (!round || round.status !== "ACTIVE") {
-      return {
-        status: "invalid_token",
-        message: "Manche classée invalide ou terminée.",
-      };
-    }
-    const rate = await recordRankedGuess({ roundId: round.id });
-    if ("error" in rate) {
-      return { status: "invalid_token", message: rate.error };
-    }
-  }
-
   const target = findCatalogPokemonById(payload.targetId);
   if (!target) {
     return {
@@ -222,18 +197,31 @@ export async function answerChoiceQuizRound(
     };
   }
 
-  await consumeJti(payload.jti, payload.exp);
-
+  const isCorrect = chosen.id === target.id;
   const correctIndex = payload.choiceIds.findIndex((id) => id === target.id);
 
-  if (chosen.id === target.id) {
-    if (payload.ranked && payload.roundId) {
-      await updateRankedRoundProgress({
-        roundId: payload.roundId,
-        wrongAttempts: payload.wrongAttempts,
-        status: "CORRECT",
-      });
+  if (payload.ranked && payload.roundId && payload.matchId) {
+    const commit = await commitRankedGuess({
+      roundId: payload.roundId,
+      matchId: payload.matchId,
+      jti: payload.jti,
+      expMs: payload.exp,
+      nextWrongAttempts: isCorrect
+        ? payload.wrongAttempts
+        : payload.wrongAttempts + 1,
+      nextStatus: isCorrect ? "CORRECT" : "FAILED",
+    });
+    if ("error" in commit) {
+      return { status: "invalid_token", message: commit.error };
     }
+  } else {
+    const jti = await consumeJtiOnce(payload.jti, payload.exp);
+    if ("error" in jti) {
+      return { status: "invalid_token", message: jti.error };
+    }
+  }
+
+  if (isCorrect) {
     return {
       status: "correct",
       reveal: toReveal(target),
@@ -242,15 +230,6 @@ export async function answerChoiceQuizRound(
     };
   }
 
-  if (payload.ranked && payload.roundId) {
-    await updateRankedRoundProgress({
-      roundId: payload.roundId,
-      wrongAttempts: payload.wrongAttempts + 1,
-      status: "FAILED",
-    });
-  }
-
-  // QCM: wrong ends the round — reveal correctIndex only after consumption
   return {
     status: "wrong",
     reveal: toReveal(chosen),
@@ -278,11 +257,6 @@ export async function skipChoiceQuizRound(
     };
   }
 
-  const jtiCheck = await assertJtiAvailable(payload.jti);
-  if ("error" in jtiCheck) {
-    return { status: "invalid_token", message: jtiCheck.error };
-  }
-
   const target = findCatalogPokemonById(payload.targetId);
   if (!target) {
     return {
@@ -291,7 +265,11 @@ export async function skipChoiceQuizRound(
     };
   }
 
-  await consumeJti(payload.jti, payload.exp);
+  const jti = await consumeJtiOnce(payload.jti, payload.exp);
+  if ("error" in jti) {
+    return { status: "invalid_token", message: jti.error };
+  }
+
   const correctIndex = payload.choiceIds.findIndex((id) => id === target.id);
 
   return { status: "ok", reveal: toReveal(target), correctIndex };

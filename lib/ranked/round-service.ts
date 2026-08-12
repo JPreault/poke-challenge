@@ -3,10 +3,12 @@ import type { RankedMode, RankedRound, RankedRoundStatus } from "@prisma/client"
 import { prisma } from "@/lib/db/prisma";
 import { createTokenJti } from "@/lib/games/token-crypto";
 import { getRankedAttemptLimit } from "@/lib/games/ranked-limits";
+import { isUniqueViolation } from "@/lib/games/token-consume";
 import { ARENA_SHUFFLE_ROUND_TYPES } from "@/lib/games/types";
 import { toGameMode, toRankedMode } from "@/lib/ranked/mode";
 
-const MAX_GUESSES_PER_MATCH_PER_MINUTE = 30;
+/** Max guesses allowed for an entire ranked match (anti-spam). */
+const MAX_GUESSES_PER_MATCH = 60;
 
 const SHUFFLE_ROUND_MODES = new Set<RankedMode>(
   ARENA_SHUFFLE_ROUND_TYPES.map((type) => toRankedMode(type)!),
@@ -106,74 +108,104 @@ export async function createRankedRound(input: {
   };
 }
 
-export async function getActiveRankedRound(input: {
+export type CommitRankedGuessInput = {
   roundId: string;
   matchId: string;
   jti: string;
-}): Promise<RankedRound | null> {
-  const round = await prisma.rankedRound.findUnique({
-    where: { id: input.roundId },
-  });
-  if (!round) return null;
-  if (round.matchId !== input.matchId) return null;
-  if (round.tokenJti !== input.jti) return null;
-  return round;
+  expMs: number;
+  nextWrongAttempts: number;
+  nextStatus: RankedRoundStatus;
+  /** When continuing an active round (multi-attempt), rotate to a new JTI. */
+  nextJti?: string;
+};
+
+/**
+ * Atomically: consume JTI, increment match guess count (rate limit),
+ * and update the round — all in one transaction.
+ */
+export async function commitRankedGuess(
+  input: CommitRankedGuessInput,
+): Promise<{ ok: true } | { error: string; status: number }> {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.consumedGameJti.create({
+        data: {
+          jti: input.jti,
+          expiresAt: new Date(Math.max(input.expMs, Date.now() + 60_000)),
+        },
+      });
+
+      const match = await tx.rankedMatch.findUnique({
+        where: { id: input.matchId },
+        select: { id: true, status: true, guessCount: true },
+      });
+
+      if (!match || match.status !== "IN_PROGRESS") {
+        throw new CommitRankedGuessError(
+          "Partie déjà finalisée.",
+          409,
+        );
+      }
+
+      if (match.guessCount >= MAX_GUESSES_PER_MATCH) {
+        throw new CommitRankedGuessError(
+          "Trop de tentatives. Ralentis.",
+          429,
+        );
+      }
+
+      await tx.rankedMatch.update({
+        where: { id: input.matchId },
+        data: { guessCount: { increment: 1 } },
+      });
+
+      const finished =
+        input.nextStatus === "CORRECT" || input.nextStatus === "FAILED";
+
+      const updated = await tx.rankedRound.updateMany({
+        where: {
+          id: input.roundId,
+          matchId: input.matchId,
+          status: "ACTIVE",
+          tokenJti: input.jti,
+        },
+        data: {
+          wrongAttempts: input.nextWrongAttempts,
+          status: input.nextStatus,
+          guessCount: { increment: 1 },
+          ...(finished ? { finishedAt: new Date() } : {}),
+          ...(input.nextJti ? { tokenJti: input.nextJti } : {}),
+        },
+      });
+
+      if (updated.count === 0) {
+        throw new CommitRankedGuessError(
+          "Manche invalide ou terminée.",
+          409,
+        );
+      }
+    });
+
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof CommitRankedGuessError) {
+      return { error: error.message, status: error.status };
+    }
+    if (isUniqueViolation(error)) {
+      return { error: "Manche déjà utilisée.", status: 409 };
+    }
+    throw error;
+  }
 }
 
-export async function recordRankedGuess(input: {
-  roundId: string;
-}): Promise<{ error: string; status: number } | { ok: true }> {
-  const round = await prisma.rankedRound.findUnique({
-    where: { id: input.roundId },
-  });
-  if (!round || round.status !== "ACTIVE") {
-    return { error: "Manche invalide ou terminée.", status: 409 };
+class CommitRankedGuessError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "CommitRankedGuessError";
+    this.status = status;
   }
-
-  const since = new Date(Date.now() - 60_000);
-  const recentGuesses = await prisma.rankedRound.aggregate({
-    where: {
-      matchId: round.matchId,
-      updatedAt: { gte: since },
-    },
-    _sum: { guessCount: true },
-  });
-
-  const guessTotal = recentGuesses._sum.guessCount ?? 0;
-  if (guessTotal >= MAX_GUESSES_PER_MATCH_PER_MINUTE) {
-    return { error: "Trop de tentatives. Ralentis.", status: 429 };
-  }
-
-  await prisma.rankedRound.update({
-    where: { id: round.id },
-    data: { guessCount: { increment: 1 } },
-  });
-
-  return { ok: true };
-}
-
-export async function updateRankedRoundProgress(input: {
-  roundId: string;
-  wrongAttempts: number;
-  status?: RankedRoundStatus;
-}): Promise<RankedRound | null> {
-  const round = await prisma.rankedRound.findUnique({
-    where: { id: input.roundId },
-  });
-  if (!round || round.status !== "ACTIVE") return null;
-
-  return prisma.rankedRound.update({
-    where: { id: input.roundId },
-    data: {
-      wrongAttempts: input.wrongAttempts,
-      ...(input.status
-        ? {
-            status: input.status,
-            finishedAt: input.status === "ACTIVE" ? null : new Date(),
-          }
-        : {}),
-    },
-  });
 }
 
 export function computeWinStreakFromRounds(

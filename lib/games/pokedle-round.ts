@@ -18,11 +18,7 @@ import {
 } from "@/lib/games/media-token";
 import { pickRandom } from "@/lib/games/random";
 import { createTokenJti } from "@/lib/games/token-crypto";
-import {
-  assertJtiAvailable,
-  consumeJti,
-  rotateRankedRoundJti,
-} from "@/lib/games/token-consume";
+import { consumeJtiOnce } from "@/lib/games/token-consume";
 import {
   findCatalogPokemonById,
   getCatalogPokemon,
@@ -31,10 +27,8 @@ import {
 import { normalizeFrenchName } from "@/lib/pokemon/normalize";
 import type { QuizPokemon } from "@/lib/pokemon/types";
 import {
+  commitRankedGuess,
   createRankedRound,
-  getActiveRankedRound,
-  recordRankedGuess,
-  updateRankedRoundProgress,
 } from "@/lib/ranked/round-service";
 
 export type {
@@ -197,29 +191,6 @@ export async function guessPokedleRound(
     };
   }
 
-  const jtiCheck = await assertJtiAvailable(payload.jti);
-  if ("error" in jtiCheck) {
-    return { status: "invalid_token", message: jtiCheck.error };
-  }
-
-  if (payload.ranked && payload.roundId && payload.matchId) {
-    const round = await getActiveRankedRound({
-      roundId: payload.roundId,
-      matchId: payload.matchId,
-      jti: payload.jti,
-    });
-    if (!round || round.status !== "ACTIVE") {
-      return {
-        status: "invalid_token",
-        message: "Manche classée invalide ou terminée.",
-      };
-    }
-    const rate = await recordRankedGuess({ roundId: round.id });
-    if ("error" in rate) {
-      return { status: "invalid_token", message: rate.error };
-    }
-  }
-
   const target = findCatalogPokemonById(payload.targetId);
   if (!target) {
     return {
@@ -253,15 +224,35 @@ export async function guessPokedleRound(
   }
 
   const attempt = toAttempt(guessed, target);
-  if (attempt.isCorrect) {
-    await consumeJti(payload.jti, payload.exp);
-    if (payload.ranked && payload.roundId) {
-      await updateRankedRoundProgress({
-        roundId: payload.roundId,
-        wrongAttempts: payload.wrongAttempts,
-        status: "CORRECT",
-      });
+  const isCorrect = attempt.isCorrect;
+  const nextAttempts = isCorrect
+    ? payload.wrongAttempts
+    : payload.wrongAttempts + 1;
+  const roundFailed = !isCorrect && nextAttempts >= payload.maxAttempts;
+  const nextJti =
+    !isCorrect && !roundFailed ? createTokenJti() : undefined;
+
+  if (payload.ranked && payload.roundId && payload.matchId) {
+    const commit = await commitRankedGuess({
+      roundId: payload.roundId,
+      matchId: payload.matchId,
+      jti: payload.jti,
+      expMs: payload.exp,
+      nextWrongAttempts: nextAttempts,
+      nextStatus: isCorrect ? "CORRECT" : roundFailed ? "FAILED" : "ACTIVE",
+      nextJti,
+    });
+    if ("error" in commit) {
+      return { status: "invalid_token", message: commit.error };
     }
+  } else {
+    const jti = await consumeJtiOnce(payload.jti, payload.exp);
+    if ("error" in jti) {
+      return { status: "invalid_token", message: jti.error };
+    }
+  }
+
+  if (isCorrect) {
     return {
       status: "correct",
       attempt,
@@ -271,18 +262,7 @@ export async function guessPokedleRound(
     };
   }
 
-  const nextAttempts = payload.wrongAttempts + 1;
-  const roundFailed = nextAttempts >= payload.maxAttempts;
-  await consumeJti(payload.jti, payload.exp);
-
   if (roundFailed) {
-    if (payload.ranked && payload.roundId) {
-      await updateRankedRoundProgress({
-        roundId: payload.roundId,
-        wrongAttempts: nextAttempts,
-        status: "FAILED",
-      });
-    }
     return {
       status: "wrong",
       attempt,
@@ -292,20 +272,11 @@ export async function guessPokedleRound(
     };
   }
 
-  const nextJti = createTokenJti();
-  if (payload.ranked && payload.roundId) {
-    await rotateRankedRoundJti({
-      roundId: payload.roundId,
-      nextJti,
-      wrongAttempts: nextAttempts,
-    });
-  }
-
   return {
     status: "wrong",
     attempt,
     roundFailed: false,
-    nextToken: reissuePokedleToken(payload, nextAttempts, nextJti),
+    nextToken: reissuePokedleToken(payload, nextAttempts, nextJti!),
     wrongAttempts: nextAttempts,
   };
 }
@@ -328,11 +299,6 @@ export async function skipPokedleRound(
     };
   }
 
-  const jtiCheck = await assertJtiAvailable(payload.jti);
-  if ("error" in jtiCheck) {
-    return { status: "invalid_token", message: jtiCheck.error };
-  }
-
   const target = findCatalogPokemonById(payload.targetId);
   if (!target) {
     return {
@@ -341,7 +307,10 @@ export async function skipPokedleRound(
     };
   }
 
-  await consumeJti(payload.jti, payload.exp);
+  const jti = await consumeJtiOnce(payload.jti, payload.exp);
+  if ("error" in jti) {
+    return { status: "invalid_token", message: jti.error };
+  }
 
   return {
     status: "ok",

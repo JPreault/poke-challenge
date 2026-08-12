@@ -98,6 +98,7 @@ model RankedMatch {
   totalRounds  Int?
   correctCount Int?
   durationMs   Int?
+  guessCount   Int               @default(0)
   createdAt    DateTime          @default(now())
   finishedAt   DateTime?
 
