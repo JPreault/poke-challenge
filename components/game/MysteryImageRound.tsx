@@ -4,14 +4,12 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
+import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
-import {
-  getBlurPx,
-  isFullyDeblurred,
-} from "@/lib/games/blur-levels";
+import { isFullyDeblurred } from "@/lib/games/blur-levels";
 import type {
   MysteryGuessResult,
   MysteryKind,
@@ -20,7 +18,7 @@ import type {
   MysteryStartResult,
 } from "@/lib/games/mystery-types";
 import type { GameSession } from "@/lib/games/useGameSession";
-import { getZoomScale, isFullyDezoomed } from "@/lib/games/zoom-levels";
+import { isFullyDezoomed } from "@/lib/games/zoom-levels";
 import { getSearchCatalog } from "@/lib/pokemon/client-data";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +43,7 @@ export function MysteryImageRound({
   enableGrayscaleToggle = false,
 }: MysteryImageRoundProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const ranked = useRankedSession();
   const [searchCatalog, setSearchCatalog] = useState(() =>
     useBacPool ? [] : getSearchCatalog(),
   );
@@ -112,6 +111,7 @@ export function MysteryImageRound({
         body: JSON.stringify({
           kind,
           pool: useBacPool ? "training" : "catalog",
+          ...(ranked?.matchId ? { matchId: ranked.matchId } : {}),
         }),
       });
 
@@ -135,7 +135,7 @@ export function MysteryImageRound({
       setFeedback("Impossible de démarrer la manche.");
       setIsLoadingRound(false);
     }
-  }, [kind, useBacPool]);
+  }, [kind, ranked?.matchId, useBacPool]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -219,11 +219,38 @@ export function MysteryImageRound({
           }
           return [...current, result.wrongGuess];
         });
-        setWrongAttempts((current) => current + 1);
         setGuessName("");
-        if (isRanked && onWrongAttempt()) {
+
+        if (result.roundFailed) {
+          setWrongAttempts((current) => current + 1);
+          setReveal(result.targetReveal);
+          setArtworkUrl(result.targetReveal.artwork);
+          session.recordRound({
+            question,
+            userAnswer: result.wrongGuess.nameFr,
+            correctAnswer: result.targetReveal.nameFr,
+            isCorrect: false,
+            attemptCount: wrongAttempts + 1,
+            chosenImage: result.wrongGuess.artwork,
+            chosenLabel: result.wrongGuess.nameFr,
+            correctImage: result.targetReveal.artwork,
+            questionImage: result.targetReveal.artwork,
+          });
           setIsSubmitting(false);
+          if (isRanked) {
+            onFailure();
+            return;
+          }
+          setIsSolved(true);
+          setFeedback(`Raté. C'était ${result.targetReveal.nameFr}.`);
           return;
+        }
+
+        setToken(result.nextToken);
+        setArtworkUrl(result.artworkUrl);
+        setWrongAttempts(result.wrongAttempts);
+        if (isRanked) {
+          onWrongAttempt();
         }
         setFeedback("Ce n'est pas le bon Pokémon. Réessaie !");
         setIsSubmitting(false);
@@ -310,8 +337,6 @@ export function MysteryImageRound({
     );
   }
 
-  const blurPx = kind === "blur" ? (isSolved ? 0 : getBlurPx(wrongAttempts)) : 0;
-  const zoomScale = kind === "zoom" ? (isSolved ? 1 : getZoomScale(wrongAttempts)) : 1;
   const showGrayscale = enableGrayscaleToggle && !isSolved && grayscaleEnabled;
   const displaySrc = isSolved && reveal ? reveal.artwork : artworkUrl;
 
@@ -320,29 +345,13 @@ export function MysteryImageRound({
       <div className="flex flex-col items-center gap-4">
         <div className="display-frame flex h-56 w-56 select-none items-center justify-center overflow-hidden">
           <div
-            className={cn(
-              kind === "blur" &&
-                (wrongAttempts > 0 || isSolved) &&
-                "transition-[filter] duration-500",
-              kind === "zoom" &&
-                (wrongAttempts > 0 || isSolved) &&
-                "transition-transform duration-500",
-            )}
-            style={{
-              ...(kind === "blur"
-                ? {
-                    filter:
-                      [
-                        blurPx > 0 ? `blur(${blurPx}px)` : "",
-                        showGrayscale ? "grayscale(100%)" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ") || "none",
-                  }
-                : { transform: `scale(${zoomScale})` }),
-            }}
+            className={cn(showGrayscale && "grayscale")}
+            style={
+              showGrayscale ? { filter: "grayscale(100%)" } : undefined
+            }
           >
             <Image
+              key={displaySrc}
               src={displaySrc}
               alt="Pokémon mystère"
               width={192}

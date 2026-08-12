@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
+import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
@@ -13,6 +14,7 @@ import type {
   AttemptHints,
   Direction,
   PokedleAttempt,
+  PokedleGuessResult,
 } from "@/lib/games/pokedle-types";
 import type { GameSession } from "@/lib/games/useGameSession";
 import { getSearchCatalog } from "@/lib/pokemon/client-data";
@@ -67,6 +69,7 @@ export function PokedleRound({
   onRoundComplete?: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const ranked = useRankedSession();
   const catalog = useMemo(() => getSearchCatalog(), []);
   const [token, setToken] = useState<string | null>(null);
   const [attempts, setAttempts] = useState<PokedleAttempt[]>([]);
@@ -100,6 +103,10 @@ export function PokedleRound({
     try {
       const response = await fetch("/api/games/pokedle/start", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(ranked?.matchId ? { matchId: ranked.matchId } : {}),
+        }),
       });
 
       if (!response.ok) {
@@ -116,7 +123,7 @@ export function PokedleRound({
     } catch {
       setIsLoading(false);
     }
-  }, []);
+  }, [ranked?.matchId]);
 
   const resetRound = useCallback(() => {
     void startRound();
@@ -130,10 +137,8 @@ export function PokedleRound({
     resetRound();
   }, [onRoundComplete, resetRound]);
 
-  const { isRanked, allowSkip, onSuccess, onWrongAttempt } = useRankedRoundFlow(
-    session,
-    advanceRound,
-  );
+  const { isRanked, allowSkip, onSuccess, onFailure, onWrongAttempt } =
+    useRankedRoundFlow(session, advanceRound);
 
   useStartRoundWhenReady(startRound);
 
@@ -167,7 +172,7 @@ export function PokedleRound({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, answer: guessName }),
       });
-      const result = await response.json();
+      const result = (await response.json()) as PokedleGuessResult;
 
       if (result.status === "not_found" || result.status === "invalid_token") {
         setFeedback(result.message);
@@ -201,8 +206,32 @@ export function PokedleRound({
       if (result.status === "wrong") {
         setAttempts((current) => [result.attempt, ...current]);
         setGuessName("");
-        if (isRanked && onWrongAttempt()) {
+
+        if (result.roundFailed) {
+          session.recordRound({
+            question: "Trouve le Pokémon mystère",
+            userAnswer: result.attempt.nameFr,
+            correctAnswer: result.targetNameFr,
+            isCorrect: false,
+            attemptCount: attempts.length + 1,
+            chosenLabel: result.attempt.nameFr,
+            correctImage: result.targetArtworkUrl,
+            hintAccuracyPercent: getHintAccuracyPercent(result.attempt.hints),
+          });
+          if (isRanked) {
+            onFailure();
+            return;
+          }
+          setIsSolved(true);
+          setSolvedName(result.targetNameFr);
+          setSolvedArtworkUrl(result.targetArtworkUrl);
+          setFeedback(`Raté. C'était ${result.targetNameFr}.`);
           return;
+        }
+
+        setToken(result.nextToken);
+        if (isRanked) {
+          onWrongAttempt();
         }
         setFeedback("Continue, les indices sont mis à jour.");
         window.setTimeout(() => {
@@ -223,6 +252,7 @@ export function PokedleRound({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
       });
+      if (!response.ok) return;
       const result = await response.json();
 
       if (result.status !== "ok") {

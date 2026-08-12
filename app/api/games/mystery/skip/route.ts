@@ -27,6 +27,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = skipMysteryRound(token);
+  const result = await skipMysteryRound(token);
+  if (result.status === "forbidden") {
+    return NextResponse.json({ error: result.message }, { status: 403 });
+  }
   return NextResponse.json(result);
 }

@@ -65,7 +65,6 @@ export function RankedSessionProvider({
   const attemptLimit = getRankedAttemptLimit(mode) ?? 1;
   const startedAtRef = useRef(Date.now());
   const finishingRef = useRef(false);
-  const roundKeyRef = useRef(0);
 
   const [state, setState] = useState<RankedSessionState>({
     ready: false,
@@ -144,11 +143,7 @@ export function RankedSessionProvider({
   }, [mode, onReady]);
 
   const persistMatch = useCallback(
-    async (
-      winStreak: number,
-      endedReason: "fail" | "abandon",
-      matchId: string,
-    ) => {
+    async (endedReason: "fail" | "abandon", matchId: string) => {
       const durationMs = Date.now() - startedAtRef.current;
       const endpoint =
         endedReason === "abandon"
@@ -160,9 +155,6 @@ export function RankedSessionProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           matchId,
-          winStreak,
-          totalRounds: winStreak,
-          correctCount: winStreak,
           durationMs,
         }),
       });
@@ -174,6 +166,7 @@ export function RankedSessionProvider({
       return (await response.json()) as {
         isNewRecord: boolean;
         previousBest: number;
+        winStreak: number;
         leaderboard: { bestWinStreak: number };
       };
     },
@@ -186,26 +179,27 @@ export function RankedSessionProvider({
       finishingRef.current = true;
 
       const matchId = state.matchId;
-      const winStreak = state.winStreak;
 
       if (!matchId) {
         session.stopGame();
         return;
       }
 
-      const result = await persistMatch(winStreak, endedReason, matchId);
+      const result = await persistMatch(endedReason, matchId);
+      const finalWinStreak = result?.winStreak ?? state.winStreak;
 
       setState((current) => ({
         ...current,
-        finalWinStreak: winStreak,
+        finalWinStreak,
         endedReason,
+        winStreak: finalWinStreak,
         isNewRecord: result?.isNewRecord ?? null,
         previousBest: result?.previousBest ?? current.playerBestStreak,
         playerBestStreak:
           result?.leaderboard.bestWinStreak ?? current.playerBestStreak,
         topStreak:
-          result?.isNewRecord && winStreak > current.topStreak
-            ? winStreak
+          result?.isNewRecord && finalWinStreak > current.topStreak
+            ? finalWinStreak
             : current.topStreak,
       }));
 
@@ -215,7 +209,6 @@ export function RankedSessionProvider({
   );
 
   const onRoundSuccess = useCallback(() => {
-    roundKeyRef.current += 1;
     setState((current) => ({
       ...current,
       winStreak: current.winStreak + 1,

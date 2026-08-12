@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export function ImageToNameRound({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const ranked = useRankedSession();
   const startRound = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
@@ -61,6 +63,7 @@ export function ImageToNameRound({
         body: JSON.stringify({
           mode: "image-to-name",
           pool: useBacPool ? "training" : "catalog",
+          ...(ranked?.matchId ? { matchId: ranked.matchId } : {}),
         }),
       });
 
@@ -91,7 +94,7 @@ export function ImageToNameRound({
       setRound(null);
       setIsLoading(false);
     }
-  }, [useBacPool]);
+  }, [ranked?.matchId, useBacPool]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -117,6 +120,7 @@ export function ImageToNameRound({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: round.token }),
       });
+      if (!response.ok) return;
       const result = (await response.json()) as ChoiceQuizSkipResult;
 
       if (result.status === "ok") {
@@ -188,14 +192,11 @@ export function ImageToNameRound({
       }
 
       if (result.status === "wrong") {
-        const correctChoice = round.choices.find(
-          (entry) => entry.choiceIndex === result.correctIndex,
-        );
         setRound((current) =>
           current
             ? {
                 ...current,
-                correctName: correctChoice?.nameFr,
+                correctName: result.targetReveal.nameFr,
                 correctIndex: result.correctIndex,
               }
             : current,
@@ -203,7 +204,7 @@ export function ImageToNameRound({
         session.recordRound({
           question: "Quel est ce Pokémon ?",
           userAnswer: result.reveal.nameFr,
-          correctAnswer: correctChoice?.nameFr ?? "?",
+          correctAnswer: result.targetReveal.nameFr,
           isCorrect: false,
           questionImage: round.questionImageUrl,
         });

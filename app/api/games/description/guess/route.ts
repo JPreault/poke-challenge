@@ -5,7 +5,6 @@ import { guessDescriptionRound } from "@/lib/games/description-round";
 interface GuessBody {
   token?: string;
   answer?: string;
-  wrongAttempts?: number;
 }
 
 export async function POST(request: Request) {
@@ -20,14 +19,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const { token, answer, wrongAttempts } = body;
+  const { token, answer } = body;
 
-  if (!token || typeof answer !== "string" || typeof wrongAttempts !== "number") {
+  if (!token || typeof answer !== "string") {
     return NextResponse.json(
       { error: "Paramètres manquants." },
       { status: 400 },
     );
   }
 
-  return NextResponse.json(guessDescriptionRound(token, answer, wrongAttempts));
+  return NextResponse.json(await guessDescriptionRound(token, answer));
 }

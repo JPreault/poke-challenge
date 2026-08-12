@@ -1,6 +1,7 @@
 import {
   createPokedleToken,
   verifyPokedleToken,
+  type PokedlePayload,
 } from "@/lib/games/pokedle-token";
 import type {
   AttemptHints,
@@ -16,6 +17,12 @@ import {
   proxySpriteUrl,
 } from "@/lib/games/media-token";
 import { pickRandom } from "@/lib/games/random";
+import { createTokenJti } from "@/lib/games/token-crypto";
+import {
+  assertJtiAvailable,
+  consumeJti,
+  rotateRankedRoundJti,
+} from "@/lib/games/token-consume";
 import {
   findCatalogPokemonById,
   getCatalogPokemon,
@@ -23,6 +30,12 @@ import {
 } from "@/lib/pokemon/data";
 import { normalizeFrenchName } from "@/lib/pokemon/normalize";
 import type { QuizPokemon } from "@/lib/pokemon/types";
+import {
+  createRankedRound,
+  getActiveRankedRound,
+  recordRankedGuess,
+  updateRankedRoundProgress,
+} from "@/lib/ranked/round-service";
 
 export type {
   AttemptHints,
@@ -122,21 +135,89 @@ function toAttempt(guess: QuizPokemon, target: QuizPokemon): PokedleAttempt {
   };
 }
 
-export function startPokedleRound(): PokedleStartResult {
-  const target = pickRandom(getCatalogPokemon());
-  return { token: createPokedleToken(target.id) };
+function reissuePokedleToken(
+  payload: PokedlePayload,
+  wrongAttempts: number,
+  jti: string,
+): string {
+  return createPokedleToken({
+    targetId: payload.targetId,
+    ranked: payload.ranked,
+    matchId: payload.matchId,
+    roundId: payload.roundId,
+    jti,
+    wrongAttempts,
+    maxAttempts: payload.maxAttempts,
+  });
 }
 
-export function guessPokedleRound(
+export async function startPokedleRound(input?: {
+  userId?: string;
+  matchId?: string;
+}): Promise<PokedleStartResult | { error: string; status: number }> {
+  const target = pickRandom(getCatalogPokemon());
+
+  if (input?.matchId) {
+    if (!input.userId) {
+      return { error: "Connexion requise pour le mode classé.", status: 401 };
+    }
+    const ranked = await createRankedRound({
+      matchId: input.matchId,
+      userId: input.userId,
+      mode: "POKEDLE",
+      targetPokemonId: target.id,
+    });
+    if ("error" in ranked) return ranked;
+
+    return {
+      token: createPokedleToken({
+        targetId: target.id,
+        ranked: true,
+        matchId: ranked.context.matchId,
+        roundId: ranked.context.roundId,
+        jti: ranked.context.jti,
+        maxAttempts: ranked.context.maxAttempts,
+        wrongAttempts: 0,
+      }),
+    };
+  }
+
+  return { token: createPokedleToken({ targetId: target.id }) };
+}
+
+export async function guessPokedleRound(
   token: string,
   answer: string,
-): PokedleGuessResult {
+): Promise<PokedleGuessResult> {
   const payload = verifyPokedleToken(token);
   if (!payload) {
     return {
       status: "invalid_token",
       message: "Manche expirée ou invalide. Relance une nouvelle manche.",
     };
+  }
+
+  const jtiCheck = await assertJtiAvailable(payload.jti);
+  if ("error" in jtiCheck) {
+    return { status: "invalid_token", message: jtiCheck.error };
+  }
+
+  if (payload.ranked && payload.roundId && payload.matchId) {
+    const round = await getActiveRankedRound({
+      roundId: payload.roundId,
+      matchId: payload.matchId,
+      jti: payload.jti,
+    });
+    if (!round || round.status !== "ACTIVE") {
+      return {
+        status: "invalid_token",
+        message: "Manche classée invalide ou terminée.",
+      };
+    }
+    const rate = await recordRankedGuess({ roundId: round.id });
+    if ("error" in rate) {
+      return { status: "invalid_token", message: rate.error };
+    }
   }
 
   const target = findCatalogPokemonById(payload.targetId);
@@ -173,24 +254,83 @@ export function guessPokedleRound(
 
   const attempt = toAttempt(guessed, target);
   if (attempt.isCorrect) {
+    await consumeJti(payload.jti, payload.exp);
+    if (payload.ranked && payload.roundId) {
+      await updateRankedRoundProgress({
+        roundId: payload.roundId,
+        wrongAttempts: payload.wrongAttempts,
+        status: "CORRECT",
+      });
+    }
     return {
       status: "correct",
       attempt,
       targetNameFr: target.nameFr,
       targetArtworkUrl: proxyArtworkUrl(target.id),
+      roundFailed: false,
     };
   }
 
-  return { status: "wrong", attempt };
+  const nextAttempts = payload.wrongAttempts + 1;
+  const roundFailed = nextAttempts >= payload.maxAttempts;
+  await consumeJti(payload.jti, payload.exp);
+
+  if (roundFailed) {
+    if (payload.ranked && payload.roundId) {
+      await updateRankedRoundProgress({
+        roundId: payload.roundId,
+        wrongAttempts: nextAttempts,
+        status: "FAILED",
+      });
+    }
+    return {
+      status: "wrong",
+      attempt,
+      roundFailed: true,
+      targetNameFr: target.nameFr,
+      targetArtworkUrl: proxyArtworkUrl(target.id),
+    };
+  }
+
+  const nextJti = createTokenJti();
+  if (payload.ranked && payload.roundId) {
+    await rotateRankedRoundJti({
+      roundId: payload.roundId,
+      nextJti,
+      wrongAttempts: nextAttempts,
+    });
+  }
+
+  return {
+    status: "wrong",
+    attempt,
+    roundFailed: false,
+    nextToken: reissuePokedleToken(payload, nextAttempts, nextJti),
+    wrongAttempts: nextAttempts,
+  };
 }
 
-export function skipPokedleRound(token: string): PokedleSkipResult {
+export async function skipPokedleRound(
+  token: string,
+): Promise<PokedleSkipResult> {
   const payload = verifyPokedleToken(token);
   if (!payload) {
     return {
       status: "invalid_token",
       message: "Manche expirée ou invalide. Relance une nouvelle manche.",
     };
+  }
+
+  if (payload.ranked) {
+    return {
+      status: "forbidden",
+      message: "Le passage est désactivé en mode classé.",
+    };
+  }
+
+  const jtiCheck = await assertJtiAvailable(payload.jti);
+  if ("error" in jtiCheck) {
+    return { status: "invalid_token", message: jtiCheck.error };
   }
 
   const target = findCatalogPokemonById(payload.targetId);
@@ -200,6 +340,8 @@ export function skipPokedleRound(token: string): PokedleSkipResult {
       message: "Impossible de charger la manche.",
     };
   }
+
+  await consumeJti(payload.jti, payload.exp);
 
   return {
     status: "ok",

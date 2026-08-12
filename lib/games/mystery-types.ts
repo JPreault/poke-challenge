@@ -22,10 +22,21 @@ export type MysteryGuessResult =
   | {
       status: "correct";
       reveal: MysteryReveal;
+      roundFailed: false;
     }
   | {
       status: "wrong";
       wrongGuess: MysteryReveal;
+      roundFailed: false;
+      nextToken: string;
+      artworkUrl: string;
+      wrongAttempts: number;
+    }
+  | {
+      status: "wrong";
+      wrongGuess: MysteryReveal;
+      roundFailed: true;
+      targetReveal: MysteryReveal;
     }
   | {
       status: "not_found";
@@ -42,4 +53,5 @@ export type MysteryGuessResult =
 
 export type MysterySkipResult =
   | { status: "ok"; reveal: MysteryReveal }
-  | { status: "invalid_token"; message: string };
+  | { status: "invalid_token"; message: string }
+  | { status: "forbidden"; message: string };

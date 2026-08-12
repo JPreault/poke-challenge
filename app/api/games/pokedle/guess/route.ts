@@ -28,5 +28,5 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json(guessPokedleRound(token, answer));
+  return NextResponse.json(await guessPokedleRound(token, answer));
 }

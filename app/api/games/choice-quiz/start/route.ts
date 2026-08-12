@@ -7,6 +7,7 @@ import type { ChoiceQuizMode, QuizPool } from "@/lib/games/choice-quiz-types";
 interface StartBody {
   mode?: ChoiceQuizMode;
   pool?: QuizPool;
+  matchId?: string;
 }
 
 export async function POST(request: Request) {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { mode, pool } = body;
+  const { mode, pool, matchId } = body;
 
   if (
     mode !== "image-to-name" &&
@@ -36,7 +37,16 @@ export async function POST(request: Request) {
   }
 
   const session = await getRequiredSession();
-  const result = await startChoiceQuizRound(mode, pool, session?.user.id);
+  if (matchId && !session) {
+    return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+  }
+
+  const result = await startChoiceQuizRound(
+    mode,
+    pool,
+    session?.user.id,
+    matchId,
+  );
 
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: result.status });

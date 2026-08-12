@@ -24,6 +24,13 @@ enum RankedEndReason {
   ABANDONED
 }
 
+enum RankedRoundStatus {
+  ACTIVE
+  CORRECT
+  FAILED
+  EXPIRED
+}
+
 enum RankedMode {
   IMAGE_TO_NAME
   NAME_TO_IMAGE
@@ -93,11 +100,41 @@ model RankedMatch {
   createdAt    DateTime          @default(now())
   finishedAt   DateTime?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rounds RankedRound[]
 
   @@index([userId, createdAt])
   @@index([mode, createdAt])
   @@index([status, createdAt])
+}
+
+model RankedRound {
+  id              String            @id @default(cuid())
+  matchId         String
+  roundIndex      Int
+  mode            RankedMode
+  tokenJti        String            @unique
+  status          RankedRoundStatus @default(ACTIVE)
+  wrongAttempts   Int               @default(0)
+  maxAttempts     Int
+  targetPokemonId Int
+  guessCount      Int               @default(0)
+  createdAt       DateTime          @default(now())
+  finishedAt      DateTime?
+  updatedAt       DateTime          @updatedAt
+
+  match RankedMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, roundIndex])
+  @@index([matchId, status])
+  @@index([matchId, updatedAt])
+}
+
+model ConsumedGameJti {
+  jti       String   @id
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
 
 model LeaderboardEntry {

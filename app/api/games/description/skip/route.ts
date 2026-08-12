@@ -4,7 +4,6 @@ import { skipDescriptionRound } from "@/lib/games/description-round";
 
 interface SkipBody {
   token?: string;
-  wrongAttempts?: number;
 }
 
 export async function POST(request: Request) {
@@ -19,14 +18,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const { token, wrongAttempts } = body;
+  const { token } = body;
 
-  if (!token || typeof wrongAttempts !== "number") {
+  if (!token) {
     return NextResponse.json(
       { error: "Paramètres manquants." },
       { status: 400 },
     );
   }
 
-  return NextResponse.json(skipDescriptionRound(token, wrongAttempts));
+  const result = await skipDescriptionRound(token);
+  if (result.status === "forbidden") {
+    return NextResponse.json({ error: result.message }, { status: 403 });
+  }
+  return NextResponse.json(result);
 }

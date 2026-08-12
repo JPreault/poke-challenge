@@ -42,11 +42,26 @@ export type PokedleGuessResult =
       attempt: PokedleAttempt;
       targetNameFr: string;
       targetArtworkUrl: string;
+      roundFailed: false;
     }
-  | { status: "wrong"; attempt: PokedleAttempt }
+  | {
+      status: "wrong";
+      attempt: PokedleAttempt;
+      roundFailed: false;
+      nextToken: string;
+      wrongAttempts: number;
+    }
+  | {
+      status: "wrong";
+      attempt: PokedleAttempt;
+      roundFailed: true;
+      targetNameFr: string;
+      targetArtworkUrl: string;
+    }
   | { status: "not_found"; message: string }
   | { status: "invalid_token"; message: string };
 
 export type PokedleSkipResult =
   | { status: "ok"; targetNameFr: string; targetArtworkUrl: string }
-  | { status: "invalid_token"; message: string };
+  | { status: "invalid_token"; message: string }
+  | { status: "forbidden"; message: string };

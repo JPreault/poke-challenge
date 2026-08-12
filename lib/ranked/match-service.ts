@@ -3,13 +3,14 @@ import type { RankedEndReason, RankedMode, RankedMatchStatus } from "@prisma/cli
 import { prisma } from "@/lib/db/prisma";
 import { ARENA_RANKED_MODES } from "@/lib/games/ranked-limits";
 import { formatPlayerLabel } from "@/lib/profile/display-name";
+import {
+  computeWinStreakFromRounds,
+  expireActiveRounds,
+} from "@/lib/ranked/round-service";
 
 export interface FinishRankedMatchInput {
   matchId: string;
   userId: string;
-  winStreak: number;
-  totalRounds: number;
-  correctCount: number;
   durationMs?: number | null;
   endedReason: RankedEndReason;
   status: "FINISHED" | "ABANDONED";
@@ -28,9 +29,16 @@ export async function finishRankedMatch(input: FinishRankedMatchInput) {
     return { error: "Partie deja finalisee.", status: 409 as const };
   }
 
-  const totalRounds = Math.max(0, Math.floor(input.totalRounds));
-  const correctCount = Math.max(0, Math.min(totalRounds, Math.floor(input.correctCount)));
-  const winStreak = Math.max(0, Math.floor(input.winStreak));
+  await expireActiveRounds(match.id);
+
+  const rounds = await prisma.rankedRound.findMany({
+    where: { matchId: match.id },
+    select: { status: true, roundIndex: true },
+    orderBy: { roundIndex: "asc" },
+  });
+
+  const { winStreak, totalRounds, correctCount } =
+    computeWinStreakFromRounds(rounds);
   const durationMs = input.durationMs ? Math.max(1, Math.floor(input.durationMs)) : null;
 
   const entry = await prisma.leaderboardEntry.upsert({

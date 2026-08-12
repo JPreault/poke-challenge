@@ -31,11 +31,15 @@ export type ChoiceQuizAnswerResult =
   | {
       status: "correct";
       reveal: ChoiceQuizReveal;
+      correctIndex: number;
+      roundFailed: false;
     }
   | {
       status: "wrong";
       reveal: ChoiceQuizReveal;
+      targetReveal: ChoiceQuizReveal;
       correctIndex: number;
+      roundFailed: true;
     }
   | {
       status: "invalid_token";
@@ -43,5 +47,6 @@ export type ChoiceQuizAnswerResult =
     };
 
 export type ChoiceQuizSkipResult =
-  | { status: "ok"; reveal: ChoiceQuizReveal }
-  | { status: "invalid_token"; message: string };
+  | { status: "ok"; reveal: ChoiceQuizReveal; correctIndex: number }
+  | { status: "invalid_token"; message: string }
+  | { status: "forbidden"; message: string };

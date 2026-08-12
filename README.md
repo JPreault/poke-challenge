@@ -88,7 +88,7 @@ Pour Google OAuth (local) :
 
 En prod (Vercel, etc.) : mêmes clés avec `NEXTAUTH_URL=https://ton-domaine.com`, un autre client Google (ou la 2ᵉ URI de redirect), et les URLs de la **BDD prod**.
 
-`MYSTERY_ROUND_SECRET` / `NEXTAUTH_SECRET` : secrets forts et **différents** en local vs prod.
+`NEXTAUTH_SECRET` : secret fort et **différent** en local vs prod (sert aussi à signer les jetons de manches).
 
 ## Bases de données (local + prod)
 
@@ -194,7 +194,7 @@ Le projet est compatible avec tout hébergeur Node.js (Vercel, Railway, Docker, 
 Checklist :
 
 1. `npm run build` doit passer sans erreur
-2. Définir `MYSTERY_ROUND_SECRET` dans les variables d’environnement
+2. Définir `NEXTAUTH_SECRET` dans les variables d’environnement
 3. Commiter `data/pokemon.json` (ou lancer `generate:pokemon` au build — déjà géré par `prebuild`)
 4. S’assurer que `data/pokemon-search.json` est présent (généré par `prebuild`)
 

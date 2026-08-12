@@ -7,6 +7,7 @@ import type { MysteryKind, MysteryPool } from "@/lib/games/mystery-types";
 interface StartBody {
   kind?: MysteryKind;
   pool?: MysteryPool;
+  matchId?: string;
 }
 
 export async function POST(request: Request) {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { kind, pool } = body;
+  const { kind, pool, matchId } = body;
 
   if (kind !== "blur" && kind !== "zoom") {
     return NextResponse.json(
@@ -38,7 +39,16 @@ export async function POST(request: Request) {
   }
 
   const session = await getRequiredSession();
-  const result = await startMysteryRound(kind, pool, session?.user.id);
+  if (matchId && !session) {
+    return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+  }
+
+  const result = await startMysteryRound(
+    kind,
+    pool,
+    session?.user.id,
+    matchId,
+  );
 
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: result.status });

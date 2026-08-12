@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
+import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isPlayingIndex, setIsPlayingIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const ranked = useRankedSession();
   const startRound = useCallback(async () => {
     setIsLoading(true);
     setFeedback({ type: "idle" });
@@ -55,7 +57,11 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       const response = await fetch("/api/games/choice-quiz/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "cry-guess", pool: "catalog" }),
+        body: JSON.stringify({
+          mode: "cry-guess",
+          pool: "catalog",
+          ...(ranked?.matchId ? { matchId: ranked.matchId } : {}),
+        }),
       });
 
       if (!response.ok) {
@@ -82,7 +88,7 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
       setRound(null);
       setIsLoading(false);
     }
-  }, []);
+  }, [ranked?.matchId]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {

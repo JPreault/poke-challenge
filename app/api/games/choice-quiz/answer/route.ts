@@ -28,5 +28,5 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json(answerChoiceQuizRound(token, choiceIndex));
+  return NextResponse.json(await answerChoiceQuizRound(token, choiceIndex));
 }

@@ -24,5 +24,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Jeton manquant." }, { status: 400 });
   }
 
-  return NextResponse.json(skipChoiceQuizRound(token));
+  const result = await skipChoiceQuizRound(token);
+  if (result.status === "forbidden") {
+    return NextResponse.json({ error: result.message }, { status: 403 });
+  }
+  return NextResponse.json(result);
 }

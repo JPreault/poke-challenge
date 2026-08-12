@@ -1,8 +1,11 @@
+import type { RankedMode } from "@prisma/client";
+
 import { pickRandom } from "@/lib/games/random";
 import {
   createMysteryToken,
   mysteryArtworkPath,
   verifyMysteryToken,
+  type MysteryPayload,
 } from "@/lib/games/mystery-token";
 import type {
   MysteryGuessResult,
@@ -17,6 +20,12 @@ import {
   proxyArtworkUrl,
   proxySpriteUrl,
 } from "@/lib/games/media-token";
+import { createTokenJti } from "@/lib/games/token-crypto";
+import {
+  assertJtiAvailable,
+  consumeJti,
+  rotateRankedRoundJti,
+} from "@/lib/games/token-consume";
 import {
   findCatalogPokemonById,
   getCatalogPokemon,
@@ -25,6 +34,12 @@ import {
 import { getTrainingQuizPokemon } from "@/lib/pokemon/training-pool";
 import { normalizeFrenchName } from "@/lib/pokemon/normalize";
 import type { QuizPokemon } from "@/lib/pokemon/types";
+import {
+  createRankedRound,
+  getActiveRankedRound,
+  recordRankedGuess,
+  updateRankedRoundProgress,
+} from "@/lib/ranked/round-service";
 
 export type {
   MysteryGuessResult,
@@ -46,6 +61,10 @@ function findById(id: number): QuizPokemon | undefined {
   return findCatalogPokemonById(id);
 }
 
+function kindToRankedMode(kind: MysteryKind): RankedMode {
+  return kind === "blur" ? "BLUR_GUESS" : "ZOOM_GUESS";
+}
+
 async function pickTarget(
   pool: MysteryPool,
   userId?: string,
@@ -60,14 +79,37 @@ async function pickTarget(
   return pickRandom(getCatalogPokemon());
 }
 
+function reissueMysteryToken(
+  payload: MysteryPayload,
+  wrongAttempts: number,
+  jti: string,
+): string {
+  return createMysteryToken({
+    pokemonId: payload.pokemonId,
+    kind: payload.kind,
+    pool: payload.pool,
+    userId: payload.userId,
+    ranked: payload.ranked,
+    matchId: payload.matchId,
+    roundId: payload.roundId,
+    jti,
+    wrongAttempts,
+    maxAttempts: payload.maxAttempts,
+  });
+}
+
 export async function startMysteryRound(
   kind: MysteryKind,
   pool: MysteryPool,
   userId?: string,
+  matchId?: string,
 ): Promise<MysteryStartResult | { error: string; status: number }> {
   const normalized = normalizeMysteryPool(pool);
   if (normalized === "training" && !userId) {
     return { error: "Connexion requise pour l'entraînement.", status: 401 };
+  }
+  if (matchId && !userId) {
+    return { error: "Connexion requise pour le mode classé.", status: 401 };
   }
 
   const target = await pickTarget(pool, userId);
@@ -79,16 +121,37 @@ export async function startMysteryRound(
     };
   }
 
-  const token = createMysteryToken(
-    target.id,
+  if (matchId && userId) {
+    const ranked = await createRankedRound({
+      matchId,
+      userId,
+      mode: kindToRankedMode(kind),
+      targetPokemonId: target.id,
+    });
+    if ("error" in ranked) return ranked;
+
+    const token = createMysteryToken({
+      pokemonId: target.id,
+      kind,
+      pool: normalized,
+      userId,
+      ranked: true,
+      matchId: ranked.context.matchId,
+      roundId: ranked.context.roundId,
+      jti: ranked.context.jti,
+      maxAttempts: ranked.context.maxAttempts,
+      wrongAttempts: 0,
+    });
+    return { token, artworkUrl: mysteryArtworkPath(token) };
+  }
+
+  const token = createMysteryToken({
+    pokemonId: target.id,
     kind,
-    normalized,
-    normalized === "training" ? userId : undefined,
-  );
-  return {
-    token,
-    artworkUrl: mysteryArtworkPath(token),
-  };
+    pool: normalized,
+    userId: normalized === "training" ? userId : undefined,
+  });
+  return { token, artworkUrl: mysteryArtworkPath(token) };
 }
 
 export async function guessMysteryRound(
@@ -101,6 +164,29 @@ export async function guessMysteryRound(
       status: "invalid_token",
       message: "Manche expirée ou invalide. Relance une nouvelle manche.",
     };
+  }
+
+  const jtiCheck = await assertJtiAvailable(payload.jti);
+  if ("error" in jtiCheck) {
+    return { status: "invalid_token", message: jtiCheck.error };
+  }
+
+  if (payload.ranked && payload.roundId && payload.matchId) {
+    const round = await getActiveRankedRound({
+      roundId: payload.roundId,
+      matchId: payload.matchId,
+      jti: payload.jti,
+    });
+    if (!round || round.status !== "ACTIVE") {
+      return {
+        status: "invalid_token",
+        message: "Manche classée invalide ou terminée.",
+      };
+    }
+    const rate = await recordRankedGuess({ roundId: round.id });
+    if ("error" in rate) {
+      return { status: "invalid_token", message: rate.error };
+    }
   }
 
   const target = findById(payload.pokemonId);
@@ -138,10 +224,7 @@ export async function guessMysteryRound(
   const pool = normalizeMysteryPool(payload.pool);
   if (pool === "training") {
     if (!payload.userId) {
-      return {
-        status: "invalid_token",
-        message: "Manche invalide.",
-      };
+      return { status: "invalid_token", message: "Manche invalide." };
     }
     const training = await getTrainingQuizPokemon(payload.userId);
     if (!training.some((pokemon) => pokemon.id === guessed.id)) {
@@ -153,19 +236,78 @@ export async function guessMysteryRound(
   }
 
   if (guessed.id === target.id) {
-    return { status: "correct", reveal: toReveal(target) };
+    await consumeJti(payload.jti, payload.exp);
+    if (payload.ranked && payload.roundId) {
+      await updateRankedRoundProgress({
+        roundId: payload.roundId,
+        wrongAttempts: payload.wrongAttempts,
+        status: "CORRECT",
+      });
+    }
+    return { status: "correct", reveal: toReveal(target), roundFailed: false };
   }
 
-  return { status: "wrong", wrongGuess: toReveal(guessed) };
+  const nextAttempts = payload.wrongAttempts + 1;
+  const roundFailed = nextAttempts >= payload.maxAttempts;
+  await consumeJti(payload.jti, payload.exp);
+
+  if (roundFailed) {
+    if (payload.ranked && payload.roundId) {
+      await updateRankedRoundProgress({
+        roundId: payload.roundId,
+        wrongAttempts: nextAttempts,
+        status: "FAILED",
+      });
+    }
+    return {
+      status: "wrong",
+      wrongGuess: toReveal(guessed),
+      roundFailed: true,
+      targetReveal: toReveal(target),
+    };
+  }
+
+  const nextJti = createTokenJti();
+  if (payload.ranked && payload.roundId) {
+    await rotateRankedRoundJti({
+      roundId: payload.roundId,
+      nextJti,
+      wrongAttempts: nextAttempts,
+    });
+  }
+
+  const nextToken = reissueMysteryToken(payload, nextAttempts, nextJti);
+  return {
+    status: "wrong",
+    wrongGuess: toReveal(guessed),
+    roundFailed: false,
+    nextToken,
+    artworkUrl: mysteryArtworkPath(nextToken),
+    wrongAttempts: nextAttempts,
+  };
 }
 
-export function skipMysteryRound(token: string): MysterySkipResult {
+export async function skipMysteryRound(
+  token: string,
+): Promise<MysterySkipResult> {
   const payload = verifyMysteryToken(token);
   if (!payload) {
     return {
       status: "invalid_token",
       message: "Manche expirée ou invalide. Relance une nouvelle manche.",
     };
+  }
+
+  if (payload.ranked) {
+    return {
+      status: "forbidden",
+      message: "Le passage est désactivé en mode classé.",
+    };
+  }
+
+  const jtiCheck = await assertJtiAvailable(payload.jti);
+  if ("error" in jtiCheck) {
+    return { status: "invalid_token", message: jtiCheck.error };
   }
 
   const target = findById(payload.pokemonId);
@@ -176,7 +318,14 @@ export function skipMysteryRound(token: string): MysterySkipResult {
     };
   }
 
+  await consumeJti(payload.jti, payload.exp);
   return { status: "ok", reveal: toReveal(target) };
+}
+
+export function resolveMysteryArtworkPayload(
+  token: string,
+): MysteryPayload | null {
+  return verifyMysteryToken(token);
 }
 
 export function resolveMysteryArtworkUrl(token: string): string | null {

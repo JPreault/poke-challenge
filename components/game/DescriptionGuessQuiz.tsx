@@ -6,11 +6,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameShell } from "@/components/game/GameShell";
 import { DescriptionSwiper } from "@/components/game/DescriptionSwiper";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
+import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
 import { Button } from "@/components/ui/button";
-import type { DescriptionStartResult } from "@/lib/games/description-types";
+import type {
+    DescriptionGuessResult,
+    DescriptionStartResult,
+} from "@/lib/games/description-types";
 import type { GameSession } from "@/lib/games/useGameSession";
 import { getSearchCatalog } from "@/lib/pokemon/client-data";
 import { cn } from "@/lib/utils";
@@ -30,6 +34,7 @@ interface WrongGuess {
 
 export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) {
     const inputRef = useRef<HTMLInputElement>(null);
+    const ranked = useRankedSession();
     const catalog = useMemo(() => getSearchCatalog(), []);
 
     const [token, setToken] = useState<string | null>(null);
@@ -64,6 +69,10 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         try {
             const response = await fetch("/api/games/description/start", {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...(ranked?.matchId ? { matchId: ranked.matchId } : {}),
+                }),
             });
 
             if (!response.ok) {
@@ -82,7 +91,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         } catch {
             setIsLoading(false);
         }
-    }, []);
+    }, [ranked?.matchId]);
 
     const advanceRound = useCallback(() => {
         if (onRoundComplete) {
@@ -92,10 +101,8 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         void startRound();
     }, [onRoundComplete, startRound]);
 
-    const { isRanked, allowSkip, onSuccess, onWrongAttempt } = useRankedRoundFlow(
-        session,
-        advanceRound,
-    );
+    const { isRanked, allowSkip, onSuccess, onFailure, onWrongAttempt } =
+        useRankedRoundFlow(session, advanceRound);
 
     useStartRoundWhenReady(startRound);
 
@@ -130,10 +137,9 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                 body: JSON.stringify({
                     token,
                     answer: guessName,
-                    wrongAttempts,
                 }),
             });
-            const result = await response.json();
+            const result = (await response.json()) as DescriptionGuessResult;
 
             if (result.status === "not_found" || result.status === "invalid_token") {
                 setFeedback(result.message);
@@ -170,11 +176,35 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                     }
                     return [...current, result.wrongGuess];
                 });
-                setWrongAttempts((current) => current + 1);
                 setVisibleDescriptions(result.visibleDescriptions);
                 setGuessName("");
-                if (isRanked && onWrongAttempt()) {
+
+                if (result.roundFailed) {
+                    setWrongAttempts((current) => current + 1);
+                    session.recordRound({
+                        question: visibleDescriptions[0] ?? "",
+                        userAnswer: result.wrongGuess.nameFr,
+                        correctAnswer: result.nameFr,
+                        isCorrect: false,
+                        attemptCount: wrongAttempts + 1,
+                        chosenLabel: result.wrongGuess.nameFr,
+                        correctImage: result.artworkUrl,
+                    });
+                    if (isRanked) {
+                        onFailure();
+                        return;
+                    }
+                    setSolvedName(result.nameFr);
+                    setSolvedArtworkUrl(result.artworkUrl);
+                    setIsSolved(true);
+                    setFeedback(`Raté. C'était ${result.nameFr}.`);
                     return;
+                }
+
+                setToken(result.nextToken);
+                setWrongAttempts(result.wrongAttempts);
+                if (isRanked) {
+                    onWrongAttempt();
                 }
                 setFeedback(
                     result.unlockedNewDescription
@@ -197,8 +227,9 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
             const response = await fetch("/api/games/description/skip", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token, wrongAttempts }),
+                body: JSON.stringify({ token }),
             });
+            if (!response.ok) return;
             const result = await response.json();
 
             if (result.status !== "ok") {

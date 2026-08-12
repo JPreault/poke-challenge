@@ -1,112 +1,81 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
-
+import {
+  createTokenJti,
+  decryptTokenPayload,
+  encryptTokenPayload,
+  tokenExpiry,
+} from "@/lib/games/token-crypto";
+import type { RankedTokenFields } from "@/lib/games/token-fields";
+import { validateRankedTokenFields } from "@/lib/games/token-fields";
 import type { MysteryKind, MysteryPool } from "@/lib/games/mystery-types";
 
 export type { MysteryKind, MysteryPool };
 
-export interface MysteryPayload {
+export interface MysteryPayload extends RankedTokenFields {
   pokemonId: number;
   kind: MysteryKind;
   pool: MysteryPool;
   userId?: string;
-  /** Unix timestamp (ms) when the token expires. */
+  solved?: boolean;
   exp: number;
 }
 
-const TOKEN_TTL_MS = 1000 * 60 * 60 * 2; // 2 hours
 const VERSION = 1;
-
-function getSecret(): string {
-  return (
-    process.env.MYSTERY_ROUND_SECRET ??
-    process.env.NEXTAUTH_SECRET ??
-    "poke-challenge-dev-mystery-secret"
-  );
-}
-
-function getKey(): Buffer {
-  return createHash("sha256").update(getSecret()).digest();
-}
-
-function toBase64Url(buffer: Buffer): string {
-  return buffer
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-}
-
-function fromBase64Url(value: string): Buffer {
-  const padded = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padLength = (4 - (padded.length % 4)) % 4;
-  return Buffer.from(padded + "=".repeat(padLength), "base64");
-}
 
 function isValidPool(pool: unknown): pool is MysteryPool {
   return pool === "training" || pool === "catalog" || pool === "bac";
 }
 
-export function createMysteryToken(
-  pokemonId: number,
-  kind: MysteryKind,
-  pool: MysteryPool,
-  userId?: string,
-): string {
+export function createMysteryToken(input: {
+  pokemonId: number;
+  kind: MysteryKind;
+  pool: MysteryPool;
+  userId?: string;
+  ranked?: boolean;
+  matchId?: string;
+  roundId?: string;
+  jti?: string;
+  wrongAttempts?: number;
+  maxAttempts?: number;
+  solved?: boolean;
+}): string {
+  const ranked = input.ranked === true;
   const payload: MysteryPayload = {
-    pokemonId,
-    kind,
-    pool,
-    userId,
-    exp: Date.now() + TOKEN_TTL_MS,
+    pokemonId: input.pokemonId,
+    kind: input.kind,
+    pool: input.pool,
+    userId: input.userId,
+    ranked: input.ranked,
+    matchId: input.matchId,
+    roundId: input.roundId,
+    jti: input.jti ?? createTokenJti(),
+    wrongAttempts: input.wrongAttempts ?? 0,
+    maxAttempts: input.maxAttempts ?? (ranked ? 3 : 99),
+    solved: input.solved,
+    exp: tokenExpiry(ranked),
   };
 
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", getKey(), iv);
-  const plaintext = Buffer.from(JSON.stringify(payload), "utf8");
-  const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
-  const tag = cipher.getAuthTag();
-
-  return `${VERSION}.${toBase64Url(iv)}.${toBase64Url(tag)}.${toBase64Url(encrypted)}`;
+  return encryptTokenPayload(payload, VERSION);
 }
 
 export function verifyMysteryToken(token: string): MysteryPayload | null {
-  const parts = token.split(".");
-  if (parts.length !== 4) return null;
+  const payload = decryptTokenPayload<MysteryPayload>(token, VERSION);
+  if (!payload) return null;
 
-  const [version, ivPart, tagPart, dataPart] = parts;
-  if (version !== String(VERSION) || !ivPart || !tagPart || !dataPart) {
+  if (
+    typeof payload.pokemonId !== "number" ||
+    (payload.kind !== "blur" && payload.kind !== "zoom") ||
+    !isValidPool(payload.pool) ||
+    typeof payload.exp !== "number" ||
+    !validateRankedTokenFields(payload)
+  ) {
     return null;
   }
 
-  try {
-    const iv = fromBase64Url(ivPart);
-    const tag = fromBase64Url(tagPart);
-    const encrypted = fromBase64Url(dataPart);
-    const decipher = createDecipheriv("aes-256-gcm", getKey(), iv);
-    decipher.setAuthTag(tag);
-    const decrypted = Buffer.concat([
-      decipher.update(encrypted),
-      decipher.final(),
-    ]);
-    const payload = JSON.parse(decrypted.toString("utf8")) as MysteryPayload;
-
-    if (
-      typeof payload.pokemonId !== "number" ||
-      (payload.kind !== "blur" && payload.kind !== "zoom") ||
-      !isValidPool(payload.pool) ||
-      typeof payload.exp !== "number"
-    ) {
-      return null;
-    }
-
-    if (Date.now() > payload.exp) {
-      return null;
-    }
-
-    return payload;
-  } catch {
+  if (Date.now() > payload.exp) {
     return null;
   }
+
+  return payload;
 }
 
 export function mysteryArtworkPath(token: string): string {

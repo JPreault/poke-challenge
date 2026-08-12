@@ -5,9 +5,6 @@ import { finishRankedMatch } from "@/lib/ranked/match-service";
 
 interface FinishRankedBody {
   matchId?: string;
-  winStreak?: number;
-  totalRounds?: number;
-  correctCount?: number;
   durationMs?: number;
 }
 
@@ -24,16 +21,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Corps invalide." }, { status: 400 });
   }
 
-  if (!body.matchId || body.winStreak == null || body.totalRounds == null || body.correctCount == null) {
+  if (!body.matchId) {
     return NextResponse.json({ error: "Parametres manquants." }, { status: 400 });
   }
 
   const result = await finishRankedMatch({
     matchId: body.matchId,
     userId: session.user.id,
-    winStreak: body.winStreak,
-    totalRounds: body.totalRounds,
-    correctCount: body.correctCount,
     durationMs: body.durationMs,
     endedReason: "COMPLETED_FAIL",
     status: "FINISHED",
@@ -43,5 +37,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  return NextResponse.json(result);
+  return NextResponse.json({
+    ...result,
+    winStreak: result.match.winStreak ?? 0,
+  });
 }
