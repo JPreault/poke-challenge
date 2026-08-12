@@ -11,7 +11,7 @@ export function LegalDocument({
   children: React.ReactNode;
 }) {
   return (
-    <article className="legal-prose mx-auto w-full max-w-3xl px-6 pb-16 pt-8">
+    <article className="legal-prose w-full pb-16 pt-8">
       <header className="mb-8 space-y-4 border-b border-border/60 pb-6">
         <Link
           href="/"

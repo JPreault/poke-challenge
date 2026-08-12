@@ -75,7 +75,7 @@ function GameShellInner({
 
   if (isRankedPlay && ranked?.loading) {
     return (
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
+      <div className="flex w-full flex-col gap-8 pb-16 pt-4 sm:pb-20 sm:pt-6">
         <p className="text-muted-foreground">Préparation du mode classé…</p>
       </div>
     );
@@ -83,7 +83,7 @@ function GameShellInner({
 
   if (isRankedPlay && ranked?.error) {
     return (
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
+      <div className="flex w-full flex-col gap-8 pb-16 pt-4 sm:pb-20 sm:pt-6">
         <p className="text-poke-red">{ranked.error}</p>
         <Link href="/partie-classee" className={cn(buttonVariants({ variant: "outline" }), "w-fit")}>
           Retour
@@ -110,7 +110,7 @@ function GameShellInner({
   return (
     <div
       className={cn(
-        "mx-auto flex w-full flex-col gap-8 px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6",
+        "flex w-full flex-col gap-8 pb-16 pt-4 sm:pb-20 sm:pt-6",
         maxWidthClassName,
       )}
     >
@@ -231,7 +231,7 @@ function GameRecap({
       ranked.endedReason === "abandon" ? "Partie abandonnée" : "Partie terminée";
 
     return (
-      <div className="mx-auto w-full max-w-2xl px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
+      <div className="w-full pb-16 pt-4 sm:pb-20 sm:pt-6">
         <div className="surface p-8 sm:p-10">
           <div className="mb-10 space-y-2">
             <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">
@@ -281,7 +281,7 @@ function GameRecap({
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
+    <div className="w-full pb-16 pt-4 sm:pb-20 sm:pt-6">
       <div className="surface p-8 sm:p-10">
         <div className="mb-10 space-y-2">
           <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">

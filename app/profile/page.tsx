@@ -6,7 +6,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { InstallWebAppSection } from "@/components/profile/InstallWebAppSection";
 import {
   RankedScoresCard,
   type RankedScoreEntry,
@@ -230,11 +229,11 @@ export default function ProfilePage() {
         deleteConfirmPseudo.trim() === savedPseudo.trim() && savedPseudo.trim().length > 0;
 
     if (status === "loading" || status === "unauthenticated" || loading) {
-        return <div className="mx-auto max-w-3xl px-6 pb-16 pt-4">Chargement du profil…</div>;
+        return <div className="w-full pb-16 pt-4">Chargement du profil…</div>;
     }
 
     return (
-        <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 pb-16 pt-4">
+        <main className="flex w-full flex-col gap-8 pb-16 pt-4">
             <header className="space-y-2">
                 <h1 className="font-heading text-3xl font-bold">Profil</h1>
                 <p className="text-muted-foreground">Définis ton pseudo et la liste de Pokémon pour le mode Entraînement.</p>
@@ -281,8 +280,6 @@ export default function ProfilePage() {
             </section>
 
             <RankedScoresCard scores={rankedScores} isOwnProfile />
-
-            <InstallWebAppSection />
 
             <section className="space-y-4 rounded-xl border border-border/60 bg-background/80 p-6">
                 <div className="space-y-1">

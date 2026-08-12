@@ -40,14 +40,14 @@ function SignInContent() {
 
   if (status === "loading" || status === "authenticated") {
     return (
-      <main className="mx-auto flex min-h-[70vh] items-center justify-center px-6">
+      <main className="flex min-h-[70vh] w-full items-center justify-center">
         Redirection…
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-6 px-6 text-center">
+    <main className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-6 text-center">
       <h1 className="font-heading text-3xl font-bold">Connexion</h1>
       <p className="text-muted-foreground">
         Connecte-toi avec Google pour enregistrer ton profil et jouer en classé.
@@ -101,7 +101,7 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto flex min-h-[70vh] items-center justify-center px-6">
+        <main className="flex min-h-[70vh] w-full items-center justify-center">
           Chargement…
         </main>
       }

@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { Providers } from "@/app/providers";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { SITE_SHELL_CLASS } from "@/lib/layout/site-shell";
 
 import "./globals.css";
 
@@ -54,9 +55,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     <div className="relative flex min-h-full flex-1 flex-col">
                         <div aria-hidden className="pointer-events-none fixed inset-0 app-bg" />
                         <AppHeader />
-                        <div className="relative z-10 flex min-h-full flex-1 flex-col pt-12">
+                        <div className="relative z-10 flex min-h-full flex-1 flex-col pt-20 sm:pt-24">
                             <div className="min-h-0 flex-1">
-                                <Suspense fallback={null}>{children}</Suspense>
+                                <div className={SITE_SHELL_CLASS}>
+                                    <Suspense fallback={null}>{children}</Suspense>
+                                </div>
                             </div>
                             <AppFooter />
                         </div>

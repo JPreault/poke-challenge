@@ -42,14 +42,14 @@ export default function PartieClasseePage() {
 
   if (status === "loading" || status === "unauthenticated") {
     return (
-      <main className="mx-auto w-full max-w-4xl px-6 pb-16 pt-4 sm:px-8 sm:pb-24 sm:pt-6">
+        <main className="w-full pb-16 pt-4 sm:pb-24 sm:pt-6">
         <p className="text-muted-foreground">Chargement du mode classé…</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-6 pb-16 pt-4 sm:px-8 sm:pb-24 sm:pt-6">
+        <main className="w-full pb-16 pt-4 sm:pb-24 sm:pt-6">
       <header className="mb-20 max-w-2xl">
         <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Poke Challenge

@@ -29,7 +29,7 @@ export default function HomePage() {
     };
 
     return (
-        <main className="mx-auto w-full max-w-4xl px-6 pb-16 pt-4 sm:px-8 sm:pb-24 sm:pt-6">
+        <main className="w-full pb-16 pt-4 sm:pb-24 sm:pt-6">
             <header className="mb-20 max-w-2xl">
                 <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">Poke Challenge</p>
                 <h1 className="font-heading text-4xl font-bold leading-[1.1] text-foreground sm:text-5xl">Non classée</h1>
