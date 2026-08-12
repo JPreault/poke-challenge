@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { InstallWebAppSection } from "@/components/profile/InstallWebAppSection";
 import {
   RankedScoresCard,
   type RankedScoreEntry,
@@ -280,6 +281,8 @@ export default function ProfilePage() {
             </section>
 
             <RankedScoresCard scores={rankedScores} isOwnProfile />
+
+            <InstallWebAppSection />
 
             <section className="space-y-4 rounded-xl border border-border/60 bg-background/80 p-6">
                 <div className="space-y-1">

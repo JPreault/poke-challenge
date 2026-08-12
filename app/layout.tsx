@@ -28,6 +28,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     title: "Poke Challenge",
     description: "Entraîne tes connaissances en Pokémon avec des mini-jeux : Pokedle, Cris, QCM, etc.",
+    applicationName: "Poke Challenge",
+    appleWebApp: {
+        capable: true,
+        title: "Poke Challenge",
+        statusBarStyle: "default",
+    },
+    themeColor: "#b91c1c",
     icons: {
         icon: [
             { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
