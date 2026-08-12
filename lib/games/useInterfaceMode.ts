@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import type { GameInterfaceMode } from "@/lib/games/types";
 
-export function useInterfaceMode(): GameInterfaceMode {
+export function useInterfaceMode(): GameInterfaceMode | null {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -16,6 +16,10 @@ export function useInterfaceMode(): GameInterfaceMode {
     return "ranked";
   }
 
+  if (pathname === "/leaderboard" || pathname.startsWith("/leaderboard/")) {
+    return "ranked";
+  }
+
   if (searchParams.get("interface") === "bac-training") {
     return "bac-training";
   }
@@ -24,7 +28,11 @@ export function useInterfaceMode(): GameInterfaceMode {
     return "ranked";
   }
 
-  return "arena";
+  if (pathname === "/") {
+    return "arena";
+  }
+
+  return null;
 }
 
 export function getInterfaceHomeHref(mode: GameInterfaceMode): string {
