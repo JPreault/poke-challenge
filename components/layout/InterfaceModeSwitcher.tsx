@@ -26,7 +26,7 @@ export function InterfaceModeSwitcher() {
   return (
     <div
       className={cn(
-        "surface inline-flex w-auto max-w-[min(100%,calc(100vw-12rem))] shrink gap-0.5 overflow-x-auto p-0.5 shadow-sm sm:max-w-none sm:gap-1 sm:p-1",
+        "surface inline-flex w-auto max-w-full shrink gap-0.5 overflow-x-auto p-0.5 shadow-sm sm:max-w-none sm:gap-1 sm:p-1",
         "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
       )}
     >

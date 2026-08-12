@@ -61,7 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     <div className="relative flex min-h-full flex-1 flex-col">
                         <div aria-hidden className="pointer-events-none fixed inset-0 app-bg" />
                         <AppHeader />
-                        <div className="relative z-10 flex min-h-full flex-1 flex-col pt-[calc(env(safe-area-inset-top,0px)+5rem)] sm:pt-[calc(env(safe-area-inset-top,0px)+5.5rem)]">
+                        <div className="relative z-10 flex min-h-full flex-1 flex-col pt-[calc(env(safe-area-inset-top,0px)+7.25rem)] sm:pt-[calc(env(safe-area-inset-top,0px)+5.5rem)]">
                             <div className="min-h-0 flex-1">
                                 <div className={SITE_SHELL_CLASS}>
                                     <Suspense fallback={null}>{children}</Suspense>
