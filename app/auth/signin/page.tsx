@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
+import { LEGAL_ROUTES } from "@/lib/legal/site-config";
 
 const ERROR_MESSAGES: Record<string, string> = {
   OAuthSignin:
@@ -55,6 +57,27 @@ function SignInContent() {
           {message}
         </p>
       ) : null}
+      <p className="max-w-md text-sm text-muted-foreground">
+        Google nous transmet ton adresse e-mail, ton nom et ta photo de profil
+        pour créer ton compte.
+      </p>
+      <p className="max-w-md text-xs text-muted-foreground">
+        En te connectant avec Google, tu acceptes nos{" "}
+        <Link
+          href={LEGAL_ROUTES.cgu}
+          className="text-foreground underline-offset-4 hover:underline"
+        >
+          CGU
+        </Link>{" "}
+        et confirmes avoir lu notre{" "}
+        <Link
+          href={LEGAL_ROUTES.confidentialite}
+          className="text-foreground underline-offset-4 hover:underline"
+        >
+          politique de confidentialité
+        </Link>
+        .
+      </p>
       <Button
         size="lg"
         onClick={() => signIn("google", { callbackUrl })}

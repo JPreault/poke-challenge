@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, Loader2, Save } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { Check, Loader2, Save, Trash2 } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -51,6 +51,9 @@ export default function ProfilePage() {
     const [trainingPokemon, setTrainingPokemon] = useState<TrainingPokemon[]>([]);
     const [draftName, setDraftName] = useState("");
     const [rankedScores, setRankedScores] = useState<RankedScoreEntry[]>([]);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deleteConfirmPseudo, setDeleteConfirmPseudo] = useState("");
+    const [deletingAccount, setDeletingAccount] = useState(false);
 
     const pseudoDirty = pseudo.trim() !== savedPseudo.trim() && pseudo.trim().length > 0;
 
@@ -196,6 +199,35 @@ export default function ProfilePage() {
         }
     };
 
+    const deleteAccount = async () => {
+        if (deletingAccount) return;
+
+        setDeletingAccount(true);
+        setError(null);
+        try {
+            const response = await fetch("/api/profile/account", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ confirmPseudo: deleteConfirmPseudo }),
+            });
+
+            if (!response.ok) {
+                const payload = (await response.json()) as { error?: string };
+                setError(payload.error ?? "Impossible de supprimer le compte.");
+                return;
+            }
+
+            await signOut({ callbackUrl: "/" });
+        } catch {
+            setError("Impossible de supprimer le compte.");
+        } finally {
+            setDeletingAccount(false);
+        }
+    };
+
+    const deleteConfirmed =
+        deleteConfirmPseudo.trim() === savedPseudo.trim() && savedPseudo.trim().length > 0;
+
     if (status === "loading" || status === "unauthenticated" || loading) {
         return <div className="mx-auto max-w-3xl px-6 pb-16 pt-4">Chargement du profil…</div>;
     }
@@ -247,12 +279,7 @@ export default function ProfilePage() {
                 </p>
             </section>
 
-            <RankedScoresCard
-                pseudo={savedPseudo || pseudo}
-                publicId={publicId}
-                scores={rankedScores}
-                isOwnProfile
-            />
+            <RankedScoresCard scores={rankedScores} isOwnProfile />
 
             <section className="space-y-4 rounded-xl border border-border/60 bg-background/80 p-6">
                 <div className="space-y-1">
@@ -316,6 +343,77 @@ export default function ProfilePage() {
                             </li>
                         ))}
                     </ul>
+                )}
+            </section>
+
+            <section className="space-y-4 rounded-xl border border-destructive/30 bg-destructive/5 p-6">
+                <div className="space-y-1">
+                    <h2 className="font-semibold text-destructive">Zone sensible</h2>
+                    <p className="text-sm text-muted-foreground">
+                        La suppression de compte est définitive. Tes scores, ton profil
+                        public et tes entrées au leaderboard seront effacés.
+                    </p>
+                </div>
+
+                {!deleteOpen ? (
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => {
+                            setDeleteOpen(true);
+                            setDeleteConfirmPseudo("");
+                            setError(null);
+                        }}
+                    >
+                        <Trash2 className="size-4" />
+                        Supprimer mon compte
+                    </Button>
+                ) : (
+                    <div className="space-y-3 rounded-lg border border-destructive/30 bg-background/80 p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Pour confirmer, saisis ton pseudo exact :{" "}
+                            <span className="font-medium text-foreground">{savedPseudo}</span>
+                        </p>
+                        <Input
+                            value={deleteConfirmPseudo}
+                            onChange={(event) => setDeleteConfirmPseudo(event.target.value)}
+                            placeholder="Ton pseudo"
+                            maxLength={24}
+                            disabled={deletingAccount}
+                        />
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                disabled={!deleteConfirmed || deletingAccount}
+                                onClick={() => void deleteAccount()}
+                            >
+                                {deletingAccount ? (
+                                    <>
+                                        <Loader2 className="size-4 animate-spin" />
+                                        Suppression…
+                                    </>
+                                ) : (
+                                    "Confirmer la suppression"
+                                )}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={deletingAccount}
+                                onClick={() => {
+                                    setDeleteOpen(false);
+                                    setDeleteConfirmPseudo("");
+                                }}
+                            >
+                                Annuler
+                            </Button>
+                        </div>
+                    </div>
                 )}
             </section>
 

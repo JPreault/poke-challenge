@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { DM_Sans, Geist_Mono, Sora } from "next/font/google";
+import { Suspense } from "react";
 
 import { Providers } from "@/app/providers";
-import { PageShell } from "@/components/layout/PageShell";
+import { AppFooter } from "@/components/layout/AppFooter";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 import "./globals.css";
 
@@ -40,9 +42,18 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
     return (
         <html lang="fr" className={`${dmSans.variable} ${sora.variable} ${geistMono.variable} h-full antialiased`}>
-            <body className="min-h-full">
+            <body className="flex min-h-full flex-col">
                 <Providers>
-                    <PageShell>{children}</PageShell>
+                    <div className="relative flex min-h-full flex-1 flex-col">
+                        <div aria-hidden className="pointer-events-none fixed inset-0 app-bg" />
+                        <AppHeader />
+                        <div className="relative z-10 flex min-h-full flex-1 flex-col pt-12">
+                            <div className="min-h-0 flex-1">
+                                <Suspense fallback={null}>{children}</Suspense>
+                            </div>
+                            <AppFooter />
+                        </div>
+                    </div>
                 </Providers>
             </body>
         </html>
