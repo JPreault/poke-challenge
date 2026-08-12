@@ -43,7 +43,11 @@ export function BlurGuessQuiz({
       title="Image flou"
       description="Devine le Pokémon à partir d'une image floutée. À chaque tentative, l'image se dévoile légèrement."
     >
-      <BlurGuessRound session={session} useBacPool={useBacPool} />
+      <BlurGuessRound
+        key={session.sessionEpoch}
+        session={session}
+        useBacPool={useBacPool}
+      />
     </GameShell>
   );
 }

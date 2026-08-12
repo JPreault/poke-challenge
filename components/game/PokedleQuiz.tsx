@@ -1,15 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
+import { usePrefetchedRound } from "@/components/game/usePrefetchedRound";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
+import { warmImage } from "@/components/game/warmMedia";
 import { Button } from "@/components/ui/button";
 import type { AttemptHints, Direction, PokedleAttempt, PokedleGuessResult } from "@/lib/games/pokedle-types";
 import type { GameSession } from "@/lib/games/useGameSession";
@@ -71,6 +73,31 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
         [attempts, catalog],
     );
 
+    const prefetchEnabled = !ranked?.matchId && !onRoundComplete;
+
+    const fetchPayload = useCallback(async (): Promise<{ token: string } | null> => {
+        try {
+            const response = await fetch("/api/games/pokedle/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...(ranked?.matchId ? { matchId: ranked.matchId } : {}),
+                }),
+            });
+
+            if (!response.ok) return null;
+            const result = (await response.json()) as { token: string };
+            return { token: result.token };
+        } catch {
+            return null;
+        }
+    }, [ranked?.matchId]);
+
+    const { prefetch, takeOrFetch } = usePrefetchedRound({
+        enabled: prefetchEnabled,
+        fetchPayload,
+    });
+
     const startRound = useCallback(async () => {
         setIsLoading(true);
         setToken(null);
@@ -83,30 +110,18 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
         setSolvedArtworkUrl(null);
         endActionRef.current = "advance";
 
-        try {
-            const response = await fetch("/api/games/pokedle/start", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...(ranked?.matchId ? { matchId: ranked.matchId } : {}),
-                }),
-            });
-
-            if (!response.ok) {
-                setIsLoading(false);
-                return;
-            }
-
-            const result = await response.json();
-            setToken(result.token);
+        const result = await takeOrFetch();
+        if (!result) {
             setIsLoading(false);
-            window.setTimeout(() => {
-                inputRef.current?.focus();
-            }, 0);
-        } catch {
-            setIsLoading(false);
+            return;
         }
-    }, [ranked?.matchId]);
+
+        setToken(result.token);
+        setIsLoading(false);
+        window.setTimeout(() => {
+            inputRef.current?.focus();
+        }, 0);
+    }, [takeOrFetch]);
 
     const resetRound = useCallback(() => {
         void startRound();
@@ -133,6 +148,11 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
     const { showNextButton, goNext } = useAwaitingAdvance(isSolved, handleResolvedAdvance);
 
     useStartRoundWhenReady(startRound);
+
+    useEffect(() => {
+        if (!isSolved || !prefetchEnabled) return;
+        prefetch();
+    }, [isSolved, prefetch, prefetchEnabled]);
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -168,6 +188,7 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
                     onSuccess();
                 }
                 endActionRef.current = "advance";
+                await warmImage(result.targetArtworkUrl);
                 setIsSolved(true);
                 setSolvedName(result.targetNameFr);
                 setSolvedArtworkUrl(result.targetArtworkUrl);
@@ -191,6 +212,7 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
                         hintAccuracyPercent: getHintAccuracyPercent(result.attempt.hints),
                     });
                     endActionRef.current = isRanked ? "fail" : "advance";
+                    await warmImage(result.targetArtworkUrl);
                     setIsSolved(true);
                     setSolvedName(result.targetNameFr);
                     setSolvedArtworkUrl(result.targetArtworkUrl);
@@ -244,6 +266,7 @@ export function PokedleRound({ session, onRoundComplete }: { session: GameSessio
             });
 
             setSolvedName(result.targetNameFr);
+            await warmImage(result.targetArtworkUrl);
             setSolvedArtworkUrl(result.targetArtworkUrl);
             setGuessName("");
             setWasAbandoned(true);
@@ -344,7 +367,7 @@ export function PokedleQuiz({ session }: { session: GameSession }) {
             title="Pokédle"
             description="Propose un Pokémon et compare ses caractéristiques pour trouver le Pokémon mystère."
         >
-            <PokedleRound session={session} />
+            <PokedleRound key={session.sessionEpoch} session={session} />
         </GameShell>
     );
 }

@@ -42,7 +42,11 @@ export function ZoomGuessQuiz({
       title="Image zoomer"
       description="Devine le Pokémon à partir d'une image ultra zoomée. À chaque tentative, l'image se dézoome légèrement."
     >
-      <ZoomGuessRound session={session} useBacPool={useBacPool} />
+      <ZoomGuessRound
+        key={session.sessionEpoch}
+        session={session}
+        useBacPool={useBacPool}
+      />
     </GameShell>
   );
 }

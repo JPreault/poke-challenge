@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GameShell } from "@/components/game/GameShell";
 import { DescriptionSwiper } from "@/components/game/DescriptionSwiper";
@@ -9,8 +9,10 @@ import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
+import { usePrefetchedRound } from "@/components/game/usePrefetchedRound";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
+import { warmImage } from "@/components/game/warmMedia";
 import { Button } from "@/components/ui/button";
 import type {
     DescriptionGuessResult,
@@ -53,6 +55,29 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
     const [solvedArtworkUrl, setSolvedArtworkUrl] = useState<string | null>(null);
 
     const excludedIds = useMemo(() => wrongGuesses.map((pokemon) => pokemon.id), [wrongGuesses]);
+    const prefetchEnabled = !ranked?.matchId && !onRoundComplete;
+
+    const fetchPayload = useCallback(async (): Promise<DescriptionStartResult | null> => {
+        try {
+            const response = await fetch("/api/games/description/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...(ranked?.matchId ? { matchId: ranked.matchId } : {}),
+                }),
+            });
+
+            if (!response.ok) return null;
+            return (await response.json()) as DescriptionStartResult;
+        } catch {
+            return null;
+        }
+    }, [ranked?.matchId]);
+
+    const { prefetch, takeOrFetch } = usePrefetchedRound({
+        enabled: prefetchEnabled,
+        fetchPayload,
+    });
 
     const startRound = useCallback(async () => {
         setIsLoading(true);
@@ -69,32 +94,20 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
         setSolvedArtworkUrl(null);
         endActionRef.current = "advance";
 
-        try {
-            const response = await fetch("/api/games/description/start", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...(ranked?.matchId ? { matchId: ranked.matchId } : {}),
-                }),
-            });
-
-            if (!response.ok) {
-                setIsLoading(false);
-                return;
-            }
-
-            const result = (await response.json()) as DescriptionStartResult;
-            setToken(result.token);
-            setTotalDescriptions(result.totalDescriptions);
-            setVisibleDescriptions(result.visibleDescriptions);
+        const result = await takeOrFetch();
+        if (!result) {
             setIsLoading(false);
-            window.setTimeout(() => {
-                inputRef.current?.focus();
-            }, 0);
-        } catch {
-            setIsLoading(false);
+            return;
         }
-    }, [ranked?.matchId]);
+
+        setToken(result.token);
+        setTotalDescriptions(result.totalDescriptions);
+        setVisibleDescriptions(result.visibleDescriptions);
+        setIsLoading(false);
+        window.setTimeout(() => {
+            inputRef.current?.focus();
+        }, 0);
+    }, [takeOrFetch]);
 
     const advanceRound = useCallback(() => {
         if (onRoundComplete) {
@@ -118,6 +131,11 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
     const { showNextButton, goNext } = useAwaitingAdvance(isSolved, handleResolvedAdvance);
 
     useStartRoundWhenReady(startRound);
+
+    useEffect(() => {
+        if (!isSolved || !prefetchEnabled) return;
+        prefetch();
+    }, [isSolved, prefetch, prefetchEnabled]);
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -153,6 +171,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                     onSuccess();
                 }
                 endActionRef.current = "advance";
+                await warmImage(result.artworkUrl);
                 setVisibleDescriptions(result.visibleDescriptions);
                 setSolvedName(result.nameFr);
                 setSolvedArtworkUrl(result.artworkUrl);
@@ -184,6 +203,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
                         correctImage: result.artworkUrl,
                     });
                     endActionRef.current = isRanked ? "fail" : "advance";
+                    await warmImage(result.artworkUrl);
                     setSolvedName(result.nameFr);
                     setSolvedArtworkUrl(result.artworkUrl);
                     setIsSolved(true);
@@ -241,6 +261,7 @@ export function DescriptionGuessRound({ session, onRoundComplete }: RoundProps) 
             });
 
             setVisibleDescriptions(result.visibleDescriptions);
+            await warmImage(result.artworkUrl);
             setSolvedName(result.nameFr);
             setSolvedArtworkUrl(result.artworkUrl);
             setGuessName("");
@@ -357,7 +378,7 @@ export function DescriptionGuessQuiz({ session }: DescriptionGuessQuizProps) {
             title="Description"
             description="Lis la description Pokédex et retrouve le Pokémon correspondant. Une description supplémentaire est dévoilée tous les 3 essais."
         >
-            <DescriptionGuessRound session={session} />
+            <DescriptionGuessRound key={session.sessionEpoch} session={session} />
         </GameShell>
     );
 }

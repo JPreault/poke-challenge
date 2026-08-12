@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
+import { playCryOnce } from "@/components/game/useCryPlayer";
 import {
     RoundAdvanceProvider,
     useRoundAdvancePreference,
@@ -42,7 +43,7 @@ export function GameShell(props: GameShellProps) {
 }
 
 function GameShellInner({ session, title, description, modeLabel, homeHref, replayHref, children }: GameShellProps) {
-    const { stats, isFinished, stopGame, mode } = session;
+    const { stats, isFinished, stopGame, mode, resetGame } = session;
     const { skipAction } = useRoundActions();
     const { autoAdvanceEnabled, setAutoAdvanceEnabled } = useRoundAdvancePreference();
     const ranked = useRankedSession();
@@ -58,8 +59,12 @@ function GameShellInner({ session, title, description, modeLabel, homeHref, repl
     const contextLabel = `${interfaceLabel} · ${displayedModeLabel}`;
 
     const handleReplay = useCallback(() => {
-        window.location.assign(resolvedReplayHref);
-    }, [resolvedReplayHref]);
+        if (isRankedPlay) {
+            window.location.assign(resolvedReplayHref);
+            return;
+        }
+        resetGame();
+    }, [isRankedPlay, resetGame, resolvedReplayHref]);
 
     if (isRankedPlay && ranked?.loading) {
         return (
@@ -182,9 +187,7 @@ function GameShellInner({ session, title, description, modeLabel, homeHref, repl
 }
 
 function playCryUrl(url: string) {
-    const audio = new Audio(url);
-    audio.volume = 0.35;
-    audio.play().catch(() => undefined);
+    playCryOnce(url);
 }
 
 function GameRecap({

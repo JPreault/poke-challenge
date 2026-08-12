@@ -29,6 +29,7 @@ export interface RecordRoundInput {
 export function useGameSession(mode: GameMode) {
   const [rounds, setRounds] = useState<RoundRecord[]>([]);
   const [isFinished, setIsFinished] = useState(false);
+  const [sessionEpoch, setSessionEpoch] = useState(0);
 
   const recordRound = useCallback((input: RecordRoundInput) => {
     setRounds((current) => [
@@ -47,6 +48,7 @@ export function useGameSession(mode: GameMode) {
   const resetGame = useCallback(() => {
     setRounds([]);
     setIsFinished(false);
+    setSessionEpoch((current) => current + 1);
   }, []);
 
   const stats = useMemo<GameStats>(() => computeStats(rounds), [rounds]);
@@ -55,6 +57,7 @@ export function useGameSession(mode: GameMode) {
     mode,
     rounds,
     isFinished,
+    sessionEpoch,
     stats,
     recordRound,
     stopGame,

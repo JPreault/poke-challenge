@@ -421,7 +421,11 @@ export function LetterInputQuiz({ session, validationMode = "training" }: Letter
                     : "Entre un Pokémon existant dont le nom français commence par la lettre affichée."
             }
         >
-            <LetterInputRound session={session} validationMode={validationMode} />
+            <LetterInputRound
+                key={session.sessionEpoch}
+                session={session}
+                validationMode={validationMode}
+            />
         </GameShell>
     );
 }

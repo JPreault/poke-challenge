@@ -7,8 +7,11 @@ import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
+import { useCryPlayer } from "@/components/game/useCryPlayer";
+import { usePrefetchedRound } from "@/components/game/usePrefetchedRound";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
+import { warmImage } from "@/components/game/warmMedia";
 import { Button } from "@/components/ui/button";
 import type {
   ChoiceQuizAnswerResult,
@@ -49,14 +52,10 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
   const [isLoading, setIsLoading] = useState(true);
   const ranked = useRankedSession();
   const endActionRef = useRef<"advance" | "fail">("advance");
+  const prefetchEnabled = !ranked?.matchId && !onRoundComplete;
+  const { play, preload } = useCryPlayer();
 
-  const startRound = useCallback(async () => {
-    setIsLoading(true);
-    setFeedback({ type: "idle" });
-    setSelectedIndex(null);
-    setIsPlayingIndex(null);
-    endActionRef.current = "advance";
-
+  const fetchPayload = useCallback(async (): Promise<RoundState | null> => {
     try {
       const response = await fetch("/api/games/choice-quiz/start", {
         method: "POST",
@@ -68,31 +67,55 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
         }),
       });
 
-      if (!response.ok) {
-        setRound(null);
-        setIsLoading(false);
-        return;
-      }
+      if (!response.ok) return null;
 
       const result = (await response.json()) as ChoiceQuizStartResult;
-      if (!result.questionName || !result.questionImageUrl) {
-        setRound(null);
-        setIsLoading(false);
-        return;
-      }
+      if (!result.questionName || !result.questionImageUrl) return null;
 
-      setRound({
+      return {
         token: result.token,
         questionName: result.questionName,
         questionImageUrl: result.questionImageUrl,
         choices: result.choices,
-      });
-      setIsLoading(false);
+      };
     } catch {
-      setRound(null);
-      setIsLoading(false);
+      return null;
     }
   }, [ranked?.matchId]);
+
+  const warmPayload = useCallback(
+    async (payload: RoundState) => {
+      await Promise.all([
+        warmImage(payload.questionImageUrl),
+        preload(payload.choices.map((choice) => choice.cryUrl)),
+      ]);
+    },
+    [preload],
+  );
+
+  const { prefetch, takeOrFetch } = usePrefetchedRound({
+    enabled: prefetchEnabled,
+    fetchPayload,
+    warm: warmPayload,
+  });
+
+  const startRound = useCallback(async () => {
+    setIsLoading(true);
+    setFeedback({ type: "idle" });
+    setSelectedIndex(null);
+    setIsPlayingIndex(null);
+    endActionRef.current = "advance";
+
+    const payload = await takeOrFetch();
+    if (!payload) {
+      setRound(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setRound(payload);
+    setIsLoading(false);
+  }, [takeOrFetch]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -122,32 +145,38 @@ export function CryGuessRound({ session, onRoundComplete }: RoundProps) {
 
   useStartRoundWhenReady(startRound);
 
-  const playCry = useCallback((choice: ChoiceQuizChoice) => {
-    if (!choice.cryUrl) return;
-    setIsPlayingIndex(choice.choiceIndex);
-    const audio = new Audio(choice.cryUrl);
-    audio.volume = 0.35;
-    audio.play().catch(() => undefined);
-    audio.onended = () =>
-      setIsPlayingIndex((current) =>
-        current === choice.choiceIndex ? null : current,
-      );
-  }, []);
+  useEffect(() => {
+    if (feedback.type === "idle" || !prefetchEnabled) return;
+    prefetch();
+  }, [feedback.type, prefetch, prefetchEnabled]);
 
-  const playCryUrl = useCallback((url: string | undefined, choiceIndex?: number) => {
-    if (!url) return;
-    if (choiceIndex != null) setIsPlayingIndex(choiceIndex);
-    const audio = new Audio(url);
-    audio.volume = 0.35;
-    audio.play().catch(() => undefined);
-    audio.onended = () => {
-      if (choiceIndex != null) {
+  const playCry = useCallback(
+    (choice: ChoiceQuizChoice) => {
+      if (!choice.cryUrl) return;
+      setIsPlayingIndex(choice.choiceIndex);
+      play(choice.cryUrl, () =>
         setIsPlayingIndex((current) =>
-          current === choiceIndex ? null : current,
-        );
-      }
-    };
-  }, []);
+          current === choice.choiceIndex ? null : current,
+        ),
+      );
+    },
+    [play],
+  );
+
+  const playCryUrl = useCallback(
+    (url: string | undefined, choiceIndex?: number) => {
+      if (!url) return;
+      if (choiceIndex != null) setIsPlayingIndex(choiceIndex);
+      play(url, () => {
+        if (choiceIndex != null) {
+          setIsPlayingIndex((current) =>
+            current === choiceIndex ? null : current,
+          );
+        }
+      });
+    },
+    [play],
+  );
 
   const handleSkip = useCallback(async () => {
     if (!round || feedback.type !== "idle") return;
@@ -455,7 +484,7 @@ export function CryGuessQuiz({ session }: CryGuessQuizProps) {
       title="Pokémon → Cri"
       description="Écoute les 4 propositions et choisis le cri correspondant au Pokémon affiché."
     >
-      <CryGuessRound session={session} />
+      <CryGuessRound key={session.sessionEpoch} session={session} />
     </GameShell>
   );
 }

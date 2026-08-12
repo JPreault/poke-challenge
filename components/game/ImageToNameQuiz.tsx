@@ -7,8 +7,10 @@ import { GameShell } from "@/components/game/GameShell";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
+import { usePrefetchedRound } from "@/components/game/usePrefetchedRound";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
+import { warmImage } from "@/components/game/warmMedia";
 import { Button } from "@/components/ui/button";
 import type {
   ChoiceQuizAnswerResult,
@@ -52,14 +54,11 @@ export function ImageToNameRound({
   const [loadError, setLoadError] = useState<string | null>(null);
   const ranked = useRankedSession();
   const endActionRef = useRef<"advance" | "fail">("advance");
+  const lastFetchErrorRef = useRef<string | null>(null);
+  const prefetchEnabled = !ranked?.matchId && !onRoundComplete;
 
-  const startRound = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError(null);
-    setFeedback("idle");
-    setSelectedIndex(null);
-    endActionRef.current = "advance";
-
+  const fetchPayload = useCallback(async (): Promise<RoundState | null> => {
+    lastFetchErrorRef.current = null;
     try {
       const response = await fetch("/api/games/choice-quiz/start", {
         method: "POST",
@@ -75,30 +74,55 @@ export function ImageToNameRound({
         const payload = (await response.json().catch(() => null)) as
           | { error?: string }
           | null;
-        setLoadError(payload?.error ?? "Impossible de démarrer la manche.");
-        setRound(null);
-        setIsLoading(false);
-        return;
+        lastFetchErrorRef.current =
+          payload?.error ?? "Impossible de démarrer la manche.";
+        return null;
       }
 
       const result = (await response.json()) as ChoiceQuizStartResult;
-      if (!result.questionImageUrl) {
-        setRound(null);
-        setIsLoading(false);
-        return;
-      }
+      if (!result.questionImageUrl) return null;
 
-      setRound({
+      return {
         token: result.token,
         questionImageUrl: result.questionImageUrl,
         choices: result.choices,
-      });
-      setIsLoading(false);
+      };
     } catch {
-      setRound(null);
-      setIsLoading(false);
+      lastFetchErrorRef.current = "Impossible de démarrer la manche.";
+      return null;
     }
   }, [ranked?.matchId, useBacPool]);
+
+  const warmPayload = useCallback(async (payload: RoundState) => {
+    await warmImage(payload.questionImageUrl);
+  }, []);
+
+  const { prefetch, takeOrFetch } = usePrefetchedRound({
+    enabled: prefetchEnabled,
+    fetchPayload,
+    warm: warmPayload,
+  });
+
+  const startRound = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    setFeedback("idle");
+    setSelectedIndex(null);
+    endActionRef.current = "advance";
+
+    const payload = await takeOrFetch();
+    if (!payload) {
+      setLoadError(
+        lastFetchErrorRef.current ?? "Impossible de démarrer la manche.",
+      );
+      setRound(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setRound(payload);
+    setIsLoading(false);
+  }, [takeOrFetch]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -127,6 +151,11 @@ export function ImageToNameRound({
   );
 
   useStartRoundWhenReady(startRound);
+
+  useEffect(() => {
+    if (feedback === "idle" || !prefetchEnabled) return;
+    prefetch();
+  }, [feedback, prefetch, prefetchEnabled]);
 
   const handleSkip = useCallback(async () => {
     if (!round || feedback !== "idle") return;
@@ -391,7 +420,11 @@ export function ImageToNameQuiz({
       title="Devine le nom"
       description="Clique sur le bon nom parmi les 4 propositions."
     >
-      <ImageToNameRound session={session} useBacPool={useBacPool} />
+      <ImageToNameRound
+        key={session.sessionEpoch}
+        session={session}
+        useBacPool={useBacPool}
+      />
     </GameShell>
   );
 }

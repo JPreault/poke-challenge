@@ -7,8 +7,10 @@ import { PokemonSearchInput } from "@/components/game/PokemonSearchInput";
 import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { useRegisterSkip } from "@/components/game/RoundActionsContext";
 import { useAwaitingAdvance } from "@/components/game/useAwaitingAdvance";
+import { usePrefetchedRound } from "@/components/game/usePrefetchedRound";
 import { useRankedRoundFlow } from "@/components/game/useRankedRoundFlow";
 import { useStartRoundWhenReady } from "@/components/game/useStartRoundWhenReady";
+import { warmImage } from "@/components/game/warmMedia";
 import { Button } from "@/components/ui/button";
 import { isFullyDeblurred } from "@/lib/games/blur-levels";
 import type {
@@ -22,6 +24,11 @@ import type { GameSession } from "@/lib/games/useGameSession";
 import { isFullyDezoomed } from "@/lib/games/zoom-levels";
 import { getSearchCatalog } from "@/lib/pokemon/client-data";
 import { cn } from "@/lib/utils";
+
+interface MysteryStartPayload {
+  token: string;
+  artworkUrl: string;
+}
 
 interface MysteryImageRoundProps {
   session: GameSession;
@@ -87,26 +94,16 @@ export function MysteryImageRound({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingRound, setIsLoadingRound] = useState(true);
   const [grayscaleEnabled, setGrayscaleEnabled] = useState(true);
+  const prefetchEnabled = !ranked?.matchId && !onRoundComplete;
+  const lastFetchErrorRef = useRef<string | null>(null);
 
   const excludedIds = useMemo(
     () => wrongGuesses.map((pokemon) => pokemon.id),
     [wrongGuesses],
   );
 
-  const startRound = useCallback(async () => {
-    setIsLoadingRound(true);
-    setToken(null);
-    setArtworkUrl(null);
-    setReveal(null);
-    setWrongGuesses([]);
-    setWrongAttempts(0);
-    setGuessName("");
-    setFeedback("");
-    setIsSolved(false);
-    setWasAbandoned(false);
-    setGrayscaleEnabled(true);
-    endActionRef.current = "advance";
-
+  const fetchPayload = useCallback(async (): Promise<MysteryStartPayload | null> => {
+    lastFetchErrorRef.current = null;
     try {
       const response = await fetch("/api/games/mystery/start", {
         method: "POST",
@@ -122,23 +119,59 @@ export function MysteryImageRound({
         const payload = (await response.json().catch(() => null)) as
           | { error?: string }
           | null;
-        setFeedback(payload?.error ?? "Impossible de démarrer la manche.");
-        setIsLoadingRound(false);
-        return;
+        lastFetchErrorRef.current =
+          payload?.error ?? "Impossible de démarrer la manche.";
+        return null;
       }
 
       const result = (await response.json()) as MysteryStartResult;
-      setToken(result.token);
-      setArtworkUrl(result.artworkUrl);
-      setIsLoadingRound(false);
-      window.setTimeout(() => {
-        inputRef.current?.focus();
-      }, 0);
+      return { token: result.token, artworkUrl: result.artworkUrl };
     } catch {
-      setFeedback("Impossible de démarrer la manche.");
-      setIsLoadingRound(false);
+      lastFetchErrorRef.current = "Impossible de démarrer la manche.";
+      return null;
     }
   }, [kind, ranked?.matchId, useBacPool]);
+
+  const warmPayload = useCallback(async (payload: MysteryStartPayload) => {
+    await warmImage(payload.artworkUrl);
+  }, []);
+
+  const { prefetch, takeOrFetch } = usePrefetchedRound({
+    enabled: prefetchEnabled,
+    fetchPayload,
+    warm: warmPayload,
+  });
+
+  const startRound = useCallback(async () => {
+    setIsLoadingRound(true);
+    setToken(null);
+    setArtworkUrl(null);
+    setReveal(null);
+    setWrongGuesses([]);
+    setWrongAttempts(0);
+    setGuessName("");
+    setFeedback("");
+    setIsSolved(false);
+    setWasAbandoned(false);
+    setGrayscaleEnabled(true);
+    endActionRef.current = "advance";
+
+    const payload = await takeOrFetch();
+    if (!payload) {
+      setFeedback(
+        lastFetchErrorRef.current ?? "Impossible de démarrer la manche.",
+      );
+      setIsLoadingRound(false);
+      return;
+    }
+
+    setToken(payload.token);
+    setArtworkUrl(payload.artworkUrl);
+    setIsLoadingRound(false);
+    window.setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  }, [takeOrFetch]);
 
   const advanceRound = useCallback(() => {
     if (onRoundComplete) {
@@ -165,6 +198,11 @@ export function MysteryImageRound({
   );
 
   useStartRoundWhenReady(startRound);
+
+  useEffect(() => {
+    if (!isSolved || !prefetchEnabled) return;
+    prefetch();
+  }, [isSolved, prefetch, prefetchEnabled]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -198,6 +236,7 @@ export function MysteryImageRound({
           onSuccess();
         }
         endActionRef.current = "advance";
+        await warmImage(result.reveal.artwork);
         setReveal(result.reveal);
         setArtworkUrl(result.reveal.artwork);
         setIsSolved(true);
@@ -218,6 +257,7 @@ export function MysteryImageRound({
 
         if (result.roundFailed) {
           setWrongAttempts((current) => current + 1);
+          await warmImage(result.targetReveal.artwork);
           setReveal(result.targetReveal);
           setArtworkUrl(result.targetReveal.artwork);
           session.recordRound({
@@ -238,6 +278,7 @@ export function MysteryImageRound({
           return;
         }
 
+        await warmImage(result.artworkUrl);
         setToken(result.nextToken);
         setArtworkUrl(result.artworkUrl);
         setWrongAttempts(result.wrongAttempts);
@@ -299,6 +340,7 @@ export function MysteryImageRound({
       });
 
       endActionRef.current = "advance";
+      await warmImage(result.reveal.artwork);
       setReveal(result.reveal);
       setArtworkUrl(result.reveal.artwork);
       setGuessName("");
