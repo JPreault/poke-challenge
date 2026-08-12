@@ -13,7 +13,7 @@ import { useRankedSession } from "@/components/game/RankedSessionContext";
 import { RoundActionsProvider, useRoundActions } from "@/components/game/RoundActionsContext";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { RoundRecord } from "@/lib/games/types";
-import { computeBlurGuessStats, getGameModeLabel } from "@/lib/games/types";
+import { computeBlurGuessStats, getGameModeLabel, getInterfaceModeLabel } from "@/lib/games/types";
 import type { GameSession } from "@/lib/games/useGameSession";
 import { cn } from "@/lib/utils";
 
@@ -49,10 +49,13 @@ function GameShellInner({ session, title, description, modeLabel, homeHref, repl
     const searchParams = useSearchParams();
     const isBacTraining = searchParams.get("interface") === "bac-training";
     const isRankedPlay = searchParams.get("interface") === "ranked";
+    const interfaceMode = isRankedPlay ? "ranked" : isBacTraining ? "bac-training" : "arena";
     const resolvedHomeHref = homeHref ?? (isRankedPlay ? "/partie-classee" : isBacTraining ? "/entrainement" : "/");
     const resolvedReplayHref =
         replayHref ?? (isRankedPlay ? `/game/${mode}?interface=ranked` : isBacTraining ? `/game/${mode}?interface=bac-training` : `/game/${mode}`);
     const displayedModeLabel = modeLabel ?? getGameModeLabel(mode);
+    const interfaceLabel = getInterfaceModeLabel(interfaceMode);
+    const contextLabel = `${interfaceLabel} · ${displayedModeLabel}`;
 
     const handleReplay = useCallback(() => {
         window.location.assign(resolvedReplayHref);
@@ -78,7 +81,15 @@ function GameShellInner({ session, title, description, modeLabel, homeHref, repl
     }
 
     if (isFinished) {
-        return <GameRecap session={session} homeHref={resolvedHomeHref} onReplay={handleReplay} isRankedPlay={isRankedPlay} />;
+        return (
+            <GameRecap
+                session={session}
+                homeHref={resolvedHomeHref}
+                onReplay={handleReplay}
+                isRankedPlay={isRankedPlay}
+                contextLabel={contextLabel}
+            />
+        );
     }
 
     const attemptsRemaining = ranked ? Math.max(0, ranked.attemptLimit - ranked.roundAttempts) : null;
@@ -92,7 +103,7 @@ function GameShellInner({ session, title, description, modeLabel, homeHref, repl
 
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
-                        <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">{displayedModeLabel}</p>
+                        <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">{contextLabel}</p>
                         <h1 className="font-heading text-2xl font-bold sm:text-3xl">{title}</h1>
                         {description ? <p className="max-w-md text-base leading-7 text-muted-foreground">{description}</p> : null}
                     </div>
@@ -181,11 +192,13 @@ function GameRecap({
     homeHref,
     onReplay,
     isRankedPlay,
+    contextLabel,
 }: {
     session: GameSession;
     homeHref: string;
     onReplay: () => void;
     isRankedPlay: boolean;
+    contextLabel: string;
 }) {
     const { stats, mode, rounds } = session;
     const ranked = useRankedSession();
@@ -199,7 +212,7 @@ function GameRecap({
             <div className="w-full pb-16 pt-4 sm:pb-20 sm:pt-6">
                 <div className="surface p-4 sm:p-8 lg:p-10">
                     <div className="mb-10 space-y-2">
-                        <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">Classée · {getGameModeLabel(mode)}</p>
+                        <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">{contextLabel}</p>
                         <h1 className="font-heading text-3xl font-bold">{endedLabel}</h1>
                     </div>
 
@@ -241,7 +254,7 @@ function GameRecap({
         <div className="w-full pb-16 pt-4 sm:pb-20 sm:pt-6">
             <div className="surface p-4 sm:p-8 lg:p-10">
                 <div className="mb-10 space-y-2">
-                    <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">{getGameModeLabel(mode)}</p>
+                    <p className="text-sm font-medium uppercase tracking-[0.15em] text-muted-foreground">{contextLabel}</p>
                     <h1 className="font-heading text-3xl font-bold">Récapitulatif</h1>
                 </div>
 

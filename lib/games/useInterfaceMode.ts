@@ -24,7 +24,7 @@ export function useInterfaceMode(): GameInterfaceMode | null {
     return "ranked";
   }
 
-  if (pathname === "/") {
+  if (pathname === "/" || pathname === "/game" || pathname.startsWith("/game/")) {
     return "arena";
   }
 

@@ -105,6 +105,17 @@ export function getGameModeLabel(mode: GameMode): string {
   }
 }
 
+export function getInterfaceModeLabel(mode: GameInterfaceMode): string {
+  switch (mode) {
+    case "bac-training":
+      return "Entraînement";
+    case "ranked":
+      return "Classée";
+    case "arena":
+      return "Non classée";
+  }
+}
+
 export function getShuffleRoundLabel(type: ShuffleRoundType): string {
   switch (type) {
     case "image-to-name":
